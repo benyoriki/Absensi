@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Dashboard Admin — Rakabu Attendance</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<a class="skip-link" href="#main">Langsung ke konten utama</a>
+
+<div class="app-shell">
+  <header class="app-header">
+    <div class="app-header__brand">
+      <span class="brand-mark" aria-hidden="true" style="background:linear-gradient(145deg,var(--ink-950),var(--brand-700))">
+        <svg viewBox="0 0 40 40" width="20" height="20"><circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" stroke-width="2.6" opacity="0.5"/><circle cx="20" cy="20" r="10" fill="currentColor"/></svg>
+      </span>
+      <div class="brand-text">
+        <h1>Rakabu Attendance</h1>
+        <p>PT Rakabu Sapi Kita · Admin</p>
+      </div>
+    </div>
+    <div class="app-header__meta">
+      <div class="clock-block">
+        <span id="clock-time" class="clock-time">--:--:--</span>
+        <span id="clock-date" class="clock-date">-- -- ----</span>
+      </div>
+      <button id="theme-toggle" class="icon-btn" type="button" aria-label="Ganti tampilan terang/gelap">
+        <svg id="theme-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      </button>
+      <button id="notif-btn" class="icon-btn notif-btn" type="button" aria-label="Notifikasi" data-nav="notifikasi">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9a6 6 0 1 1 12 0c0 4 1.5 5.5 1.5 5.5H4.5S6 13 6 9Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9.5 17a2.5 2.5 0 0 0 5 0" stroke="currentColor" stroke-width="1.7"/></svg>
+        <span id="notif-dot" class="notif-dot" hidden>0</span>
+      </button>
+      <button class="avatar-btn" id="avatar-btn" type="button" aria-label="Profil admin">A</button>
+    </div>
+  </header>
+
+  <div class="app-body">
+    <nav class="sidebar" aria-label="Menu admin">
+      <p class="sidebar__group-label">Utama</p>
+      <button class="sidebar__link" data-nav="dashboard">🏠 Dashboard</button>
+      <button class="sidebar__link" data-nav="pendaftaran">🆕 Pendaftaran Baru <span id="sidebar-pending-badge" class="pill pill--danger" style="margin-left:auto" hidden>0</span></button>
+      <button class="sidebar__link" data-nav="karyawan">👥 Data Karyawan</button>
+      <p class="sidebar__group-label">Absensi</p>
+      <button class="sidebar__link" data-nav="absensi">📋 Rekap Absensi</button>
+      <button class="sidebar__link" data-nav="cuti">🏖️ Pengajuan Cuti</button>
+      <button class="sidebar__link" data-nav="lembur">⏱️ Pengajuan Lembur</button>
+      <p class="sidebar__group-label">Keuangan &amp; Laporan</p>
+      <button class="sidebar__link" data-nav="gaji">💰 Gaji Karyawan</button>
+      <button class="sidebar__link" data-nav="laporan">📑 Laporan</button>
+      <p class="sidebar__group-label">Lainnya</p>
+      <button class="sidebar__link" data-nav="notifikasi">🔔 Notifikasi</button>
+      <button class="sidebar__link" id="sidebar-logout">🚪 Keluar</button>
+    </nav>
+
+    <main id="main" class="main-content">
+
+      <!-- ===================== DASHBOARD ===================== -->
+      <section data-page="dashboard">
+        <div class="page-title"><h2>Dashboard Admin</h2><p>Ringkasan kehadiran & aktivitas hari ini.</p></div>
+
+        <div class="grid-stats" id="stat-cards"></div>
+
+        <div class="grid-two mt-1">
+          <section class="card">
+            <div class="card__head"><h3>Grafik Kehadiran Hari Ini</h3></div>
+            <div class="donut-wrap">
+              <svg class="donut" id="attendance-donut" width="140" height="140" viewBox="0 0 140 140"></svg>
+              <div class="legend" id="attendance-legend"></div>
+            </div>
+          </section>
+          <section class="card">
+            <div class="card__head"><h3>Absensi Mingguan</h3></div>
+            <div class="bar-chart" id="weekly-bar-chart"></div>
+          </section>
+        </div>
+
+        <section class="card mt-1">
+          <div class="card__head"><h3>Aktivitas Terbaru</h3></div>
+          <ul id="recent-activity-list" class="history-list"></ul>
+        </section>
+      </section>
+
+      <!-- ===================== PENDAFTARAN BARU ===================== -->
+      <section data-page="pendaftaran" hidden>
+        <div class="page-title"><h2>Pendaftaran Baru</h2><p>Setujui atau tolak pendaftaran akun karyawan baru.</p></div>
+        <section class="card">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Nama</th><th>ID</th><th>Departemen</th><th>Tanggal Daftar</th><th>Status</th><th>Aksi</th></tr></thead>
+              <tbody id="pendaftaran-tbody"></tbody>
+            </table>
+          </div>
+          <div id="pendaftaran-empty" hidden></div>
+        </section>
+      </section>
+
+      <!-- ===================== DATA KARYAWAN ===================== -->
+      <section data-page="karyawan" hidden>
+        <div class="page-title flex-between">
+          <div><h2>Data Karyawan</h2><p>Kelola akun dan data kepegawaian.</p></div>
+        </div>
+        <section class="card">
+          <div class="field-row" style="margin-bottom:1em">
+            <input id="karyawan-search" type="search" placeholder="Cari nama, ID, atau departemen…" />
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Nama</th><th>ID</th><th>Jabatan</th><th>Departemen</th><th>Status</th><th>Aksi</th></tr></thead>
+              <tbody id="karyawan-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <!-- ===================== REKAP ABSENSI ===================== -->
+      <section data-page="absensi" hidden>
+        <div class="page-title flex-between">
+          <div><h2>Rekap Absensi</h2><p>Pantau kehadiran seluruh karyawan.</p></div>
+          <button class="btn btn--ghost btn--sm" id="export-attendance-btn">⬇️ Export CSV</button>
+        </div>
+        <section class="card">
+          <div class="chip-group" style="margin-bottom:1em">
+            <button class="chip is-active" data-arange="today">Hari ini</button>
+            <button class="chip" data-arange="week">Minggu ini</button>
+            <button class="chip" data-arange="month">Bulan ini</button>
+            <button class="chip" data-arange="all">Semua</button>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Nama</th><th>Tanggal</th><th>Masuk</th><th>Pulang</th><th>Jarak Masuk</th><th>Status</th></tr></thead>
+              <tbody id="absensi-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <!-- ===================== PENGAJUAN CUTI ===================== -->
+      <section data-page="cuti" hidden>
+        <div class="page-title"><h2>Pengajuan Cuti</h2><p>Setujui atau tolak permintaan cuti karyawan.</p></div>
+        <section class="card">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Nama</th><th>Jenis</th><th>Tanggal</th><th>Hari</th><th>Alasan</th><th>Status</th><th>Aksi</th></tr></thead>
+              <tbody id="cuti-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <!-- ===================== PENGAJUAN LEMBUR ===================== -->
+      <section data-page="lembur" hidden>
+        <div class="page-title"><h2>Pengajuan Lembur</h2><p>Setujui atau tolak permintaan lembur karyawan.</p></div>
+        <section class="card">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Nama</th><th>Tanggal</th><th>Jam</th><th>Durasi</th><th>Alasan</th><th>Status</th><th>Aksi</th></tr></thead>
+              <tbody id="lembur-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <!-- ===================== GAJI KARYAWAN ===================== -->
+      <section data-page="gaji" hidden>
+        <div class="page-title flex-between">
+          <div><h2>Gaji Karyawan</h2><p id="gaji-period-label">Periode -</p></div>
+          <button class="btn btn--ghost btn--sm" id="export-gaji-btn">⬇️ Export CSV</button>
+        </div>
+        <p class="fine-print" style="margin-bottom:1em">Data gaji di bawah ini adalah <strong>data uji coba (dummy)</strong>, bukan data gaji sesungguhnya.</p>
+        <section class="card">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Nama</th><th>Gaji Pokok</th><th>Tunjangan</th><th>Lembur</th><th>Potongan</th><th>Bonus</th><th>Total</th><th>Status</th></tr></thead>
+              <tbody id="gaji-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <!-- ===================== LAPORAN ===================== -->
+      <section data-page="laporan" hidden>
+        <div class="page-title"><h2>Laporan</h2><p>Rekap lengkap seluruh aktivitas untuk periode terpilih.</p></div>
+        <div class="grid-stats" id="laporan-summary"></div>
+        <section class="card mt-1">
+          <div class="card__head"><h3>Ringkasan per Karyawan</h3></div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Nama</th><th>Departemen</th><th>Hadir</th><th>Terlambat</th><th>Cuti Disetujui</th><th>Lembur Disetujui</th></tr></thead>
+              <tbody id="laporan-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <!-- ===================== NOTIFIKASI ===================== -->
+      <section data-page="notifikasi" hidden>
+        <div class="page-title flex-between">
+          <div><h2>Notifikasi</h2><p>Pemberitahuan sistem dan pengajuan karyawan.</p></div>
+          <button class="link-btn" id="mark-all-read-btn">Tandai semua dibaca</button>
+        </div>
+        <section class="card"><ul id="notif-list" class="history-list"></ul></section>
+      </section>
+
+    </main>
+  </div>
+
+  <nav class="bottom-nav" aria-label="Navigasi bawah admin">
+    <button class="bottom-nav__item" data-nav="dashboard">🏠<span>Home</span></button>
+    <button class="bottom-nav__item" data-nav="pendaftaran">🆕<span>Daftar</span></button>
+    <button class="bottom-nav__item" data-nav="karyawan">👥<span>Pegawai</span></button>
+    <button class="bottom-nav__item" data-nav="absensi">📋<span>Absensi</span></button>
+    <button class="bottom-nav__item" id="more-btn">☰<span>Lainnya</span></button>
+  </nav>
+</div>
+
+<div id="more-modal" class="modal-overlay" hidden role="dialog" aria-modal="true">
+  <div class="modal" style="max-width:340px">
+    <div class="modal__head"><h2>Menu Lainnya</h2><button class="icon-btn" id="more-close-btn" aria-label="Tutup">✕</button></div>
+    <div class="stack">
+      <button class="sidebar__link" data-nav="cuti">🏖️ Pengajuan Cuti</button>
+      <button class="sidebar__link" data-nav="lembur">⏱️ Pengajuan Lembur</button>
+      <button class="sidebar__link" data-nav="gaji">💰 Gaji Karyawan</button>
+      <button class="sidebar__link" data-nav="laporan">📑 Laporan</button>
+      <button class="sidebar__link" data-nav="notifikasi">🔔 Notifikasi</button>
+      <button class="sidebar__link" id="more-logout-btn">🚪 Keluar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ EMPLOYEE DETAIL MODAL ============ -->
+<div id="employee-modal" class="modal-overlay" hidden role="dialog" aria-modal="true">
+  <div class="modal modal--wide" id="employee-modal-content"></div>
+</div>
+
+<!-- ============ REJECT REASON MODAL (generic) ============ -->
+<div id="reject-modal" class="modal-overlay" hidden role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal__head"><h2 id="reject-modal-title">Tolak</h2><button class="icon-btn" id="reject-modal-close" aria-label="Tutup">✕</button></div>
+    <form id="reject-form">
+      <label for="reject-reason">Alasan / Catatan (opsional)</label>
+      <textarea id="reject-reason" placeholder="Tuliskan alasan…"></textarea>
+      <button type="submit" class="btn btn--danger btn--block mt-1">Konfirmasi Tolak</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============ CONFIRM MODAL (generic) ============ -->
+<div id="confirm-modal" class="modal-overlay" hidden role="alertdialog" aria-modal="true">
+  <div class="modal">
+    <h2 id="confirm-title">Konfirmasi</h2>
+    <p id="confirm-message">Apakah Anda yakin?</p>
+    <div class="camera-actions__row" style="display:flex;gap:.8em;margin-top:1.2em">
+      <button id="confirm-cancel-btn" type="button" class="btn btn--ghost" style="flex:1">Batal</button>
+      <button id="confirm-ok-btn" type="button" class="btn btn--danger" style="flex:1">Ya, Lanjutkan</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-region" class="toast-region" aria-live="polite"></div>
+
+<script src="js/store.js"></script>
+<script src="js/ui-common.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

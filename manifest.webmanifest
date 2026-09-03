@@ -1,0 +1,12 @@
+{
+  "name": "Rakabu Attendance",
+  "short_name": "Rakabu Attendance",
+  "description": "Sistem absensi & HR PT Rakabu Sapi Kita",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#F5F6FB",
+  "theme_color": "#4F46E5",
+  "icons": [
+    { "src": "assets/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

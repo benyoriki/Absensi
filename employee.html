@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Dashboard Karyawan — Rakabu Attendance</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<a class="skip-link" href="#main">Langsung ke konten utama</a>
+
+<div class="app-shell">
+  <!-- ============ HEADER ============ -->
+  <header class="app-header">
+    <div class="app-header__brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 40 40" width="20" height="20"><circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" stroke-width="2.6" opacity="0.5"/><circle cx="20" cy="20" r="10" fill="currentColor"/></svg>
+      </span>
+      <div class="brand-text">
+        <h1>Rakabu Attendance</h1>
+        <p>PT Rakabu Sapi Kita</p>
+      </div>
+    </div>
+    <div class="app-header__meta">
+      <div class="clock-block">
+        <span id="clock-time" class="clock-time">--:--:--</span>
+        <span id="clock-date" class="clock-date">-- -- ----</span>
+      </div>
+      <button id="theme-toggle" class="icon-btn" type="button" aria-label="Ganti tampilan terang/gelap">
+        <svg id="theme-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      </button>
+      <button id="notif-btn" class="icon-btn notif-btn" type="button" aria-label="Notifikasi" data-nav="notifikasi">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9a6 6 0 1 1 12 0c0 4 1.5 5.5 1.5 5.5H4.5S6 13 6 9Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9.5 17a2.5 2.5 0 0 0 5 0" stroke="currentColor" stroke-width="1.7"/></svg>
+        <span id="notif-dot" class="notif-dot" hidden>0</span>
+      </button>
+      <button class="avatar-btn" id="avatar-btn" type="button" data-nav="profil" aria-label="Profil saya">?</button>
+    </div>
+  </header>
+
+  <div class="app-body">
+    <!-- ============ SIDEBAR (desktop) ============ -->
+    <nav class="sidebar" aria-label="Menu utama">
+      <p class="sidebar__group-label">Menu</p>
+      <button class="sidebar__link" data-nav="dashboard">🏠 Dashboard</button>
+      <button class="sidebar__link" data-nav="absensi">📍 Absensi</button>
+      <button class="sidebar__link" data-nav="riwayat">📊 Riwayat Absensi</button>
+      <button class="sidebar__link" data-nav="jadwal">📅 Jadwal Kerja</button>
+      <p class="sidebar__group-label">Pengajuan</p>
+      <button class="sidebar__link" data-nav="cuti">🏖️ Cuti</button>
+      <button class="sidebar__link" data-nav="lembur">⏱️ Lembur</button>
+      <p class="sidebar__group-label">Akun</p>
+      <button class="sidebar__link" data-nav="profil">👤 Data Saya</button>
+      <button class="sidebar__link" data-nav="notifikasi">🔔 Notifikasi</button>
+      <button class="sidebar__link" id="sidebar-logout">🚪 Keluar</button>
+    </nav>
+
+    <!-- ============ MAIN CONTENT ============ -->
+    <main id="main" class="main-content">
+
+      <!-- ===================== DASHBOARD ===================== -->
+      <section data-page="dashboard">
+        <div class="page-title">
+          <h2 id="greeting">Halo 👋</h2>
+          <p id="today-date-label">-</p>
+        </div>
+
+        <div class="stack">
+          <section class="card hero-card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1em">
+            <div>
+              <span class="text-sm text-muted">Status Kehadiran</span>
+              <div style="margin-top:.3em"><span id="attendance-status-badge" class="badge badge--neutral">BELUM ABSEN</span></div>
+            </div>
+            <div class="text-sm text-muted" style="text-align:right">
+              <div>Masuk: <strong id="hero-checkin" class="mono">—</strong></div>
+              <div>Pulang: <strong id="hero-checkout" class="mono">—</strong></div>
+            </div>
+          </section>
+
+          <div class="grid-two">
+            <section class="card location-card" aria-labelledby="location-heading">
+              <div class="card__head">
+                <h3 id="location-heading">📍 Lokasi Anda</h3>
+                <span id="location-status-pill" class="pill pill--neutral">Memeriksa…</span>
+              </div>
+              <div class="radar-wrap">
+                <div class="radar" id="radar" aria-hidden="true">
+                  <div class="radar__sweep"></div>
+                  <div class="radar__ring radar__ring--outer"></div>
+                  <div class="radar__ring radar__ring--mid"></div>
+                  <div class="radar__ring radar__ring--office"></div>
+                  <span class="radar__limit-label">15m</span>
+                  <div class="radar__tick radar__tick--n"></div>
+                  <div class="radar__tick radar__tick--s"></div>
+                  <div class="radar__tick radar__tick--e"></div>
+                  <div class="radar__tick radar__tick--w"></div>
+                  <div class="radar__dot" id="radar-dot"></div>
+                  <div class="radar__center"></div>
+                </div>
+              </div>
+              <dl class="stat-list">
+                <div class="stat-list__item"><dt>Jarak dari kantor</dt><dd id="stat-distance" class="mono">— m</dd></div>
+                <div class="stat-list__item"><dt>Akurasi GPS</dt><dd id="stat-accuracy" class="mono">±— m</dd></div>
+                <div class="stat-list__item"><dt>Update terakhir</dt><dd id="stat-updated" class="mono">—</dd></div>
+              </dl>
+              <div class="progress-track"><div id="progress-fill" class="progress-track__fill"></div></div>
+              <p class="progress-caption">Batas absensi: <strong>3 meter</strong> · Batas aman monitoring: <strong>5 meter</strong></p>
+              <button id="open-maps-btn" type="button" class="btn btn--ghost btn--block mt-1">Buka Google Maps</button>
+              <p id="location-permission-note" class="fine-print"></p>
+            </section>
+
+            <section class="card monitoring-card" aria-labelledby="monitoring-heading">
+              <div class="card__head"><h3 id="monitoring-heading">🛰️ Monitoring Area Kerja</h3></div>
+              <dl class="stat-list">
+                <div class="stat-list__item"><dt>Status area</dt><dd id="monitor-area-status">—</dd></div>
+                <div class="stat-list__item"><dt>Jarak dari kantor</dt><dd id="monitor-distance" class="mono">— m</dd></div>
+                <div class="stat-list__item"><dt>Waktu di luar area</dt><dd id="monitor-outside-time" class="mono">00:00</dd></div>
+              </dl>
+              <div id="warning-banner" class="warning-banner" hidden role="alert">
+                <div aria-hidden="true">⚠️</div>
+                <div>
+                  <p class="warning-banner__title">Anda berada di luar area kerja</p>
+                  <p>Jarak: <strong id="warning-distance">—</strong> m — kembali ke area kerja sebelum:</p>
+                  <p class="warning-banner__timer mono" id="warning-timer">05:00</p>
+                </div>
+              </div>
+              <p class="fine-print">Monitoring lokasi bergantung pada izin GPS, browser, sistem operasi, dan kondisi perangkat. Monitoring dapat terbatas ketika browser ditutup atau sistem membatasi aktivitas latar belakang.</p>
+            </section>
+          </div>
+
+          <section class="card action-card">
+            <div class="action-grid">
+              <button id="check-in-btn" type="button" class="btn btn--action btn--checkin">
+                <span class="btn__icon-badge" aria-hidden="true">→</span>
+                <span class="btn__label">ABSEN MASUK</span>
+                <span class="btn__sub" id="check-in-sub">Tekan untuk memulai</span>
+              </button>
+              <button id="check-out-btn" type="button" class="btn btn--action btn--checkout" disabled>
+                <span class="btn__icon-badge" aria-hidden="true">←</span>
+                <span class="btn__label">ABSEN PULANG</span>
+                <span class="btn__sub" id="check-out-sub">Absen masuk dahulu</span>
+              </button>
+            </div>
+          </section>
+
+          <div class="grid-two">
+            <section class="card">
+              <div class="card__head"><h3>📅 Jadwal Hari Ini</h3></div>
+              <p style="font-size:1.4rem;font-weight:800;font-family:var(--font-display)" id="today-schedule">08:00 – 17:00</p>
+              <p class="text-sm text-muted">Senin – Jumat · Sabtu-Minggu libur</p>
+            </section>
+            <section class="card">
+              <div class="card__head"><h3>🏖️ Sisa Cuti</h3></div>
+              <p style="font-size:1.4rem;font-weight:800;font-family:var(--font-display)"><span id="leave-remaining">12</span> Hari</p>
+              <p class="text-sm text-muted"><span id="leave-used">0</span> hari terpakai dari <span id="leave-quota">12</span> hari/tahun</p>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== ABSENSI (alias dashboard, quick nav target) ===================== -->
+      <!-- 'absensi' routes to dashboard section since check-in/out lives there -->
+
+      <!-- ===================== RIWAYAT ABSENSI ===================== -->
+      <section data-page="riwayat" hidden>
+        <div class="page-title"><h2>Riwayat Absensi</h2><p>Rekam jejak kehadiran Anda.</p></div>
+        <section class="card">
+          <div class="chip-group mt-1" style="margin-bottom:1em">
+            <button class="chip is-active" data-range="week">Minggu ini</button>
+            <button class="chip" data-range="month">Bulan ini</button>
+            <button class="chip" data-range="all">Semua</button>
+          </div>
+          <ul id="riwayat-list" class="history-list"></ul>
+        </section>
+      </section>
+
+      <!-- ===================== JADWAL KERJA ===================== -->
+      <section data-page="jadwal" hidden>
+        <div class="page-title"><h2>Jadwal Kerja</h2><p>Jadwal kerja tetap mingguan Anda.</p></div>
+        <section class="card">
+          <ul class="history-list" id="jadwal-list"></ul>
+        </section>
+      </section>
+
+      <!-- ===================== CUTI ===================== -->
+      <section data-page="cuti" hidden>
+        <div class="page-title"><h2>Cuti</h2><p>Kelola sisa cuti dan pengajuan cuti Anda.</p></div>
+        <div class="grid-two">
+          <section class="card">
+            <div class="card__head"><h3>Sisa Cuti</h3></div>
+            <p style="font-size:2rem;font-weight:800;font-family:var(--font-display)"><span id="cuti-remaining">12</span> Hari</p>
+            <dl class="stat-list">
+              <div class="stat-list__item"><dt>Jatah cuti tahunan</dt><dd id="cuti-quota" class="mono">12 hari</dd></div>
+              <div class="stat-list__item"><dt>Cuti terpakai</dt><dd id="cuti-used" class="mono">0 hari</dd></div>
+            </dl>
+          </section>
+          <section class="card">
+            <div class="card__head"><h3>Ajukan Cuti Baru</h3></div>
+            <form id="leave-form" novalidate>
+              <label for="leave-type">Jenis Cuti</label>
+              <select id="leave-type" required>
+                <option>Cuti Tahunan</option>
+                <option>Cuti Sakit</option>
+                <option>Cuti Melahirkan</option>
+                <option>Cuti Penting/Keluarga</option>
+                <option>Tanpa Gaji</option>
+              </select>
+              <div class="field-row">
+                <div><label for="leave-start">Tanggal Mulai</label><input id="leave-start" type="date" required /></div>
+                <div><label for="leave-end">Tanggal Selesai</label><input id="leave-end" type="date" required /></div>
+              </div>
+              <label for="leave-reason">Alasan</label>
+              <textarea id="leave-reason" placeholder="Jelaskan alasan pengajuan cuti" required></textarea>
+              <span class="field-error" id="leave-form-error" role="alert"></span>
+              <button type="submit" class="btn btn--primary btn--block mt-1">Ajukan Cuti</button>
+            </form>
+          </section>
+        </div>
+        <section class="card mt-1">
+          <div class="card__head"><h3>Riwayat Pengajuan Cuti</h3></div>
+          <ul id="leave-history-list" class="history-list"></ul>
+        </section>
+      </section>
+
+      <!-- ===================== LEMBUR ===================== -->
+      <section data-page="lembur" hidden>
+        <div class="page-title"><h2>Lembur</h2><p>Ajukan dan pantau pengajuan lembur Anda.</p></div>
+        <div class="grid-two">
+          <section class="card">
+            <div class="card__head"><h3>Ajukan Lembur</h3></div>
+            <form id="overtime-form" novalidate>
+              <label for="ot-date">Tanggal</label>
+              <input id="ot-date" type="date" required />
+              <div class="field-row">
+                <div><label for="ot-start">Jam Mulai</label><input id="ot-start" type="time" required /></div>
+                <div><label for="ot-end">Jam Selesai</label><input id="ot-end" type="time" required /></div>
+              </div>
+              <label for="ot-task">Pekerjaan yang Dilakukan</label>
+              <input id="ot-task" type="text" placeholder="Contoh: Maintenance sistem" required />
+              <label for="ot-reason">Alasan Lembur</label>
+              <textarea id="ot-reason" placeholder="Jelaskan alasan lembur" required></textarea>
+              <span class="field-error" id="ot-form-error" role="alert"></span>
+              <button type="submit" class="btn btn--primary btn--block mt-1">Ajukan Lembur</button>
+            </form>
+          </section>
+          <section class="card">
+            <div class="card__head"><h3>Riwayat Lembur</h3></div>
+            <ul id="overtime-history-list" class="history-list"></ul>
+          </section>
+        </div>
+      </section>
+
+      <!-- ===================== PROFIL ===================== -->
+      <section data-page="profil" hidden>
+        <div class="page-title"><h2>Profil Saya</h2><p>Data akun dan kepegawaian Anda.</p></div>
+        <section class="card">
+          <div class="profile-head">
+            <div class="avatar-lg" id="profile-avatar">?</div>
+            <div>
+              <h3 id="profile-name">-</h3>
+              <p id="profile-position">-</p>
+            </div>
+          </div>
+          <dl class="stat-list">
+            <div class="stat-list__item"><dt>ID Karyawan</dt><dd id="profile-id">-</dd></div>
+            <div class="stat-list__item"><dt>Departemen</dt><dd id="profile-department">-</dd></div>
+            <div class="stat-list__item"><dt>Email</dt><dd id="profile-email">-</dd></div>
+            <div class="stat-list__item"><dt>Nomor HP</dt><dd id="profile-phone">-</dd></div>
+            <div class="stat-list__item"><dt>Status Akun</dt><dd id="profile-status">-</dd></div>
+            <div class="stat-list__item"><dt>Tanggal Bergabung</dt><dd id="profile-join">-</dd></div>
+          </dl>
+          <p class="fine-print">Untuk mengubah data jabatan, departemen, atau status akun, silakan hubungi admin HR. Anda dapat memperbarui nomor HP dan email sendiri.</p>
+          <form id="profile-form" class="mt-1">
+            <div class="field-row">
+              <div><label for="profile-phone-input">Nomor HP</label><input id="profile-phone-input" type="tel" /></div>
+              <div><label for="profile-email-input">Email</label><input id="profile-email-input" type="email" /></div>
+            </div>
+            <button type="submit" class="btn btn--ghost btn--block mt-1">Simpan Perubahan</button>
+          </form>
+        </section>
+        <section class="card mt-1">
+          <div class="card__head"><h3>Pengaturan</h3></div>
+          <button id="logout-btn" type="button" class="btn btn--danger-ghost btn--block">🚪 Keluar</button>
+        </section>
+      </section>
+
+      <!-- ===================== NOTIFIKASI ===================== -->
+      <section data-page="notifikasi" hidden>
+        <div class="page-title flex-between">
+          <div><h2>Notifikasi</h2><p>Pemberitahuan terkait akun dan pengajuan Anda.</p></div>
+          <button class="link-btn" id="mark-all-read-btn">Tandai semua dibaca</button>
+        </div>
+        <section class="card"><ul id="notif-list" class="history-list"></ul></section>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ============ BOTTOM NAV (mobile) ============ -->
+  <nav class="bottom-nav" aria-label="Navigasi bawah">
+    <button class="bottom-nav__item" data-nav="dashboard">🏠<span>Home</span></button>
+    <button class="bottom-nav__item" data-nav="dashboard">📍<span>Absen</span></button>
+    <button class="bottom-nav__item" data-nav="cuti">🏖️<span>Cuti</span></button>
+    <button class="bottom-nav__item" data-nav="profil">👤<span>Profil</span></button>
+    <button class="bottom-nav__item" id="more-btn">☰<span>Lainnya</span></button>
+  </nav>
+</div>
+
+<!-- ============ MORE SHEET (mobile) ============ -->
+<div id="more-modal" class="modal-overlay" hidden role="dialog" aria-modal="true">
+  <div class="modal" style="max-width:340px">
+    <div class="modal__head"><h2>Menu Lainnya</h2><button class="icon-btn" id="more-close-btn" aria-label="Tutup">✕</button></div>
+    <div class="stack">
+      <button class="sidebar__link" data-nav="riwayat">📊 Riwayat Absensi</button>
+      <button class="sidebar__link" data-nav="jadwal">📅 Jadwal Kerja</button>
+      <button class="sidebar__link" data-nav="lembur">⏱️ Lembur</button>
+      <button class="sidebar__link" data-nav="notifikasi">🔔 Notifikasi</button>
+      <button class="sidebar__link" id="more-logout-btn">🚪 Keluar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CHECK-IN/OUT CONFIRM MODAL ============ -->
+<div id="attendance-modal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="attendance-modal-title">
+  <div class="modal">
+    <div class="modal__head"><h2 id="attendance-modal-title">Absen Masuk</h2><button class="icon-btn" id="attendance-modal-close" aria-label="Tutup">✕</button></div>
+    <div id="attendance-modal-body" style="text-align:center;padding:1em 0">
+      <div class="spinner" style="width:32px;height:32px;border-color:var(--border);border-top-color:var(--brand-600);margin:0 auto 1em"></div>
+      <p class="text-muted text-sm">Mengambil lokasi GPS Anda…</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SUCCESS MODAL ============ -->
+<div id="success-modal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="success-title">
+  <div class="modal success-modal">
+    <div class="success-modal__check" aria-hidden="true">✓</div>
+    <h2 id="success-title">Absen Berhasil</h2>
+    <dl class="success-modal__details">
+      <div><dt>Nama</dt><dd id="success-name">—</dd></div>
+      <div><dt>Waktu</dt><dd id="success-time" class="mono">—</dd></div>
+      <div><dt>Jarak</dt><dd id="success-distance" class="mono">—</dd></div>
+    </dl>
+    <button id="success-close-btn" type="button" class="btn btn--primary btn--block">Tutup</button>
+  </div>
+</div>
+
+<!-- ============ CRITICAL ZONE WARNING MODAL (5 menit di luar area) ============ -->
+<div id="critical-warning-modal" class="modal-overlay" hidden role="alertdialog" aria-modal="true" aria-labelledby="critical-title">
+  <div class="modal critical-modal">
+    <div class="critical-modal__icon" aria-hidden="true">⚠️</div>
+    <h2 id="critical-title">Peringatan Keluar Area</h2>
+    <p>Anda telah berada di luar area kerja <strong>PT Rakabu Sapi Kita</strong> selama lebih dari 5 menit.</p>
+    <p class="text-sm text-muted mt-1">Jarak maksimum: <strong id="critical-distance" class="mono">—</strong> meter</p>
+
+    <form id="reason-form" style="text-align:left;margin-top:1.2em">
+      <label for="reason-select">Alasan keluar area kerja</label>
+      <select id="reason-select" required>
+        <option value="">Pilih alasan</option>
+        <option>Keperluan pekerjaan</option>
+        <option>Ke toilet</option>
+        <option>Ke gudang</option>
+        <option>Mengantar dokumen</option>
+        <option>Keperluan operasional</option>
+        <option>Istirahat</option>
+        <option value="Keperluan lain">Keperluan lain</option>
+      </select>
+      <div id="reason-other-wrap" hidden>
+        <label for="reason-other-text">Jelaskan alasan Anda</label>
+        <textarea id="reason-other-text" placeholder="Jelaskan alasan Anda..."></textarea>
+      </div>
+      <span class="field-error" id="reason-error" role="alert"></span>
+      <button type="submit" class="btn btn--primary btn--block mt-1">KIRIM ALASAN</button>
+    </form>
+  </div>
+</div>
+
+<div id="toast-region" class="toast-region" aria-live="polite"></div>
+
+<script src="js/store.js"></script>
+<script src="js/ui-common.js"></script>
+<script src="js/geo.js"></script>
+<script src="js/employee.js"></script>
+</body>
+</html>
