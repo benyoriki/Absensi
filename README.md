@@ -1,6 +1,71 @@
 # Rakabu Attendance — PT Rakabu Sapi Kita
 
-## 🔧 Perbaikan Terbaru (Bug Fix + Redesign)
+## 🗑️ Fitur "Peringatan Keluar Area" — SUDAH DIHAPUS TOTAL
+
+Atas permintaan, fitur ini **dihapus dari kode**, bukan cuma dimatikan lewat
+saklar. Yang dihapus:
+- Modal "Peringatan Keluar Area" + form alasan (`critical-warning-modal`) di
+  `employee.html`.
+- Kartu "Monitoring Area Kerja" + banner "Anda berada di luar area kerja" di
+  `employee.html`.
+- Semua logika alarm 5-menit, timer, getar, bunyi, dan notifikasi terkait di
+  `js/geo.js` dan `js/employee.js`.
+
+Sekarang karyawan **bebas pergi sejauh apa pun** setelah absen masuk — tidak
+ada notifikasi, banner, modal, getar, atau bunyi apa pun yang akan muncul.
+
+**Yang TIDAK berubah** (tetap berjalan seperti biasa): absen masuk & absen
+pulang tetap mewajibkan karyawan berada dalam radius kantor
+(`attendanceRadius`, 20 meter), dan kartu "Lokasi Anda" (jarak + akurasi GPS)
+di dashboard tetap tampil sebagai bagian dari proses absen.
+
+Kalau suatu saat fitur ini ingin dibangun ulang, disarankan sebagai fitur
+baru dari nol, bukan mengembalikan kode lama — sebelumnya versi ini pernah
+dicoba dimatikan lewat saklar `ZONE_ALARM_ENABLED` di `js/geo.js`, tapi
+opsi itu sudah tidak ada lagi di kode karena seluruh mesinnya sudah dibuang.
+
+---
+
+## 🔧 Perbaikan Putaran Ke-2 (setelah laporan bug dari layar HP)
+
+Dua laporan bug baru sudah diperbaiki:
+
+1. **"Sudah kirim alasan, notifikasi/modal tidak hilang"** — Root cause-nya
+   BUKAN di logika pengiriman alasan (`onSubmitZoneReason` di `employee.js`
+   sudah benar menutup modal), melainkan **modal yang saling menumpuk**:
+   sebelum ini, setiap modal (`Menu Lainnya`, `Absen Masuk/Pulang`, `Sukses`,
+   `Peringatan Keluar Area` di karyawan; `Menu Lainnya`, `Detail Karyawan`,
+   `Tolak`, `Konfirmasi` di admin) hanya mengatur `hidden` pada dirinya
+   sendiri, tanpa pernah menutup modal lain yang mungkin masih terbuka di
+   belakangnya. Kalau dua modal kebetulan sama-sama tidak `hidden` (misalnya
+   akibat klik ganda, event yang datang beruntun, atau kondisi race lain),
+   keduanya tampil bertumpuk — persis seperti pada screenshot: overlay gelap
+   berlapis, dan teks satu modal "menembus" ke modal lain. Ini yang membuat
+   layar tampak macet/tidak merespons.
+   **Perbaikan:** ditambahkan `showModal()` di `employee.js` dan `admin.js`
+   yang **selalu menutup semua modal lain** sebelum membuka satu modal yang
+   diminta. Sekarang mustahil dua modal tampil bersamaan.
+2. **"Tidak bisa masuk Dashboard Admin"** — Ini paling sering terjadi karena
+   dua hal, silakan cek satu per satu:
+   - Akses admin **sengaja disembunyikan**: dari halaman login karyawan,
+     **ketuk logo/lambang "Rakabu Attendance" di bagian atas sebanyak 5 kali
+     dengan cepat** (dalam 2 detik) — bukan lewat tombol biasa. Setelah itu
+     form login admin akan muncul. Login dengan `admin` / `admin123`.
+   - Jika sebelumnya sempat macet karena bug modal-tumpuk di atas, maka
+     setelah tumpukan modal ini diperbaiki, admin seharusnya bisa
+     melanjutkan proses (approve/tolak) tanpa layar macet lagi.
+   - **Kalau website yang online (`benyoriki.github.io/Absensi/`) masih
+     menampilkan perilaku lama setelah Anda unggah ulang file dari paket
+     ini**, kemungkinan besar itu karena **cache browser** menyimpan versi
+     JS/CSS lama. Semua referensi `css/style.css` dan `js/*.js` di file HTML
+     sudah ditambahkan `?v=2` di paket ini supaya browser dipaksa mengambil
+     file terbaru. Setelah unggah ulang ke GitHub, lakukan **hard refresh**
+     (Ctrl+Shift+R di desktop, atau buka di jendela penyamaran/incognito di
+     HP) sekali saja untuk memastikan versi baru yang termuat.
+
+---
+
+## 🔧 Perbaikan Sebelumnya (Bug Fix + Redesign)
 
 **Bug utama yang diperbaiki** (penyebab notifikasi "Peringatan Keluar Area"
 muncul padahal status masih "BELUM ABSEN", seperti di laporan Anda):

@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="css/style.css" />
+<link rel="stylesheet" href="css/style.css?v=5" />
 </head>
 <body>
 <a class="skip-link" href="#main">Langsung ke konten utama</a>
@@ -67,6 +67,7 @@
         <div class="page-title">
           <h2 id="greeting">Halo 👋</h2>
           <p id="today-date-label">-</p>
+          <p class="fine-print" style="opacity:.55;margin-top:.4em">Build kode: v5 (2026-09-04)</p>
         </div>
 
         <div class="stack">
@@ -113,23 +114,6 @@
               <p id="location-permission-note" class="fine-print"></p>
             </section>
 
-            <section class="card monitoring-card" aria-labelledby="monitoring-heading">
-              <div class="card__head"><h3 id="monitoring-heading"><span class="inline-icon" data-icon="satellite" data-icon-size="18"></span> Monitoring Area Kerja</h3></div>
-              <dl class="stat-list">
-                <div class="stat-list__item"><dt>Status area</dt><dd id="monitor-area-status">—</dd></div>
-                <div class="stat-list__item"><dt>Jarak dari kantor</dt><dd id="monitor-distance" class="mono">— m</dd></div>
-                <div class="stat-list__item"><dt>Waktu di luar area</dt><dd id="monitor-outside-time" class="mono">00:00</dd></div>
-              </dl>
-              <div id="warning-banner" class="warning-banner" hidden role="alert">
-                <div class="warning-banner__icon" aria-hidden="true"><span data-icon="alertTriangle" data-icon-size="20"></span></div>
-                <div>
-                  <p class="warning-banner__title">Anda berada di luar area kerja</p>
-                  <p>Jarak: <strong id="warning-distance">—</strong> m — kembali ke area kerja sebelum:</p>
-                  <p class="warning-banner__timer mono" id="warning-timer">05:00</p>
-                </div>
-              </div>
-              <p class="fine-print">Monitoring lokasi bergantung pada izin GPS, browser, sistem operasi, dan kondisi perangkat. Monitoring dapat terbatas ketika browser ditutup atau sistem membatasi aktivitas latar belakang.</p>
-            </section>
           </div>
 
           <section class="card action-card">
@@ -349,41 +333,11 @@
   </div>
 </div>
 
-<!-- ============ CRITICAL ZONE WARNING MODAL (5 menit di luar area) ============ -->
-<div id="critical-warning-modal" class="modal-overlay" hidden role="alertdialog" aria-modal="true" aria-labelledby="critical-title">
-  <div class="modal critical-modal">
-    <div class="critical-modal__icon" aria-hidden="true"><span data-icon="alertTriangle" data-icon-size="30"></span></div>
-    <h2 id="critical-title">Peringatan Keluar Area</h2>
-    <p>Anda telah berada di luar area kerja <strong>PT Rakabu Sapi Kita</strong> selama lebih dari 5 menit.</p>
-    <p class="text-sm text-muted mt-1">Jarak maksimum: <strong id="critical-distance" class="mono">—</strong> meter</p>
-
-    <form id="reason-form" novalidate style="text-align:left;margin-top:1.2em">
-      <label for="reason-select">Alasan keluar area kerja</label>
-      <select id="reason-select" required>
-        <option value="">Pilih alasan</option>
-        <option>Keperluan pekerjaan</option>
-        <option>Ke toilet</option>
-        <option>Ke gudang</option>
-        <option>Mengantar dokumen</option>
-        <option>Keperluan operasional</option>
-        <option>Istirahat</option>
-        <option value="Keperluan lain">Keperluan lain</option>
-      </select>
-      <div id="reason-other-wrap" hidden>
-        <label for="reason-other-text">Jelaskan alasan Anda</label>
-        <textarea id="reason-other-text" placeholder="Jelaskan alasan Anda..."></textarea>
-      </div>
-      <span class="field-error" id="reason-error" role="alert"></span>
-      <button type="submit" class="btn btn--primary btn--block mt-1">KIRIM ALASAN</button>
-    </form>
-  </div>
-</div>
-
 <div id="toast-region" class="toast-region" aria-live="polite"></div>
 
-<script src="js/store.js"></script>
-<script src="js/ui-common.js"></script>
-<script src="js/geo.js"></script>
-<script src="js/employee.js"></script>
+<script src="js/store.js?v=5"></script>
+<script src="js/ui-common.js?v=5"></script>
+<script src="js/geo.js?v=5"></script>
+<script src="js/employee.js?v=5"></script>
 </body>
 </html>
