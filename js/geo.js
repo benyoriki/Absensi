@@ -28,8 +28,16 @@ const OFFICE_LOCATION = {
   // https://maps.app.goo.gl/bpJtNMaJEokaB92G9?g_st=ac
   latitude: -6.4569083,
   longitude: 106.7299401,
-  attendanceRadius: 3,   // meter — radius wajib untuk boleh absen masuk/pulang
-  warningRadius: 5,      // meter — radius batas "aman", di luar ini mulai dihitung
+  // Bug fix (akar masalah alarm berulang): radius sebelumnya (3m masuk /
+  // 5m aman) jauh lebih ketat daripada akurasi GPS smartphone pada
+  // umumnya (biasanya 10–20m, bahkan di luar ruangan). Sistem sendiri
+  // sudah menerima toleransi akurasi hingga 30m (lihat maxAcceptableAccuracy
+  // di bawah), tapi radius amannya cuma 5m — kontradiksi ini menyebabkan
+  // HAMPIR SETIAP pembacaan GPS normal terhitung "keluar area" walau
+  // karyawan diam di tempat yang sama. Radius dinaikkan ke nilai yang
+  // realistis terhadap teknologi GPS konsumen.
+  attendanceRadius: 20,  // meter — radius wajib untuk boleh absen masuk/pulang
+  warningRadius: 30,     // meter — radius batas "aman", di luar ini mulai dihitung
   outsideDurationMs: 5 * 60 * 1000, // 5 menit — batas sebelum alarm & wajib alasan
   maxAcceptableAccuracy: 30 // meter — akurasi GPS lebih buruk dari ini akan diberi peringatan
 };
@@ -114,26 +122,47 @@ function createGeoMonitor(callbacks) {
   let alarmFired = false;
   let maxDistanceWhileOutside = 0;
   let zoneActive = false;
+  let consecutiveOutside = 0;
+  let consecutiveSafe = 0;
+
+  // Bug fix (anti-alarm-palsu): GPS di HP/browser sering "meloncat" sesaat
+  // (satu titik noise) terutama di dalam ruangan atau saat sinyal lemah.
+  // Sebelumnya SATU pembacaan buruk saja cukup untuk membalik status
+  // aman<->keluar-area, sehingga alarm bisa berbunyi berulang kali padahal
+  // karyawan sebenarnya diam di tempat. Sekarang perubahan status HANYA
+  // diterima setelah beberapa pembacaan berturut-turut yang konsisten
+  // (CONFIRMATIONS_REQUIRED), dan pembacaan dengan akurasi GPS yang terlalu
+  // buruk untuk dipercaya sepenuhnya diabaikan untuk logika alarm (tapi
+  // tetap ditampilkan di UI apa adanya).
+  const CONFIRMATIONS_REQUIRED = 2;
+  const ZONE_MAX_ACCEPTABLE_ACCURACY = Math.max(OFFICE_LOCATION.maxAcceptableAccuracy, 50);
 
   function resetZoneState(notify) {
     if (notify && outsideSince !== null) callbacks.onReturnSafe && callbacks.onReturnSafe();
     outsideSince = null;
     alarmFired = false;
     maxDistanceWhileOutside = 0;
+    consecutiveOutside = 0;
+    consecutiveSafe = 0;
   }
 
   function handlePosition(pos) {
     const { latitude, longitude, accuracy } = pos.coords;
     const distance = distanceToOffice(latitude, longitude);
     const safe = distance <= OFFICE_LOCATION.warningRadius;
+    const accuracyTrustworthy = typeof accuracy === "number" && isFinite(accuracy) && accuracy <= ZONE_MAX_ACCEPTABLE_ACCURACY;
 
-    if (zoneActive) {
+    if (zoneActive && accuracyTrustworthy) {
       if (!safe) {
+        consecutiveSafe = 0;
+        consecutiveOutside++;
         maxDistanceWhileOutside = Math.max(maxDistanceWhileOutside, distance);
         if (outsideSince === null) {
-          outsideSince = Date.now();
-          alarmFired = false;
-          callbacks.onEnterOutside && callbacks.onEnterOutside();
+          if (consecutiveOutside >= CONFIRMATIONS_REQUIRED) {
+            outsideSince = Date.now();
+            alarmFired = false;
+            callbacks.onEnterOutside && callbacks.onEnterOutside();
+          }
         } else if (!alarmFired && Date.now() - outsideSince >= OFFICE_LOCATION.outsideDurationMs) {
           alarmFired = true;
           const finalDistance = (typeof maxDistanceWhileOutside === "number" && isFinite(maxDistanceWhileOutside))
@@ -150,14 +179,19 @@ function createGeoMonitor(callbacks) {
             });
           }
         }
-      } else if (outsideSince !== null) {
-        callbacks.onReturnSafe && callbacks.onReturnSafe();
-        resetZoneState(false);
+      } else {
+        consecutiveOutside = 0;
+        consecutiveSafe++;
+        if (outsideSince !== null && consecutiveSafe >= CONFIRMATIONS_REQUIRED) {
+          callbacks.onReturnSafe && callbacks.onReturnSafe();
+          resetZoneState(false);
+        }
       }
     }
 
     callbacks.onUpdate && callbacks.onUpdate({
       distance, accuracy, lat: latitude, lon: longitude, safe, zoneActive,
+      accuracyTrustworthy,
       outsideSince, outsideDurationMs: outsideSince ? Date.now() - outsideSince : 0
     });
   }
@@ -206,6 +240,24 @@ function createGeoMonitor(callbacks) {
     isZoneActive() { return zoneActive; },
     getOutsideDurationSec() {
       return outsideSince ? (Date.now() - outsideSince) / 1000 : 0;
+    },
+    /**
+     * Bug fix: sebelumnya setelah karyawan mengirim alasan keluar area,
+     * penghitung waktu "di luar area" TIDAK direset. Jika GPS sempat
+     * berkedip "aman" sesaat lalu "keluar" lagi (noise), alarm bisa
+     * berbunyi lagi hampir seketika setelah alasan dikirim, seolah-olah
+     * alasan yang baru saja dikirim diabaikan. Panggil ini tepat setelah
+     * alasan berhasil dikirim agar karyawan mendapat jeda 5 menit yang
+     * baru dan bersih sebelum alarm berikutnya mungkin berbunyi lagi.
+     */
+    acknowledgeOutsideReason() {
+      if (outsideSince !== null) {
+        outsideSince = Date.now();
+        alarmFired = false;
+        maxDistanceWhileOutside = 0;
+        consecutiveOutside = 0;
+        consecutiveSafe = 0;
+      }
     },
     isRunning() { return watchId !== null; }
   };

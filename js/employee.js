@@ -4,6 +4,17 @@
 (function () {
   "use strict";
 
+  // Bug fix (anti-duplikasi): sejumlah tool preview/live-reload (mis. saat
+  // menguji lewat editor kode di HP) kadang menyuntikkan ulang skrip ini ke
+  // halaman yang sama tanpa memuat ulang dokumen sepenuhnya. Jika ini
+  // terjadi, IIFE di bawah bisa berjalan dua kali dan mendaftarkan dua set
+  // listener + dua GeoMonitor independen — salah satu gejalanya adalah
+  // modal/alarm yang tampak "nyangkut" atau muncul kembali dengan data lama.
+  // Penjaga ini memastikan logika dashboard karyawan hanya diinisialisasi
+  // sekali per halaman.
+  if (window.__rakabuEmployeeInitialized) return;
+  window.__rakabuEmployeeInitialized = true;
+
   const user = Store.currentUser();
   if (!user || user.role !== "employee") {
     window.location.replace("index.html");
@@ -26,6 +37,18 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     cacheDom();
+    // Bug fix: paksa semua modal ke kondisi tertutup saat halaman baru
+    // dimuat. Ini jaring pengaman terhadap kondisi DOM/form yang terwariskan
+    // secara tidak sengaja (mis. bfcache browser, atau preview yang tidak
+    // benar-benar memuat ulang dokumen), yang sebelumnya bisa membuat modal
+    // "Peringatan Keluar Area" tampak terbuka lagi dengan data lama padahal
+    // alarm baru belum benar-benar terpicu.
+    [el.attendanceModal, el.successModal, el.criticalWarningModal, el.moreModal].forEach((m) => { if (m) m.hidden = true; });
+    if (el.reasonSelect) el.reasonSelect.value = "";
+    if (el.reasonOtherWrap) el.reasonOtherWrap.hidden = true;
+    if (el.reasonOtherText) el.reasonOtherText.value = "";
+    if (el.criticalDistance) el.criticalDistance.textContent = "—";
+
     bindNav();
     bindEvents();
     renderStaticInfo();
@@ -90,18 +113,27 @@
     function closeMore() { el.moreModal.hidden = true; }
   }
 
+  // Bug fix: menu sidebar "Absensi" memakai data-nav="absensi", tapi tidak
+  // ada section data-page="absensi" tersendiri (absen dilakukan dari halaman
+  // Dashboard). Sebelumnya ini membuat sistem diam-diam melempar ke
+  // Dashboard tanpa menyorot menu yang benar-benar diklik pengguna. Sekarang
+  // "absensi" dipetakan eksplisit sebagai alias dari "dashboard".
+  const PAGE_ALIASES = { absensi: "dashboard" };
   function route(page) {
     const valid = ["dashboard","riwayat","jadwal","cuti","lembur","profil","notifikasi"];
-    if (!valid.includes(page)) page = "dashboard";
+    let requestedPage = page;
+    if (PAGE_ALIASES[page]) page = PAGE_ALIASES[page];
+    if (!valid.includes(page)) { page = "dashboard"; requestedPage = "dashboard"; }
     document.querySelectorAll("[data-page]").forEach((sec) => { sec.hidden = sec.dataset.page !== page; });
     document.querySelectorAll("[data-nav]").forEach((btn) => {
-      btn.classList.toggle("is-active", btn.dataset.nav === page);
+      const btnPage = PAGE_ALIASES[btn.dataset.nav] || btn.dataset.nav;
+      btn.classList.toggle("is-active", btnPage === page);
     });
     if (page === "notifikasi") { Store.markAllRead(user.id); renderNotifications(); updateNotifBadge(); }
     if (page === "riwayat") renderRiwayat("week");
     if (page === "cuti") renderCutiPage();
     if (page === "lembur") renderLemburPage();
-    location.hash = page;
+    location.hash = requestedPage;
   }
   window.addEventListener("hashchange", () => route(location.hash.replace("#", "")));
 
@@ -212,8 +244,10 @@
       ? "Akurasi lokasi terlalu rendah. Silakan aktifkan GPS dengan akurasi tinggi dan coba lagi."
       : "Akurasi lokasi bergantung pada perangkat, GPS, jaringan, dan kondisi lingkungan.");
 
-    // Radar dot: peta jarak 0-15m ke radius 0-78px dari pusat radar (86px setengah lebar)
-    const maxRadar = 15, maxPx = 76;
+    // Radar dot: peta jarak ke radius piksel radar, diskalakan mengikuti
+    // warningRadius (bukan angka tetap) supaya tetap akurat kalau radius
+    // dikonfigurasi ulang.
+    const maxRadar = OFFICE_LOCATION.warningRadius, maxPx = 76;
     const clamped = Math.min(data.distance, maxRadar);
     const pixelDist = (clamped / maxRadar) * maxPx;
     const angle = (Date.now() / 1500) % (Math.PI * 2); // sudut berputar halus agar tidak statis di satu sisi
@@ -320,6 +354,9 @@
       pendingActiveZoneEvent = null;
       pendingZoneDistance = 0;
     }
+    // Beri jeda 5 menit baru & bersih sejak alasan dikirim, supaya alarm
+    // tidak langsung berbunyi lagi akibat noise GPS sesaat setelah ini.
+    monitor.acknowledgeOutsideReason();
     el.criticalWarningModal.hidden = true;
     showToast("Alasan berhasil dikirim ke admin.", "success");
   }

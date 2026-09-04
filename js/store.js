@@ -54,6 +54,22 @@ const Store = (function () {
     return (prefix || "id") + "_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   }
 
+  /**
+   * Bug fix: sebelumnya seluruh "date key" (untuk absensi harian, dsb)
+   * dihasilkan dengan `new Date().toISOString().slice(0,10)`, yang memakai
+   * tanggal UTC — BUKAN tanggal lokal perangkat. Di Indonesia (UTC+7/8/9),
+   * ini bisa membuat absensi dini hari (00:00–06:59 waktu lokal) tercatat
+   * dengan tanggal KEMARIN, sehingga status "Absen Hari Ini" tampak keliru.
+   * Semua date-key sekarang memakai kalender LOKAL perangkat secara konsisten.
+   */
+  function localDateKey(d) {
+    d = d || new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+
   // NOTE: DEMO ONLY. Bukan hashing yang aman — hanya agar password tidak
   // tersimpan sebagai teks polos di localStorage demo ini.
   function hashPassword(pw) {
@@ -214,7 +230,7 @@ const Store = (function () {
   function todayKeyOffset(offsetDays) {
     const d = new Date();
     d.setDate(d.getDate() + offsetDays);
-    return d.toISOString().slice(0, 10);
+    return localDateKey(d);
   }
   function currentPeriod() {
     const d = new Date();
@@ -304,7 +320,7 @@ const Store = (function () {
   }
 
   function approveUser(userId) {
-    updateUser(userId, { status: "active", joinDate: new Date().toISOString().slice(0, 10) });
+    updateUser(userId, { status: "active", joinDate: localDateKey() });
     addNotification({ audience: userId, type: "info", title: "Pendaftaran disetujui",
       message: "Akun Anda telah disetujui admin. Anda sekarang dapat login." });
   }
@@ -322,13 +338,13 @@ const Store = (function () {
   function saveAttendanceList(list) { return write(KEYS.attendance, list); }
 
   function getTodayRecord(userId) {
-    const key = new Date().toISOString().slice(0, 10);
+    const key = localDateKey();
     return getAttendance().find(a => a.userId === userId && a.date === key) || null;
   }
 
   function checkIn(userId, meta) {
     const list = getAttendance();
-    const dateKey = new Date().toISOString().slice(0, 10);
+    const dateKey = localDateKey();
     let record = list.find(a => a.userId === userId && a.date === dateKey);
     const timeStr = new Date().toTimeString().slice(0, 5);
     const isLate = timeStr > "08:15";
@@ -351,7 +367,7 @@ const Store = (function () {
 
   function checkOut(userId, meta) {
     const list = getAttendance();
-    const dateKey = new Date().toISOString().slice(0, 10);
+    const dateKey = localDateKey();
     let record = list.find(a => a.userId === userId && a.date === dateKey);
     const timeStr = new Date().toTimeString().slice(0, 5);
     if (!record) return null;
@@ -515,7 +531,7 @@ const Store = (function () {
   seedIfNeeded();
 
   return {
-    KEYS, uid, hashPassword,
+    KEYS, uid, hashPassword, localDateKey,
     getUsers, saveUsers, findUserByUsername, findUserById, registerEmployee,
     login, logout, currentUser, getSession, updateUser, approveUser, rejectUser, setUserStatus,
     getAttendance, getTodayRecord, checkIn, checkOut, attendanceByUser,

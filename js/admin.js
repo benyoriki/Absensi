@@ -128,7 +128,7 @@
   function renderDashboard() {
     const users = Store.getUsers().filter((u) => u.role === "employee");
     const active = users.filter((u) => u.status === "active");
-    const todayKey = new Date().toISOString().slice(0, 10);
+    const todayKey = Store.localDateKey();
     const todayAtt = Store.getAttendance().filter((a) => a.date === todayKey);
     const hadir = todayAtt.filter((a) => a.status === "hadir").length;
     const terlambat = todayAtt.filter((a) => a.status === "terlambat").length;
@@ -199,7 +199,7 @@
     const att = Store.getAttendance();
     const values = days.map((_, i) => {
       const d = new Date(monday); d.setDate(monday.getDate() + i);
-      const key = d.toISOString().slice(0, 10);
+      const key = Store.localDateKey(d);
       return att.filter((a) => a.date === key).length;
     });
     const max = Math.max(1, ...values);
@@ -397,9 +397,12 @@
   function renderAbsensi(range) {
     let list = Store.getAttendance();
     const now = new Date();
-    if (range === "today") { const key = now.toISOString().slice(0, 10); list = list.filter((a) => a.date === key); }
+    if (range === "today") { const key = Store.localDateKey(); list = list.filter((a) => a.date === key); }
     else if (range === "week") { const weekAgo = new Date(now); weekAgo.setDate(now.getDate() - 7); list = list.filter((a) => new Date(a.date) >= weekAgo); }
-    else if (range === "month") { list = list.filter((a) => new Date(a.date).getMonth() === now.getMonth()); }
+    // Bug fix: filter "bulan ini" sebelumnya hanya mencocokkan angka bulan
+    // (getMonth()) tanpa memeriksa tahun, sehingga data bulan yang sama dari
+    // tahun-tahun sebelumnya ikut tampil sebagai "bulan ini".
+    else if (range === "month") { list = list.filter((a) => { const d = new Date(a.date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }); }
     list = list.sort((a, b) => b.date.localeCompare(a.date));
 
     if (!list.length) { el.absensiTbody.innerHTML = `<tr><td colspan="6">${emptyStateBlock("Tidak ada data absensi pada rentang ini.")}</td></tr>`; return; }
