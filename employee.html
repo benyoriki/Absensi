@@ -274,7 +274,7 @@
             <div class="stat-list__item"><dt>Tanggal Bergabung</dt><dd id="profile-join">-</dd></div>
           </dl>
           <p class="fine-print">Untuk mengubah data jabatan, departemen, atau status akun, silakan hubungi admin HR. Anda dapat memperbarui nomor HP dan email sendiri.</p>
-          <form id="profile-form" class="mt-1">
+          <form id="profile-form" class="mt-1" novalidate>
             <div class="field-row">
               <div><label for="profile-phone-input">Nomor HP</label><input id="profile-phone-input" type="tel" /></div>
               <div><label for="profile-email-input">Email</label><input id="profile-email-input" type="email" /></div>
@@ -357,7 +357,7 @@
     <p>Anda telah berada di luar area kerja <strong>PT Rakabu Sapi Kita</strong> selama lebih dari 5 menit.</p>
     <p class="text-sm text-muted mt-1">Jarak maksimum: <strong id="critical-distance" class="mono">—</strong> meter</p>
 
-    <form id="reason-form" style="text-align:left;margin-top:1.2em">
+    <form id="reason-form" novalidate style="text-align:left;margin-top:1.2em">
       <label for="reason-select">Alasan keluar area kerja</label>
       <select id="reason-select" required>
         <option value="">Pilih alasan</option>
