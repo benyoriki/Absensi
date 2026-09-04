@@ -157,6 +157,11 @@ textarea{ resize:vertical; min-height:80px; }
 .card{
   background:var(--surface); border:1px solid var(--border);
   border-radius:var(--radius-md); padding:1.3em; box-shadow:var(--shadow-sm);
+  transition:box-shadow .2s ease, transform .2s ease;
+}
+@media (hover:hover){
+  .card:hover{ box-shadow:var(--shadow-md); }
+  .stat-card:hover{ transform:translateY(-2px); box-shadow:var(--shadow-md); }
 }
 .card__head{ display:flex; align-items:center; justify-content:space-between; gap:1em; margin-bottom:1em; }
 .card__head h3{ display:flex; align-items:center; gap:.5em; font-size:1rem; }
@@ -189,6 +194,7 @@ textarea{ resize:vertical; min-height:80px; }
 .toast--success{ background:var(--success-600); }
 .toast--error{ background:var(--danger-600); }
 .toast--warning{ background:var(--warning-600); color:#241a00; }
+.toast--info{ background:var(--info-600); }
 @keyframes toast-in{ from{ opacity:0; transform:translateY(-8px);} to{opacity:1; transform:translateY(0);} }
 
 /* ---------------- Modals ---------------- */
@@ -294,9 +300,9 @@ textarea{ resize:vertical; min-height:80px; }
   font-weight:700; display:flex; align-items:center; justify-content:center;
 }
 .avatar-btn{
-  width:38px; height:38px; border-radius:50%; background:var(--brand-100); color:var(--brand-700);
-  border:1px solid var(--border); font-weight:700; display:flex; align-items:center; justify-content:center;
-  cursor:pointer; font-size:.85rem;
+  width:38px; height:38px; border-radius:50%; background:linear-gradient(145deg,var(--brand-100),var(--cyan-100));
+  color:var(--brand-700); border:1px solid var(--border); font-weight:700; display:flex; align-items:center;
+  justify-content:center; cursor:pointer; font-size:.85rem;
 }
 
 .app-body{ display:flex; min-height:calc(100vh - var(--header-h)); }
@@ -317,6 +323,9 @@ textarea{ resize:vertical; min-height:80px; }
 .sidebar__link:hover{ background:var(--surface-sunken); }
 .sidebar__link.is-active{ background:var(--brand-100); color:var(--brand-700); }
 .sidebar__link svg{ flex-shrink:0; }
+.inline-icon{ display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; vertical-align:middle; }
+h3 .inline-icon{ margin-right:.15em; color:var(--brand-600); }
+.bottom-nav__item .inline-icon{ color:inherit; }
 
 .main-content{ flex:1; min-width:0; padding:1.1em; padding-bottom:calc(var(--bottomnav-h) + 1.5em); max-width:1440px; margin:0 auto; width:100%; }
 
@@ -342,19 +351,42 @@ textarea{ resize:vertical; min-height:80px; }
 .grid-stats{ display:grid; grid-template-columns:repeat(2,1fr); gap:.9em; }
 .stack{ display:flex; flex-direction:column; gap:1em; }
 
-.stat-card{ padding:1.1em; border-radius:var(--radius-md); background:var(--surface); border:1px solid var(--border); }
+.stat-card{ padding:1.1em; border-radius:var(--radius-md); background:var(--surface); border:1px solid var(--border); position:relative; overflow:hidden; }
+.stat-card::before{
+  content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--accent-color, var(--brand-600));
+}
+.stat-card--success{ --accent-color:var(--success-600); }
+.stat-card--warning{ --accent-color:var(--warning-600); }
+.stat-card--danger{ --accent-color:var(--danger-600); }
+.stat-card--info{ --accent-color:var(--info-600); }
+.stat-card--neutral{ --accent-color:var(--text-400); }
 .stat-card__top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:.6em; }
 .stat-card__icon{
-  width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+  width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center;
 }
-.stat-card__value{ font-family:var(--font-display); font-size:1.5rem; font-weight:800; }
-.stat-card__label{ color:var(--text-500); font-size:.78rem; font-weight:600; margin-top:.15em; }
+.stat-card__value{ font-family:var(--font-display); font-size:1.6rem; font-weight:800; letter-spacing:-0.02em; }
+.stat-card__label{ color:var(--text-500); font-size:.76rem; font-weight:700; margin-top:.15em; text-transform:uppercase; letter-spacing:.03em; }
 
 .stat-list{ margin:0; padding:0; }
 .stat-list__item{ display:flex; align-items:center; justify-content:space-between; padding:.5em 0; border-bottom:1px dashed var(--border); }
 .stat-list__item:last-child{ border-bottom:none; }
 .stat-list dt{ color:var(--text-500); font-size:.82rem; }
 .stat-list dd{ margin:0; font-weight:700; font-size:.86rem; }
+
+/* ---------------- Hero status card (deliberate bold moment) ---------------- */
+.hero-card{
+  background:linear-gradient(135deg,var(--brand-600) 0%,var(--brand-700) 55%,var(--ink-950) 100%);
+  color:#fff; border:none; position:relative; overflow:hidden;
+}
+.hero-card::after{
+  content:""; position:absolute; inset:0;
+  background:radial-gradient(120% 140% at 100% -10%, rgba(255,255,255,.16), transparent 55%);
+  pointer-events:none;
+}
+.hero-card > *{ position:relative; z-index:1; }
+.hero-card .text-muted{ color:rgba(255,255,255,.78); }
+.hero-card .badge--neutral{ background:rgba(255,255,255,.16); color:#fff; }
+.hero-card strong{ color:#fff; }
 
 /* ---------------- Radar / geolocation visual ---------------- */
 .radar-wrap{ display:flex; justify-content:center; padding:.6em 0 1.1em; }
@@ -392,6 +424,7 @@ textarea{ resize:vertical; min-height:80px; }
   display:flex; gap:.8em; padding:.9em; border-radius:var(--radius-sm); background:var(--warning-100);
   color:var(--warning-600); margin-top:1em; align-items:flex-start;
 }
+.warning-banner__icon{ flex-shrink:0; color:var(--warning-600); margin-top:1px; }
 .warning-banner__title{ font-weight:700; margin-bottom:.2em; color:var(--text-900); }
 .warning-banner__timer{ font-size:1.1rem; font-weight:800; margin-top:.2em; }
 
