@@ -61,7 +61,7 @@
     document.querySelectorAll("[data-nav]").forEach((btn) => {
       btn.addEventListener("click", () => { route(btn.dataset.nav); closeMore(); });
     });
-    el.moreBtn.addEventListener("click", () => { el.moreModal.hidden = false; });
+    el.moreBtn.addEventListener("click", () => { showModal(el.moreModal); });
     el.moreCloseBtn.addEventListener("click", closeMore);
     el.moreModal.addEventListener("click", (e) => { if (e.target === el.moreModal) closeMore(); });
     function closeMore() { el.moreModal.hidden = true; }
@@ -104,11 +104,29 @@
   }
 
   function doLogout() { Store.logout(); window.location.replace("index.html"); }
+
+  // Bug fix (anti tumpuk-modal): sebelumnya setiap modal (Menu Lainnya,
+  // Detail Karyawan, Tolak, Konfirmasi) hanya mengatur `hidden` pada dirinya
+  // sendiri tanpa pernah menutup modal lain yang mungkin masih terbuka.
+  // Jika dua modal kebetulan tampil bersamaan (mis. karena double-klik atau
+  // urutan event yang tidak terduga), keduanya bertumpuk secara visual
+  // (dua overlay gelap + dua kotak dialog saling menimpa) dan admin bisa
+  // merasa dashboard "macet"/tidak bisa dipakai — persis seperti pada
+  // laporan bug ("Tolak" menumpuk dengan "Konfirmasi"). Sekarang SETIAP
+  // pembukaan modal dipusatkan lewat showModal(), yang menutup semua modal
+  // lain terlebih dahulu, sehingga hanya satu modal yang mungkin terbuka
+  // di satu waktu.
+  function allModals() {
+    return [el.moreModal, el.employeeModal, el.rejectModal, el.confirmModal].filter(Boolean);
+  }
+  function closeAllModals() { allModals().forEach((m) => { m.hidden = true; }); }
+  function showModal(modalEl) { closeAllModals(); modalEl.hidden = false; }
+
   function askConfirm(title, message, onConfirm) {
     el.confirmTitle.textContent = title;
     el.confirmMessage.textContent = message;
     confirmCallback = onConfirm;
-    el.confirmModal.hidden = false;
+    showModal(el.confirmModal);
   }
 
   function initClock() {
@@ -266,7 +284,7 @@
       rejectContext = { kind: "user", id: b.dataset.reject };
       el.rejectModalTitle.textContent = "Tolak Pendaftaran";
       el.rejectReason.value = "";
-      el.rejectModal.hidden = false;
+      showModal(el.rejectModal);
     }));
   }
 
@@ -359,7 +377,7 @@
         <button type="submit" class="btn btn--ghost btn--block mt-1">Simpan Perubahan</button>
       </form>
     `;
-    el.employeeModal.hidden = false;
+    showModal(el.employeeModal);
     document.getElementById("employee-modal-close").addEventListener("click", () => el.employeeModal.hidden = true);
 
     const activateBtn = el.employeeModalContent.querySelector('[data-action="activate"]');
@@ -462,7 +480,7 @@
       rejectContext = { kind: "leave", id: b.dataset.lvReject };
       el.rejectModalTitle.textContent = "Tolak Pengajuan Cuti";
       el.rejectReason.value = "";
-      el.rejectModal.hidden = false;
+      showModal(el.rejectModal);
     }));
   }
   function leaveStatusPill(status) {
@@ -500,7 +518,7 @@
       rejectContext = { kind: "overtime", id: b.dataset.otReject };
       el.rejectModalTitle.textContent = "Tolak Pengajuan Lembur";
       el.rejectReason.value = "";
-      el.rejectModal.hidden = false;
+      showModal(el.rejectModal);
     }));
   }
 
