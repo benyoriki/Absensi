@@ -46,17 +46,17 @@
     <!-- ============ SIDEBAR (desktop) ============ -->
     <nav class="sidebar" aria-label="Menu utama">
       <p class="sidebar__group-label">Menu</p>
-      <button class="sidebar__link" data-nav="dashboard">🏠 Dashboard</button>
-      <button class="sidebar__link" data-nav="absensi">📍 Absensi</button>
-      <button class="sidebar__link" data-nav="riwayat">📊 Riwayat Absensi</button>
-      <button class="sidebar__link" data-nav="jadwal">📅 Jadwal Kerja</button>
+      <button class="sidebar__link" data-nav="dashboard"><span class="inline-icon" data-icon="home" data-icon-size="18"></span> Dashboard</button>
+      <button class="sidebar__link" data-nav="absensi"><span class="inline-icon" data-icon="pin" data-icon-size="18"></span> Absensi</button>
+      <button class="sidebar__link" data-nav="riwayat"><span class="inline-icon" data-icon="chart" data-icon-size="18"></span> Riwayat Absensi</button>
+      <button class="sidebar__link" data-nav="jadwal"><span class="inline-icon" data-icon="calendar" data-icon-size="18"></span> Jadwal Kerja</button>
       <p class="sidebar__group-label">Pengajuan</p>
-      <button class="sidebar__link" data-nav="cuti">🏖️ Cuti</button>
-      <button class="sidebar__link" data-nav="lembur">⏱️ Lembur</button>
+      <button class="sidebar__link" data-nav="cuti"><span class="inline-icon" data-icon="umbrella" data-icon-size="18"></span> Cuti</button>
+      <button class="sidebar__link" data-nav="lembur"><span class="inline-icon" data-icon="clock" data-icon-size="18"></span> Lembur</button>
       <p class="sidebar__group-label">Akun</p>
-      <button class="sidebar__link" data-nav="profil">👤 Data Saya</button>
-      <button class="sidebar__link" data-nav="notifikasi">🔔 Notifikasi</button>
-      <button class="sidebar__link" id="sidebar-logout">🚪 Keluar</button>
+      <button class="sidebar__link" data-nav="profil"><span class="inline-icon" data-icon="user" data-icon-size="18"></span> Data Saya</button>
+      <button class="sidebar__link" data-nav="notifikasi"><span class="inline-icon" data-icon="bell" data-icon-size="18"></span> Notifikasi</button>
+      <button class="sidebar__link" id="sidebar-logout"><span class="inline-icon" data-icon="logout" data-icon-size="18"></span> Keluar</button>
     </nav>
 
     <!-- ============ MAIN CONTENT ============ -->
@@ -84,7 +84,7 @@
           <div class="grid-two">
             <section class="card location-card" aria-labelledby="location-heading">
               <div class="card__head">
-                <h3 id="location-heading">📍 Lokasi Anda</h3>
+                <h3 id="location-heading"><span class="inline-icon" data-icon="pin" data-icon-size="18"></span> Lokasi Anda</h3>
                 <span id="location-status-pill" class="pill pill--neutral">Memeriksa…</span>
               </div>
               <div class="radar-wrap">
@@ -114,14 +114,14 @@
             </section>
 
             <section class="card monitoring-card" aria-labelledby="monitoring-heading">
-              <div class="card__head"><h3 id="monitoring-heading">🛰️ Monitoring Area Kerja</h3></div>
+              <div class="card__head"><h3 id="monitoring-heading"><span class="inline-icon" data-icon="satellite" data-icon-size="18"></span> Monitoring Area Kerja</h3></div>
               <dl class="stat-list">
                 <div class="stat-list__item"><dt>Status area</dt><dd id="monitor-area-status">—</dd></div>
                 <div class="stat-list__item"><dt>Jarak dari kantor</dt><dd id="monitor-distance" class="mono">— m</dd></div>
                 <div class="stat-list__item"><dt>Waktu di luar area</dt><dd id="monitor-outside-time" class="mono">00:00</dd></div>
               </dl>
               <div id="warning-banner" class="warning-banner" hidden role="alert">
-                <div aria-hidden="true">⚠️</div>
+                <div class="warning-banner__icon" aria-hidden="true"><span data-icon="alertTriangle" data-icon-size="20"></span></div>
                 <div>
                   <p class="warning-banner__title">Anda berada di luar area kerja</p>
                   <p>Jarak: <strong id="warning-distance">—</strong> m — kembali ke area kerja sebelum:</p>
@@ -135,12 +135,12 @@
           <section class="card action-card">
             <div class="action-grid">
               <button id="check-in-btn" type="button" class="btn btn--action btn--checkin">
-                <span class="btn__icon-badge" aria-hidden="true">→</span>
+                <span class="btn__icon-badge" aria-hidden="true"><span data-icon="arrowRight" data-icon-size="18"></span></span>
                 <span class="btn__label">ABSEN MASUK</span>
                 <span class="btn__sub" id="check-in-sub">Tekan untuk memulai</span>
               </button>
               <button id="check-out-btn" type="button" class="btn btn--action btn--checkout" disabled>
-                <span class="btn__icon-badge" aria-hidden="true">←</span>
+                <span class="btn__icon-badge" aria-hidden="true"><span data-icon="arrowLeft" data-icon-size="18"></span></span>
                 <span class="btn__label">ABSEN PULANG</span>
                 <span class="btn__sub" id="check-out-sub">Absen masuk dahulu</span>
               </button>
@@ -149,12 +149,12 @@
 
           <div class="grid-two">
             <section class="card">
-              <div class="card__head"><h3>📅 Jadwal Hari Ini</h3></div>
+              <div class="card__head"><h3><span class="inline-icon" data-icon="calendar" data-icon-size="18"></span> Jadwal Hari Ini</h3></div>
               <p style="font-size:1.4rem;font-weight:800;font-family:var(--font-display)" id="today-schedule">08:00 – 17:00</p>
               <p class="text-sm text-muted">Senin – Jumat · Sabtu-Minggu libur</p>
             </section>
             <section class="card">
-              <div class="card__head"><h3>🏖️ Sisa Cuti</h3></div>
+              <div class="card__head"><h3><span class="inline-icon" data-icon="umbrella" data-icon-size="18"></span> Sisa Cuti</h3></div>
               <p style="font-size:1.4rem;font-weight:800;font-family:var(--font-display)"><span id="leave-remaining">12</span> Hari</p>
               <p class="text-sm text-muted"><span id="leave-used">0</span> hari terpakai dari <span id="leave-quota">12</span> hari/tahun</p>
             </section>
@@ -284,7 +284,7 @@
         </section>
         <section class="card mt-1">
           <div class="card__head"><h3>Pengaturan</h3></div>
-          <button id="logout-btn" type="button" class="btn btn--danger-ghost btn--block">🚪 Keluar</button>
+          <button id="logout-btn" type="button" class="btn btn--danger-ghost btn--block"><span class="inline-icon" data-icon="logout" data-icon-size="18"></span> Keluar</button>
         </section>
       </section>
 
@@ -302,11 +302,11 @@
 
   <!-- ============ BOTTOM NAV (mobile) ============ -->
   <nav class="bottom-nav" aria-label="Navigasi bawah">
-    <button class="bottom-nav__item" data-nav="dashboard">🏠<span>Home</span></button>
-    <button class="bottom-nav__item" data-nav="dashboard">📍<span>Absen</span></button>
-    <button class="bottom-nav__item" data-nav="cuti">🏖️<span>Cuti</span></button>
-    <button class="bottom-nav__item" data-nav="profil">👤<span>Profil</span></button>
-    <button class="bottom-nav__item" id="more-btn">☰<span>Lainnya</span></button>
+    <button class="bottom-nav__item" data-nav="dashboard"><span class="inline-icon" data-icon="home" data-icon-size="20"></span><span>Home</span></button>
+    <button class="bottom-nav__item" data-nav="dashboard"><span class="inline-icon" data-icon="pin" data-icon-size="20"></span><span>Absen</span></button>
+    <button class="bottom-nav__item" data-nav="cuti"><span class="inline-icon" data-icon="umbrella" data-icon-size="20"></span><span>Cuti</span></button>
+    <button class="bottom-nav__item" data-nav="profil"><span class="inline-icon" data-icon="user" data-icon-size="20"></span><span>Profil</span></button>
+    <button class="bottom-nav__item" id="more-btn"><span class="inline-icon" data-icon="more" data-icon-size="20"></span><span>Lainnya</span></button>
   </nav>
 </div>
 
@@ -315,11 +315,11 @@
   <div class="modal" style="max-width:340px">
     <div class="modal__head"><h2>Menu Lainnya</h2><button class="icon-btn" id="more-close-btn" aria-label="Tutup">✕</button></div>
     <div class="stack">
-      <button class="sidebar__link" data-nav="riwayat">📊 Riwayat Absensi</button>
-      <button class="sidebar__link" data-nav="jadwal">📅 Jadwal Kerja</button>
-      <button class="sidebar__link" data-nav="lembur">⏱️ Lembur</button>
-      <button class="sidebar__link" data-nav="notifikasi">🔔 Notifikasi</button>
-      <button class="sidebar__link" id="more-logout-btn">🚪 Keluar</button>
+      <button class="sidebar__link" data-nav="riwayat"><span class="inline-icon" data-icon="chart" data-icon-size="18"></span> Riwayat Absensi</button>
+      <button class="sidebar__link" data-nav="jadwal"><span class="inline-icon" data-icon="calendar" data-icon-size="18"></span> Jadwal Kerja</button>
+      <button class="sidebar__link" data-nav="lembur"><span class="inline-icon" data-icon="clock" data-icon-size="18"></span> Lembur</button>
+      <button class="sidebar__link" data-nav="notifikasi"><span class="inline-icon" data-icon="bell" data-icon-size="18"></span> Notifikasi</button>
+      <button class="sidebar__link" id="more-logout-btn"><span class="inline-icon" data-icon="logout" data-icon-size="18"></span> Keluar</button>
     </div>
   </div>
 </div>
@@ -338,7 +338,7 @@
 <!-- ============ SUCCESS MODAL ============ -->
 <div id="success-modal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="success-title">
   <div class="modal success-modal">
-    <div class="success-modal__check" aria-hidden="true">✓</div>
+    <div class="success-modal__check" aria-hidden="true"><span data-icon="checkCircle" data-icon-size="30"></span></div>
     <h2 id="success-title">Absen Berhasil</h2>
     <dl class="success-modal__details">
       <div><dt>Nama</dt><dd id="success-name">—</dd></div>
@@ -352,7 +352,7 @@
 <!-- ============ CRITICAL ZONE WARNING MODAL (5 menit di luar area) ============ -->
 <div id="critical-warning-modal" class="modal-overlay" hidden role="alertdialog" aria-modal="true" aria-labelledby="critical-title">
   <div class="modal critical-modal">
-    <div class="critical-modal__icon" aria-hidden="true">⚠️</div>
+    <div class="critical-modal__icon" aria-hidden="true"><span data-icon="alertTriangle" data-icon-size="30"></span></div>
     <h2 id="critical-title">Peringatan Keluar Area</h2>
     <p>Anda telah berada di luar area kerja <strong>PT Rakabu Sapi Kita</strong> selama lebih dari 5 menit.</p>
     <p class="text-sm text-muted mt-1">Jarak maksimum: <strong id="critical-distance" class="mono">—</strong> meter</p>

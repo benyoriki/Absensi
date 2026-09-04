@@ -1,5 +1,51 @@
 # Rakabu Attendance — PT Rakabu Sapi Kita
 
+## 🔧 Perbaikan Terbaru (Bug Fix + Redesign)
+
+**Bug utama yang diperbaiki** (penyebab notifikasi "Peringatan Keluar Area"
+muncul padahal status masih "BELUM ABSEN", seperti di laporan Anda):
+
+Sebelumnya `js/geo.js` menyalakan pemantauan zona (timer 5 menit + alarm)
+**sejak halaman dibuka**, bukan hanya setelah Absen Masuk. Akibatnya:
+- Alarm keluar-area bisa berbunyi sebelum karyawan absen sama sekali.
+- Alarm juga tetap berbunyi setelah karyawan absen pulang dan sudah legal
+  meninggalkan kantor.
+- Karena alarm terpicu di luar alur yang seharusnya, nilai jarak yang
+  ditampilkan di modal ("Jarak maksimum: — meter") kadang tidak konsisten.
+
+**Perbaikan:** pemantauan zona kini punya sakelar terpisah
+(`monitor.setZoneActive()`) yang hanya aktif dari saat **Absen Masuk**
+berhasil sampai **Absen Pulang**. Sudah diverifikasi lewat simulasi logika
+(lihat catatan commit) bahwa: sebelum absen → tidak ada alarm; setelah
+absen masuk & 5 menit di luar radius → alarm muncul dengan jarak terisi
+benar; setelah absen pulang → alarm berhenti sepenuhnya.
+
+Perbaikan lain:
+- Data sisa cuti di dashboard sekarang selalu diambil ulang dari
+  penyimpanan (sebelumnya bisa menampilkan angka lama/basi setelah admin
+  memproses pengajuan cuti).
+- Jarak pada notifikasi "keluar area" sekarang disimpan sebagai nilai,
+  bukan dibaca ulang dari teks yang ditampilkan di layar (lebih tahan
+  terhadap race condition).
+- Ditambahkan peringatan otomatis jika koordinat kantor di `js/geo.js`
+  masih nilai contoh (placeholder) — supaya tidak membingungkan jika lupa
+  diisi.
+
+**Redesign tampilan:**
+- Semua ikon emoji (🏠📍🔔 dst., yang tampil beda-beda di tiap HP/OS)
+  diganti dengan sistem ikon SVG kustom yang konsisten — kesan jauh lebih
+  rapi dan "aplikasi sungguhan", bukan template.
+- Kartu status kehadiran di dashboard karyawan kini memakai aksen gradasi
+  sebagai satu titik fokus visual yang berani, sementara kartu lain tetap
+  bersih agar tidak ramai.
+- Kartu statistik admin diberi garis aksen warna + ikon vektor + efek
+  hover halus untuk kesan lebih premium.
+- Ikon tombol Absen Masuk/Pulang, modal sukses, dan modal peringatan
+  kini vektor tajam, bukan karakter panah/emoji polos.
+
+---
+
+
 Sistem absensi & manajemen HR berbasis browser (HTML/CSS/JS murni, tanpa
 framework, tanpa build step). Versi ini merombak total prototipe
 "Lokon Attendance" (single-user, localStorage) menjadi sistem multi-peran
@@ -59,14 +105,18 @@ approval tanpa perlu mendaftar akun baru dulu.
 Akun-akun ini murni untuk demo lokal (`// DEMO ONLY` di `store.js`). Ganti
 seluruhnya saat masuk ke produksi (lihat bagian Backend di bawah).
 
-## 4. Mengganti Koordinat Kantor
+## 4. Koordinat Kantor & Aturan Anti-Bug
 
-Buka `js/geo.js`, cari blok `OFFICE_LOCATION` di bagian paling atas:
+Koordinat kantor **sudah diisi** di `js/geo.js` (`OFFICE_LOCATION`), diambil
+dari link Google Maps: `https://maps.app.goo.gl/bpJtNMaJEokaB92G9?g_st=ac`
+→ **-6.4569083, 106.7299401**.
+
+Jika kantor pindah lokasi dan koordinat perlu diganti lagi:
 
 ```js
 const OFFICE_LOCATION = {
-  latitude: -7.0000000,   // GANTI
-  longitude: 110.0000000, // GANTI
+  latitude: -6.4569083,   // GANTI jika kantor pindah
+  longitude: 106.7299401, // GANTI jika kantor pindah
   attendanceRadius: 3,
   warningRadius: 5,
   outsideDurationMs: 5 * 60 * 1000,
@@ -74,21 +124,24 @@ const OFFICE_LOCATION = {
 };
 ```
 
-Link Google Maps kantor yang diberikan:
-`https://maps.app.goo.gl/AqmqNdaZb8x8hbrQ6?g_st=ac`
-
 **Kenapa tidak otomatis?** Short-link Google Maps (`maps.app.goo.gl/...`)
 tidak bisa di-resolve menjadi latitude/longitude langsung dari JavaScript
-browser (redirect lintas-domain semacam ini diblokir oleh kebijakan CORS
-browser). Cara mengambil koordinatnya:
+browser (kebijakan CORS browser). Cara mengambil koordinat baru jika kantor
+pindah lagi:
 
-1. Buka link tersebut di HP/PC — akan mengarah ke lokasi di Google Maps.
-2. Di aplikasi/situs Google Maps, tekan-tahan (HP) atau klik-kanan (desktop)
-   tepat di titik kantor.
-3. Angka yang muncul (format `-7.xxxxxx, 110.xxxxxx`) adalah latitude,
-   longitude — salin ke `OFFICE_LOCATION` di atas.
-4. Jangan biarkan nilai contoh (0,0 atau nilai dummy) di produksi — sistem
-   tidak akan pernah mengizinkan absen jika koordinat salah/kosong.
+1. Buka link lokasi baru — akan mengarah ke titik di Google Maps.
+2. Tekan-tahan (HP) atau klik-kanan (desktop) tepat di titik kantor.
+3. Salin angka yang muncul (format `-6.xxxxxx, 106.xxxxxx`) ke
+   `OFFICE_LOCATION` di atas.
+
+**Aturan anti-bug (baru ditambahkan):** sistem sekarang memvalidasi sendiri
+apakah `OFFICE_LOCATION` masuk akal (bukan 0,0, bukan di luar rentang bumi,
+bukan nilai contoh lama). Jika tidak valid, **monitoring zona/alarm 5 menit
+otomatis dinonaktifkan seluruhnya** — bukan hanya diberi peringatan — supaya
+kesalahan konfigurasi tidak pernah lagi memicu notifikasi "Peringatan Keluar
+Area" yang salah/membingungkan. Ini bisa dicek di konsol browser (pesan
+`[Rakabu Attendance] Monitoring zona TIDAK diaktifkan...`) dan lewat badge
+"KONFIGURASI LOKASI BELUM VALID" di kartu Monitoring Area Kerja karyawan.
 
 ## 5. Cara Kerja Radius & Monitoring
 

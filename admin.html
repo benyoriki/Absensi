@@ -44,19 +44,19 @@
   <div class="app-body">
     <nav class="sidebar" aria-label="Menu admin">
       <p class="sidebar__group-label">Utama</p>
-      <button class="sidebar__link" data-nav="dashboard">🏠 Dashboard</button>
-      <button class="sidebar__link" data-nav="pendaftaran">🆕 Pendaftaran Baru <span id="sidebar-pending-badge" class="pill pill--danger" style="margin-left:auto" hidden>0</span></button>
-      <button class="sidebar__link" data-nav="karyawan">👥 Data Karyawan</button>
+      <button class="sidebar__link" data-nav="dashboard"><span class="inline-icon" data-icon="home" data-icon-size="18"></span> Dashboard</button>
+      <button class="sidebar__link" data-nav="pendaftaran"><span class="inline-icon" data-icon="plusCircle" data-icon-size="18"></span> Pendaftaran Baru <span id="sidebar-pending-badge" class="pill pill--danger" style="margin-left:auto" hidden>0</span></button>
+      <button class="sidebar__link" data-nav="karyawan"><span class="inline-icon" data-icon="users" data-icon-size="18"></span> Data Karyawan</button>
       <p class="sidebar__group-label">Absensi</p>
-      <button class="sidebar__link" data-nav="absensi">📋 Rekap Absensi</button>
-      <button class="sidebar__link" data-nav="cuti">🏖️ Pengajuan Cuti</button>
-      <button class="sidebar__link" data-nav="lembur">⏱️ Pengajuan Lembur</button>
+      <button class="sidebar__link" data-nav="absensi"><span class="inline-icon" data-icon="clipboard" data-icon-size="18"></span> Rekap Absensi</button>
+      <button class="sidebar__link" data-nav="cuti"><span class="inline-icon" data-icon="umbrella" data-icon-size="18"></span> Pengajuan Cuti</button>
+      <button class="sidebar__link" data-nav="lembur"><span class="inline-icon" data-icon="clock" data-icon-size="18"></span> Pengajuan Lembur</button>
       <p class="sidebar__group-label">Keuangan &amp; Laporan</p>
-      <button class="sidebar__link" data-nav="gaji">💰 Gaji Karyawan</button>
-      <button class="sidebar__link" data-nav="laporan">📑 Laporan</button>
+      <button class="sidebar__link" data-nav="gaji"><span class="inline-icon" data-icon="dollar" data-icon-size="18"></span> Gaji Karyawan</button>
+      <button class="sidebar__link" data-nav="laporan"><span class="inline-icon" data-icon="fileText" data-icon-size="18"></span> Laporan</button>
       <p class="sidebar__group-label">Lainnya</p>
-      <button class="sidebar__link" data-nav="notifikasi">🔔 Notifikasi</button>
-      <button class="sidebar__link" id="sidebar-logout">🚪 Keluar</button>
+      <button class="sidebar__link" data-nav="notifikasi"><span class="inline-icon" data-icon="bell" data-icon-size="18"></span> Notifikasi</button>
+      <button class="sidebar__link" id="sidebar-logout"><span class="inline-icon" data-icon="logout" data-icon-size="18"></span> Keluar</button>
     </nav>
 
     <main id="main" class="main-content">
@@ -212,11 +212,11 @@
   </div>
 
   <nav class="bottom-nav" aria-label="Navigasi bawah admin">
-    <button class="bottom-nav__item" data-nav="dashboard">🏠<span>Home</span></button>
-    <button class="bottom-nav__item" data-nav="pendaftaran">🆕<span>Daftar</span></button>
-    <button class="bottom-nav__item" data-nav="karyawan">👥<span>Pegawai</span></button>
-    <button class="bottom-nav__item" data-nav="absensi">📋<span>Absensi</span></button>
-    <button class="bottom-nav__item" id="more-btn">☰<span>Lainnya</span></button>
+    <button class="bottom-nav__item" data-nav="dashboard"><span class="inline-icon" data-icon="home" data-icon-size="20"></span><span>Home</span></button>
+    <button class="bottom-nav__item" data-nav="pendaftaran"><span class="inline-icon" data-icon="plusCircle" data-icon-size="20"></span><span>Daftar</span></button>
+    <button class="bottom-nav__item" data-nav="karyawan"><span class="inline-icon" data-icon="users" data-icon-size="20"></span><span>Pegawai</span></button>
+    <button class="bottom-nav__item" data-nav="absensi"><span class="inline-icon" data-icon="clipboard" data-icon-size="20"></span><span>Absensi</span></button>
+    <button class="bottom-nav__item" id="more-btn"><span class="inline-icon" data-icon="more" data-icon-size="20"></span><span>Lainnya</span></button>
   </nav>
 </div>
 
@@ -224,12 +224,12 @@
   <div class="modal" style="max-width:340px">
     <div class="modal__head"><h2>Menu Lainnya</h2><button class="icon-btn" id="more-close-btn" aria-label="Tutup">✕</button></div>
     <div class="stack">
-      <button class="sidebar__link" data-nav="cuti">🏖️ Pengajuan Cuti</button>
-      <button class="sidebar__link" data-nav="lembur">⏱️ Pengajuan Lembur</button>
-      <button class="sidebar__link" data-nav="gaji">💰 Gaji Karyawan</button>
-      <button class="sidebar__link" data-nav="laporan">📑 Laporan</button>
-      <button class="sidebar__link" data-nav="notifikasi">🔔 Notifikasi</button>
-      <button class="sidebar__link" id="more-logout-btn">🚪 Keluar</button>
+      <button class="sidebar__link" data-nav="cuti"><span class="inline-icon" data-icon="umbrella" data-icon-size="18"></span> Pengajuan Cuti</button>
+      <button class="sidebar__link" data-nav="lembur"><span class="inline-icon" data-icon="clock" data-icon-size="18"></span> Pengajuan Lembur</button>
+      <button class="sidebar__link" data-nav="gaji"><span class="inline-icon" data-icon="dollar" data-icon-size="18"></span> Gaji Karyawan</button>
+      <button class="sidebar__link" data-nav="laporan"><span class="inline-icon" data-icon="fileText" data-icon-size="18"></span> Laporan</button>
+      <button class="sidebar__link" data-nav="notifikasi"><span class="inline-icon" data-icon="bell" data-icon-size="18"></span> Notifikasi</button>
+      <button class="sidebar__link" id="more-logout-btn"><span class="inline-icon" data-icon="logout" data-icon-size="18"></span> Keluar</button>
     </div>
   </div>
 </div>
