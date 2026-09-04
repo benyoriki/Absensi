@@ -138,19 +138,19 @@
     const lemburBulanIni = Store.getOvertime().filter((o) => o.status === "approved" && o.date.slice(0, 7) === todayKey.slice(0, 7)).length;
 
     const cards = [
-      { label: "TOTAL KARYAWAN", value: active.length, icon: "👥", color: "info" },
-      { label: "HADIR HARI INI", value: hadir + terlambat, icon: "✅", color: "success" },
-      { label: "TERLAMBAT", value: terlambat, icon: "⏰", color: "warning" },
-      { label: "BELUM ABSEN", value: belumAbsen, icon: "❔", color: "neutral" },
-      { label: "CUTI HARI INI", value: cutiHariIni, icon: "🏖️", color: "info" },
-      { label: "PENDAFTARAN PENDING", value: Store.getUsers().filter((u) => u.status === "pending").length, icon: "🆕", color: "warning" },
-      { label: "LEMBUR BULAN INI", value: lemburBulanIni, icon: "⏱️", color: "info" },
-      { label: "TIDAK HADIR", value: Math.max(0, active.length - hadir - terlambat - cutiHariIni - belumAbsen), icon: "🚫", color: "danger" }
+      { label: "TOTAL KARYAWAN", value: active.length, icon: "users", color: "info" },
+      { label: "HADIR HARI INI", value: hadir + terlambat, icon: "checkCircle", color: "success" },
+      { label: "TERLAMBAT", value: terlambat, icon: "clock", color: "warning" },
+      { label: "BELUM ABSEN", value: belumAbsen, icon: "user", color: "neutral" },
+      { label: "CUTI HARI INI", value: cutiHariIni, icon: "umbrella", color: "info" },
+      { label: "PENDAFTARAN PENDING", value: Store.getUsers().filter((u) => u.status === "pending").length, icon: "plusCircle", color: "warning" },
+      { label: "LEMBUR BULAN INI", value: lemburBulanIni, icon: "chart", color: "info" },
+      { label: "TIDAK HADIR", value: Math.max(0, active.length - hadir - terlambat - cutiHariIni - belumAbsen), icon: "slash", color: "danger" }
     ];
     el.statCards.innerHTML = cards.map((c) => `
-      <div class="stat-card">
+      <div class="stat-card stat-card--${c.color}">
         <div class="stat-card__top">
-          <div class="stat-card__icon" style="background:var(--${c.color === 'neutral' ? 'surface-sunken' : c.color + '-100'});color:var(--${c.color === 'neutral' ? 'text-500' : c.color + '-600'})">${c.icon}</div>
+          <div class="stat-card__icon" style="background:var(--${c.color === 'neutral' ? 'surface-sunken' : c.color + '-100'});color:var(--${c.color === 'neutral' ? 'text-500' : c.color + '-600'})">${iconSvg(c.icon, 19)}</div>
         </div>
         <div class="stat-card__value">${c.value}</div>
         <div class="stat-card__label">${c.label}</div>

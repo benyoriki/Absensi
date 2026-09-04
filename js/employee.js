@@ -16,10 +16,12 @@
     onEnterOutside: onEnterOutside,
     onReturnSafe: onReturnSafe,
     onOutsideLimitReached: onOutsideLimitReached,
+    onConfigInvalid: onConfigInvalid,
     onError: (msg) => { setLocationNote(msg); }
   });
 
   let pendingActiveZoneEvent = null;
+  let pendingZoneDistance = 0;
   let outsideTickTimer = null;
 
   document.addEventListener("DOMContentLoaded", () => {
@@ -38,6 +40,18 @@
     initClock();
     requestNotificationPermission();
     monitor.start();
+
+    // Pemantauan zona (alarm 5 menit) hanya aktif jika karyawan sudah absen
+    // masuk hari ini dan belum absen pulang — dan HANYA jika koordinat
+    // kantor sudah dikonfigurasi dengan benar (dicek ulang di dalam
+    // monitor.setZoneActive, jadi ini aman dipanggil kapan saja).
+    const todayRecordOnLoad = Store.getTodayRecord(user.id);
+    monitor.setZoneActive(!!(todayRecordOnLoad && todayRecordOnLoad.checkIn && !todayRecordOnLoad.checkOut));
+
+    if (!isOfficeLocationConfigured()) {
+      showConfigWarning();
+    }
+
     route(location.hash.replace("#", "") || "dashboard");
   });
 
@@ -153,9 +167,10 @@
   function renderDashboardBaseline() {
     const record = Store.getTodayRecord(user.id);
     updateAttendanceStatusUI(record);
-    el.leaveRemaining.textContent = (user.leaveQuota - user.leaveUsed);
-    el.leaveUsed.textContent = user.leaveUsed;
-    el.leaveQuota.textContent = user.leaveQuota;
+    const fresh = Store.findUserById(user.id);
+    el.leaveRemaining.textContent = (fresh.leaveQuota - fresh.leaveUsed);
+    el.leaveUsed.textContent = fresh.leaveUsed;
+    el.leaveQuota.textContent = fresh.leaveQuota;
   }
 
   function updateAttendanceStatusUI(record) {
@@ -215,7 +230,11 @@
       : "linear-gradient(90deg,var(--warning-600),var(--danger-600))";
 
     el.monitorDistance.textContent = data.distance.toFixed(1) + " m";
-    if (data.safe) {
+    if (!isOfficeLocationConfigured()) {
+      el.monitorAreaStatus.innerHTML = '<span class="badge badge--warning">KONFIGURASI LOKASI BELUM VALID</span>';
+    } else if (!data.zoneActive) {
+      el.monitorAreaStatus.innerHTML = '<span class="badge badge--neutral">MENUNGGU ABSEN MASUK</span>';
+    } else if (data.safe) {
       el.monitorAreaStatus.innerHTML = '<span class="badge badge--success">DI AREA KERJA</span>';
     } else {
       el.monitorAreaStatus.innerHTML = '<span class="badge badge--danger">DI LUAR AREA KERJA</span>';
@@ -223,6 +242,22 @@
   }
 
   function setLocationNote(msg) { el.locationPermissionNote.textContent = msg; }
+
+  let configWarningShown = false;
+  function showConfigWarning() {
+    if (configWarningShown) return;
+    configWarningShown = true;
+    showToast("Koordinat kantor belum dikonfigurasi dengan benar. Monitoring zona dinonaktifkan sampai admin memperbaikinya.", "warning");
+    el.monitorAreaStatus.innerHTML = '<span class="badge badge--warning">KONFIGURASI LOKASI BELUM VALID</span>';
+    el.warningBanner.hidden = true;
+    stopOutsideTicker();
+  }
+  function onConfigInvalid() {
+    // Dipanggil oleh geo.js jika ada percobaan mengaktifkan alarm zona
+    // padahal koordinat kantor belum valid. Ini adalah jaring pengaman
+    // terakhir — seharusnya sudah dicegah lebih awal oleh showConfigWarning().
+    showConfigWarning();
+  }
 
   function onEnterOutside() {
     el.warningBanner.hidden = false;
@@ -251,11 +286,16 @@
   }
 
   function onOutsideLimitReached({ distance, durationMs }) {
+    const safeDistance = (typeof distance === "number" && isFinite(distance)) ? distance : 0;
     triggerZoneAlarm("Peringatan Keluar Area", `Anda telah berada di luar area kerja selama ${Math.round(durationMs / 60000)} menit.`);
     pendingActiveZoneEvent = Store.addZoneEvent({
-      userId: user.id, distance, durationMs, startedAt: Date.now() - durationMs
+      userId: user.id, distance: safeDistance, durationMs, startedAt: Date.now() - durationMs
     });
-    el.criticalDistance.textContent = distance.toFixed(1);
+    // Simpan jarak di variabel JS (bukan dibaca ulang dari teks DOM saat
+    // submit) — sebelumnya nilai bisa hilang/tampil "—" jika elemen belum
+    // sempat ter-render saat pengguna buru-buru mengirim alasan.
+    pendingZoneDistance = safeDistance;
+    el.criticalDistance.textContent = safeDistance.toFixed(1);
     el.reasonSelect.value = "";
     el.reasonOtherWrap.hidden = true;
     el.reasonOtherText.value = "";
@@ -274,10 +314,11 @@
       reasonText = other;
     }
     const durationSec = pendingActiveZoneEvent ? (Date.now() - pendingActiveZoneEvent.startedAt) / 1000 : 300;
-    const distance = parseFloat(el.criticalDistance.textContent) || 0;
+    const distance = pendingZoneDistance || 0;
     if (pendingActiveZoneEvent) {
       Store.submitZoneReason(pendingActiveZoneEvent.id, reasonText, distance, durationSec);
       pendingActiveZoneEvent = null;
+      pendingZoneDistance = 0;
     }
     el.criticalWarningModal.hidden = true;
     showToast("Alasan berhasil dikirim ke admin.", "success");
@@ -332,8 +373,20 @@
     let record;
     if (type === "check-in") {
       record = Store.checkIn(user.id, meta);
+      // Aktifkan monitoring zona HANYA setelah absen masuk berhasil (dan
+      // HANYA jika koordinat kantor valid — dicek di dalam setZoneActive).
+      monitor.setZoneActive(true);
+      if (monitor.isZoneActive()) {
+        showToast("Monitoring lokasi kerja aktif.", "info");
+      }
     } else {
       record = Store.checkOut(user.id, meta);
+      // Matikan monitoring zona setelah absen pulang — karyawan sudah
+      // sah meninggalkan area kerja, jadi tidak boleh lagi dianggap
+      // "keluar area" dan dialarm.
+      monitor.setZoneActive(false);
+      el.warningBanner.hidden = true;
+      stopOutsideTicker();
     }
     el.attendanceModal.hidden = true;
     updateAttendanceStatusUI(record);
