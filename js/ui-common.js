@@ -35,6 +35,20 @@ function showFatalErrorBanner(message) {
     const reason = e && e.reason;
     showFatalErrorBanner((reason && reason.message) ? reason.message : "Proses gagal (promise ditolak).");
   });
+  // Bug fix: error runtime JS (mis. "X is not defined") memang otomatis
+  // muncul lewat listener di atas, TAPI kegagalan MEMUAT resource itu
+  // sendiri (<script src> atau <link> yang 404 / gagal diambil — misalnya
+  // karena cache browser yang basi menimpa nama file yang sama) memakai
+  // event "error" versi lain yang HANYA terdeteksi lewat capturing phase.
+  // Tanpa ini, skrip yang gagal dimuat akan diam-diam membuat seluruh
+  // halaman berhenti berfungsi tanpa pesan apa pun.
+  window.addEventListener("error", (e) => {
+    const target = e && e.target;
+    if (target && (target.tagName === "SCRIPT" || target.tagName === "LINK")) {
+      const src = target.src || target.href || "(tidak diketahui)";
+      showFatalErrorBanner("Gagal memuat berkas: " + src + ". Coba muat ulang halaman dengan paksa (hard refresh) untuk membersihkan cache lama.");
+    }
+  }, true);
 })();
 
 /**
