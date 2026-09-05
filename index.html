@@ -1,6 +1,28 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+  <script>
+  /* Bootstrap darurat: dipasang PALING AWAL, sebelum berkas eksternal apa
+     pun diminta, supaya kalau css/style.css atau salah satu js/*.js gagal
+     dimuat (404, cache basi, dsb.), pengguna tetap melihat pesan yang
+     jelas alih-alih halaman yang terlihat "mati total" tanpa penjelasan. */
+  (function () {
+    function banner(msg) {
+      var b = document.getElementById("fatal-error-banner");
+      if (!b) {
+        b = document.createElement("div");
+        b.id = "fatal-error-banner";
+        b.style.cssText = "position:fixed;top:0;left:0;right:0;z-index:99999;background:#dc2626;color:#fff;padding:.9em 1.1em;font:600 13px/1.5 system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.25)";
+        document.documentElement.appendChild(b);
+      }
+      b.textContent = "\u26A0\uFE0F Gagal memuat berkas: " + msg + " \u2014 coba muat ulang halaman dengan paksa (hard refresh) untuk membersihkan cache lama.";
+    }
+    window.addEventListener("error", function (e) {
+      var t = e && e.target;
+      if (t && (t.tagName === "SCRIPT" || t.tagName === "LINK")) banner(t.src || t.href || "(tidak diketahui)");
+    }, true);
+  })();
+  </script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Rakabu Attendance — PT Rakabu Sapi Kita</title>
@@ -10,7 +32,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="css/style.css" />
+<link rel="stylesheet" href="css/style.css?v=8" />
 </head>
 <body>
 <a class="skip-link" href="#main">Langsung ke konten utama</a>
@@ -65,6 +87,7 @@
       </div>
 
       <p class="fine-print" style="text-align:center;margin-top:1em">Demo — Karyawan: <b>LKN001</b> / <b>123456</b></p>
+      <p class="fine-print" style="text-align:center;opacity:.5">Build v8 (2026-09-05) — kalau nomor build ini TIDAK berubah setelah Anda deploy ulang, browser Anda kemungkinan menyajikan salinan lama dari cache. Coba muat ulang dengan paksa (hard refresh) atau buka di mode Incognito.</p>
     </div>
 
     <!-- ============ ADMIN LOGIN VIEW (muncul via tautan "Masuk sebagai Admin") ============ -->
@@ -103,10 +126,10 @@
 
 <div id="toast-region" class="toast-region" aria-live="polite"></div>
 
-<script src="js/config.js"></script>
-<script src="js/store.js"></script>
-<script src="js/ui-common.js"></script>
-<script src="js/modal.js"></script>
-<script src="js/auth.js"></script>
+<script src="js/config.js?v=8"></script>
+<script src="js/store.js?v=8"></script>
+<script src="js/ui-common.js?v=8"></script>
+<script src="js/modal.js?v=8"></script>
+<script src="js/auth.js?v=8"></script>
 </body>
 </html>
