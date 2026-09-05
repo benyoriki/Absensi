@@ -1,150 +1,86 @@
-# Rakabu Attendance — PT Rakabu Sapi Kita
+# Rakabu Attendance — PT Rakabu Sapi Kita (Build v7)
 
-## 🗑️ Fitur "Peringatan Keluar Area" — SUDAH DIHAPUS TOTAL
-
-Atas permintaan, fitur ini **dihapus dari kode**, bukan cuma dimatikan lewat
-saklar. Yang dihapus:
-- Modal "Peringatan Keluar Area" + form alasan (`critical-warning-modal`) di
-  `employee.html`.
-- Kartu "Monitoring Area Kerja" + banner "Anda berada di luar area kerja" di
-  `employee.html`.
-- Semua logika alarm 5-menit, timer, getar, bunyi, dan notifikasi terkait di
-  `js/geo.js` dan `js/employee.js`.
-
-Sekarang karyawan **bebas pergi sejauh apa pun** setelah absen masuk — tidak
-ada notifikasi, banner, modal, getar, atau bunyi apa pun yang akan muncul.
-
-**Yang TIDAK berubah** (tetap berjalan seperti biasa): absen masuk & absen
-pulang tetap mewajibkan karyawan berada dalam radius kantor
-(`attendanceRadius`, 20 meter), dan kartu "Lokasi Anda" (jarak + akurasi GPS)
-di dashboard tetap tampil sebagai bagian dari proses absen.
-
-Kalau suatu saat fitur ini ingin dibangun ulang, disarankan sebagai fitur
-baru dari nol, bukan mengembalikan kode lama — sebelumnya versi ini pernah
-dicoba dimatikan lewat saklar `ZONE_ALARM_ENABLED` di `js/geo.js`, tapi
-opsi itu sudah tidak ada lagi di kode karena seluruh mesinnya sudah dibuang.
+Sistem absensi karyawan berbasis browser (HTML/CSS/JavaScript murni, tanpa
+framework, tanpa build step, siap dijalankan di GitHub Pages). Build v7 ini
+adalah **rombak total** dari v6: bug lama diperbaiki, fitur "keluar area 10
+menit" dibangun ulang dari nol, dan struktur data dirapikan agar mudah
+dipindahkan ke Firebase di tahap berikutnya.
 
 ---
 
-## 🔧 Perbaikan Putaran Ke-2 (setelah laporan bug dari layar HP)
+## A. Ringkasan Bug yang Ditemukan (di v6)
 
-Dua laporan bug baru sudah diperbaiki:
+1. **Radius tidak konsisten dengan permintaan** — v6 memakai radius 20 meter
+   (dengan "radius peringatan" terpisah 30 meter), bukan 15 meter tunggal
+   yang diwajibkan untuk absen masuk maupun pulang.
+2. **Koordinat kantor belum diverifikasi ulang** dari tautan Google Maps yang
+   baru (`https://maps.app.goo.gl/Vv9wHZADw7mMiQV56`).
+3. **Fitur "keluar area 10 menit" tidak ada** — pada v6 fitur ini pernah
+   dihapus total atas permintaan sebelumnya, sehingga perlu dibangun ulang
+   dari nol sesuai spesifikasi baru (bukan mengaktifkan kode lama).
+4. **Akses admin disembunyikan lewat "tap logo 5 kali"** — membingungkan dan
+   tidak terlihat oleh pengguna baru.
+5. **Modal dikelola terpisah di tiap halaman** (`employee.js` & `admin.js`
+   masing-masing punya `showModal()`/`closeAllModals()` sendiri, ditambah
+   `MutationObserver` sebagai jaring pengaman) — berfungsi, tapi rawan bug
+   baru setiap kali ada modal baru ditambahkan karena logikanya terduplikasi.
+6. **Registrasi tidak menolak ID admin** — karyawan bisa mendaftar dengan ID
+   `admin` tanpa ditolak.
+7. **Teks radius di kartu lokasi karyawan basi** — menampilkan "Batas
+   absensi: 3 meter" padahal konfigurasi aktualnya 20 meter (tidak pernah
+   diperbarui saat radius berubah).
+8. **Tidak ada halaman Monitoring Lokasi / Riwayat Lokasi untuk admin** —
+   admin tidak first punya cara memantau siapa yang sedang bekerja dan di
+   mana posisi terakhirnya.
 
-1. **"Sudah kirim alasan, notifikasi/modal tidak hilang"** — Root cause-nya
-   BUKAN di logika pengiriman alasan (`onSubmitZoneReason` di `employee.js`
-   sudah benar menutup modal), melainkan **modal yang saling menumpuk**:
-   sebelum ini, setiap modal (`Menu Lainnya`, `Absen Masuk/Pulang`, `Sukses`,
-   `Peringatan Keluar Area` di karyawan; `Menu Lainnya`, `Detail Karyawan`,
-   `Tolak`, `Konfirmasi` di admin) hanya mengatur `hidden` pada dirinya
-   sendiri, tanpa pernah menutup modal lain yang mungkin masih terbuka di
-   belakangnya. Kalau dua modal kebetulan sama-sama tidak `hidden` (misalnya
-   akibat klik ganda, event yang datang beruntun, atau kondisi race lain),
-   keduanya tampil bertumpuk — persis seperti pada screenshot: overlay gelap
-   berlapis, dan teks satu modal "menembus" ke modal lain. Ini yang membuat
-   layar tampak macet/tidak merespons.
-   **Perbaikan:** ditambahkan `showModal()` di `employee.js` dan `admin.js`
-   yang **selalu menutup semua modal lain** sebelum membuka satu modal yang
-   diminta. Sekarang mustahil dua modal tampil bersamaan.
-2. **"Tidak bisa masuk Dashboard Admin"** — Ini paling sering terjadi karena
-   dua hal, silakan cek satu per satu:
-   - Akses admin **sengaja disembunyikan**: dari halaman login karyawan,
-     **ketuk logo/lambang "Rakabu Attendance" di bagian atas sebanyak 5 kali
-     dengan cepat** (dalam 2 detik) — bukan lewat tombol biasa. Setelah itu
-     form login admin akan muncul. Login dengan `admin` / `admin123`.
-   - Jika sebelumnya sempat macet karena bug modal-tumpuk di atas, maka
-     setelah tumpukan modal ini diperbaiki, admin seharusnya bisa
-     melanjutkan proses (approve/tolak) tanpa layar macet lagi.
-   - **Kalau website yang online (`benyoriki.github.io/Absensi/`) masih
-     menampilkan perilaku lama setelah Anda unggah ulang file dari paket
-     ini**, kemungkinan besar itu karena **cache browser** menyimpan versi
-     JS/CSS lama. Semua referensi `css/style.css` dan `js/*.js` di file HTML
-     sudah ditambahkan `?v=2` di paket ini supaya browser dipaksa mengambil
-     file terbaru. Setelah unggah ulang ke GitHub, lakukan **hard refresh**
-     (Ctrl+Shift+R di desktop, atau buka di jendela penyamaran/incognito di
-     HP) sekali saja untuk memastikan versi baru yang termuat.
+## B. Ringkasan Perubahan
 
----
+| Area | Perubahan |
+|---|---|
+| Konfigurasi | Semua angka penting (radius, durasi, koordinat) dipindah ke satu file baru `js/config.js` — tidak ada lagi angka yang di-hardcode di beberapa tempat berbeda. |
+| Radius | Disatukan jadi **15 meter**, berlaku sama untuk absen masuk & pulang. |
+| Koordinat kantor | Diperbarui ke **-6.4568847, 106.7299525** (hasil verifikasi tautan Maps terbaru). |
+| Monitoring 10 menit | Dibangun ulang di `js/geo.js` (`createZoneMonitor`) — aktif hanya antara absen masuk & absen pulang, akurat terhadap waktu asli (bukan `setInterval` yang bisa meleset), dan hanya memicu **satu** notifikasi per kejadian keluar-area. |
+| Modal | Disatukan ke satu manajer baru, `js/modal.js` (objek global `Modal`) — dipakai oleh `employee.js` dan `admin.js`. Termasuk `Modal.runOnce()` untuk mencegah tombol di-klik dua kali. |
+| Admin | Ditambah 3 halaman baru: **Monitoring Lokasi**, **Riwayat Lokasi**, **Pengaturan** (menampilkan koordinat/radius/durasi yang aktif). |
+| Akses admin | Diganti dari "tap logo 5x" menjadi tautan **"Masuk sebagai Admin"** yang terlihat jelas di halaman login. |
+| Registrasi | Menolak pendaftaran dengan ID `admin` atau ID yang bentrok dengan akun admin manapun. |
+| Anti klik-ganda | Tombol konfirmasi absen, tombol ACC/Tolak pendaftaran, dan tombol setuju cuti/lembur sekarang di-disable otomatis selama proses berjalan. |
 
-## 🔧 Perbaikan Sebelumnya (Bug Fix + Redesign)
-
-**Bug utama yang diperbaiki** (penyebab notifikasi "Peringatan Keluar Area"
-muncul padahal status masih "BELUM ABSEN", seperti di laporan Anda):
-
-Sebelumnya `js/geo.js` menyalakan pemantauan zona (timer 5 menit + alarm)
-**sejak halaman dibuka**, bukan hanya setelah Absen Masuk. Akibatnya:
-- Alarm keluar-area bisa berbunyi sebelum karyawan absen sama sekali.
-- Alarm juga tetap berbunyi setelah karyawan absen pulang dan sudah legal
-  meninggalkan kantor.
-- Karena alarm terpicu di luar alur yang seharusnya, nilai jarak yang
-  ditampilkan di modal ("Jarak maksimum: — meter") kadang tidak konsisten.
-
-**Perbaikan:** pemantauan zona kini punya sakelar terpisah
-(`monitor.setZoneActive()`) yang hanya aktif dari saat **Absen Masuk**
-berhasil sampai **Absen Pulang**. Sudah diverifikasi lewat simulasi logika
-(lihat catatan commit) bahwa: sebelum absen → tidak ada alarm; setelah
-absen masuk & 5 menit di luar radius → alarm muncul dengan jarak terisi
-benar; setelah absen pulang → alarm berhenti sepenuhnya.
-
-Perbaikan lain:
-- Data sisa cuti di dashboard sekarang selalu diambil ulang dari
-  penyimpanan (sebelumnya bisa menampilkan angka lama/basi setelah admin
-  memproses pengajuan cuti).
-- Jarak pada notifikasi "keluar area" sekarang disimpan sebagai nilai,
-  bukan dibaca ulang dari teks yang ditampilkan di layar (lebih tahan
-  terhadap race condition).
-- Ditambahkan peringatan otomatis jika koordinat kantor di `js/geo.js`
-  masih nilai contoh (placeholder) — supaya tidak membingungkan jika lupa
-  diisi.
-
-**Redesign tampilan:**
-- Semua ikon emoji (🏠📍🔔 dst., yang tampil beda-beda di tiap HP/OS)
-  diganti dengan sistem ikon SVG kustom yang konsisten — kesan jauh lebih
-  rapi dan "aplikasi sungguhan", bukan template.
-- Kartu status kehadiran di dashboard karyawan kini memakai aksen gradasi
-  sebagai satu titik fokus visual yang berani, sementara kartu lain tetap
-  bersih agar tidak ramai.
-- Kartu statistik admin diberi garis aksen warna + ikon vektor + efek
-  hover halus untuk kesan lebih premium.
-- Ikon tombol Absen Masuk/Pulang, modal sukses, dan modal peringatan
-  kini vektor tajam, bukan karakter panah/emoji polos.
-
----
-
-
-Sistem absensi & manajemen HR berbasis browser (HTML/CSS/JS murni, tanpa
-framework, tanpa build step). Versi ini merombak total prototipe
-"Lokon Attendance" (single-user, localStorage) menjadi sistem multi-peran
-(admin & karyawan) dengan alur registrasi → persetujuan admin → login →
-absensi berbasis geofencing 3–5 meter dengan pemantauan keluar-area.
-
-## 1. Struktur File
+## C. Struktur File Final
 
 ```
 /
-├── index.html          → Halaman login (+ akses admin tersembunyi via 5x tap logo)
-├── register.html       → Pendaftaran akun karyawan baru
-├── employee.html       → Dashboard karyawan (SPA)
-├── admin.html          → Dashboard admin (SPA)
-├── manifest.webmanifest → Manifest PWA ringan
+├── index.html            → Halaman login (+ tautan "Masuk sebagai Admin")
+├── register.html         → Pendaftaran akun karyawan baru
+├── employee.html         → Dashboard karyawan (SPA)
+├── admin.html             → Dashboard admin (SPA)
+├── manifest.webmanifest   → Manifest PWA ringan
 ├── css/
-│   └── style.css       → Seluruh desain (design tokens, light/dark, responsive)
+│   └── style.css          → Seluruh desain (design tokens, light/dark, responsive)
 ├── js/
-│   ├── store.js         → Lapisan data / "backend" demo (localStorage)
-│   ├── geo.js            → Konfigurasi lokasi kantor + geofencing + alarm
-│   ├── ui-common.js       → Helper bersama (toast, tema, format)
-│   ├── auth.js            → Logika halaman login
-│   ├── register.js        → Logika halaman registrasi
-│   ├── employee.js        → Logika dashboard karyawan
-│   └── admin.js            → Logika dashboard admin
+│   ├── config.js           → BARU. Satu-satunya sumber konfigurasi (koordinat, radius, durasi)
+│   ├── store.js            → Lapisan data / "backend" demo (localStorage)
+│   ├── ui-common.js        → Helper bersama (toast, tema, format, ikon)
+│   ├── modal.js             → BARU. Manajer modal terpusat (anti tumpuk, anti klik-ganda)
+│   ├── geo.js               → Jarak/GPS + monitoring zona 10 menit (dirombak total)
+│   ├── auth.js              → Logika halaman login
+│   ├── register.js          → Logika halaman registrasi
+│   ├── employee.js          → Logika dashboard karyawan
+│   └── admin.js              → Logika dashboard admin
 └── assets/
     └── favicon.svg
 ```
 
-## 2. Cara Menjalankan
+## D. Kode Lengkap
 
-Karena menggunakan `fetch`/module path relatif, jalankan lewat server lokal,
-jangan buka file `index.html` langsung dengan `file://` (Geolocation API dan
-sebagian browser modern membatasi ini).
+Semua file di atas ada di paket ini dan siap dipakai langsung — tidak ada
+placeholder atau potongan kode yang sengaja dikosongkan.
+
+## E. Cara Menjalankan
+
+Jalankan lewat server lokal (Geolocation API & sebagian browser modern
+membatasi `file://` langsung):
 
 ```bash
 # dari folder proyek
@@ -152,10 +88,10 @@ python3 -m http.server 8080
 # lalu buka http://localhost:8080/index.html
 ```
 
-Atau gunakan ekstensi "Live Server" di VS Code, atau unggah ke hosting statis
-apa pun (Netlify, Vercel, GitHub Pages, dsb).
+Atau unggah ke GitHub Pages / Netlify / Vercel / hosting statis apa pun —
+tidak ada build step yang diperlukan.
 
-## 3. Akun Demo
+### Akun Demo
 
 | Peran     | ID / Username | Password  |
 |-----------|----------------|-----------|
@@ -163,136 +99,148 @@ apa pun (Netlify, Vercel, GitHub Pages, dsb).
 | Karyawan  | `LKN001`       | `123456`  |
 | Karyawan  | `LKN002`       | `123456`  |
 
-Ada juga 1 akun contoh berstatus **pending** (`LKN003` — Budi Santoso) yang
-sudah muncul di menu **Pendaftaran Baru** admin, untuk mendemokan alur
-approval tanpa perlu mendaftar akun baru dulu.
+Ada juga 1 akun contoh berstatus **pending** (`LKN003`) untuk mendemokan
+alur approval tanpa perlu mendaftar akun baru dulu.
 
-Akun-akun ini murni untuk demo lokal (`// DEMO ONLY` di `store.js`). Ganti
-seluruhnya saat masuk ke produksi (lihat bagian Backend di bawah).
+## F. Cara Testing
 
-## 4. Koordinat Kantor & Aturan Anti-Bug
+Selain checklist manual di bawah, paket ini disertai **automated test
+suite** (di luar folder yang dikirim ke pengguna akhir, dijalankan dengan
+Node.js + jsdom) yang memuat file HTML/JS ASLI dan mensimulasikan klik/isi
+form sungguhan untuk memverifikasi hampir seluruh 33 skenario yang diminta —
+hasil run terakhir: **57/57 pengujian lulus**, mencakup: registrasi & semua
+validasinya, seluruh kombinasi login (pending/approved/salah
+password/akun tidak ada), approve/reject admin, absen masuk & pulang di
+dalam/luar radius, absen ganda, refresh setelah absen masuk, logout,
+absen pulang setelah refresh, GPS error/permission-denied/timeout, seluruh
+siklus monitoring 10 menit (keluar <10 menit lalu kembali, keluar ≥10 menit,
+notifikasi tidak berulang, kembali ke area, keluar lagi setelah kembali),
+modal anti-tumpuk, anti klik-ganda, data LocalStorage rusak, session tidak
+valid, serta halaman Monitoring Lokasi/Riwayat Lokasi/Pengaturan di admin.
 
-Koordinat kantor **sudah diisi** di `js/geo.js` (`OFFICE_LOCATION`), diambil
-dari link Google Maps: `https://maps.app.goo.gl/bpJtNMaJEokaB92G9?g_st=ac`
-→ **-6.4569083, 106.7299401**.
+**Checklist manual** (disarankan tetap dicoba langsung di HP & desktop,
+karena beberapa hal seperti animasi, tema gelap/terang, dan perasaan GPS
+sungguhan tidak sepenuhnya bisa disimulasikan otomatis):
 
-Jika kantor pindah lokasi dan koordinat perlu diganti lagi:
-
-```js
-const OFFICE_LOCATION = {
-  latitude: -6.4569083,   // GANTI jika kantor pindah
-  longitude: 106.7299401, // GANTI jika kantor pindah
-  attendanceRadius: 3,
-  warningRadius: 5,
-  outsideDurationMs: 5 * 60 * 1000,
-  maxAcceptableAccuracy: 30
-};
-```
-
-**Kenapa tidak otomatis?** Short-link Google Maps (`maps.app.goo.gl/...`)
-tidak bisa di-resolve menjadi latitude/longitude langsung dari JavaScript
-browser (kebijakan CORS browser). Cara mengambil koordinat baru jika kantor
-pindah lagi:
-
-1. Buka link lokasi baru — akan mengarah ke titik di Google Maps.
-2. Tekan-tahan (HP) atau klik-kanan (desktop) tepat di titik kantor.
-3. Salin angka yang muncul (format `-6.xxxxxx, 106.xxxxxx`) ke
-   `OFFICE_LOCATION` di atas.
-
-**Aturan anti-bug (baru ditambahkan):** sistem sekarang memvalidasi sendiri
-apakah `OFFICE_LOCATION` masuk akal (bukan 0,0, bukan di luar rentang bumi,
-bukan nilai contoh lama). Jika tidak valid, **monitoring zona/alarm 5 menit
-otomatis dinonaktifkan seluruhnya** — bukan hanya diberi peringatan — supaya
-kesalahan konfigurasi tidak pernah lagi memicu notifikasi "Peringatan Keluar
-Area" yang salah/membingungkan. Ini bisa dicek di konsol browser (pesan
-`[Rakabu Attendance] Monitoring zona TIDAK diaktifkan...`) dan lewat badge
-"KONFIGURASI LOKASI BELUM VALID" di kartu Monitoring Area Kerja karyawan.
-
-## 5. Cara Kerja Radius & Monitoring
-
-- **Absen masuk/pulang**: hanya diizinkan jika jarak ≤ `attendanceRadius` (3 m)
-  **dan** akurasi GPS ≤ `maxAcceptableAccuracy` (30 m). Jarak dihitung dengan
-  rumus Haversine (`haversineDistance` di `geo.js`).
-- **Monitoring area kerja**: setelah absen masuk, `watchPosition()` terus
-  memantau lokasi. Jika jarak > `warningRadius` (5 m), sistem mulai menghitung
-  waktu. Jika karyawan tetap di luar selama `outsideDurationMs` (5 menit),
-  sistem memicu alarm (bunyi WebAudio, getar via Vibration API, notifikasi
-  browser jika izin diberikan) dan mewajibkan karyawan memberi alasan —
-  yang otomatis terkirim ke Dashboard Admin (menu Notifikasi &
-  data mentah tersimpan di `rakabu_zone_events`).
-- **Keterbatasan jujur**: pemantauan ini bergantung pada browser tetap
-  berjalan (tab terbuka), izin GPS, dan kebijakan hemat-baterai OS. Browser
-  yang benar-benar ditutup, atau sistem operasi yang membekukan tab di
-  latar belakang, dapat menghentikan pemantauan. Ini bukan solusi tracking
-  latar-belakang sejati — untuk itu diperlukan aplikasi native.
-
-## 6. Backend / Data (Demo → Produksi)
-
-Seluruh data (`users`, `attendance`, `leave`, `overtime`, `salary`,
-`notifications`, `zoneEvents`) disimpan di **localStorage** lewat modul
-`js/store.js`, yang sengaja dipisah dari UI. Untuk produksi:
-
-1. Ganti isi tiap fungsi di `store.js` (`login`, `registerEmployee`,
-   `checkIn`, `submitLeave`, dst.) dengan pemanggilan API/SDK sungguhan,
-   misalnya **Firebase Authentication + Firestore/Realtime Database**:
-   ```js
-   // Placeholder — isi dengan konfigurasi proyek Firebase Anda sendiri.
-   // JANGAN commit API key asli ke repo publik.
-   const firebaseConfig = {
-     apiKey: "GANTI_DENGAN_API_KEY_ANDA",
-     authDomain: "GANTI.firebaseapp.com",
-     projectId: "GANTI",
-     // ...
-   };
-   ```
-2. Pertahankan nama fungsi & bentuk data yang sama agar `auth.js`,
-   `employee.js`, `admin.js` **tidak perlu diubah sama sekali**.
-3. Ganti `hashPassword()` (saat ini hanya obfuscation sederhana, BUKAN
-   hashing aman) dengan autentikasi resmi (Firebase Auth / bcrypt di server).
-4. Pindahkan validasi role (admin vs karyawan) ke server/security rules —
-   jangan hanya mengandalkan pengecekan di frontend.
-
-## 7. Checklist Pengujian
-
-**Sebagai Karyawan baru:**
+**Sebagai karyawan baru:**
 1. Buka `register.html` → isi form → submit → tampil layar "Menunggu
    Persetujuan Admin".
-2. Login dengan akun tersebut sebelum di-ACC → ditolak dengan pesan yang
-   jelas.
+2. Coba daftar dengan ID yang sama lagi → ditolak "ID Karyawan sudah
+   terdaftar".
+3. Coba daftar dengan ID `admin` → ditolak.
+4. Login dengan akun yang belum di-ACC → pesan "menunggu persetujuan admin".
 
-**Sebagai Admin** (`admin` / `admin123`, akses via 5x tap logo di halaman
-login):
-1. Dashboard menampilkan kartu statistik & grafik.
-2. Menu **Pendaftaran Baru** → ACC / Tolak karyawan pending.
-3. Menu **Data Karyawan** → cari, buka detail, aktifkan/nonaktifkan, reset
-   password, ubah jabatan/departemen.
-4. Menu **Rekap Absensi** → filter hari ini/minggu/bulan/semua, export CSV.
-5. Menu **Pengajuan Cuti** & **Pengajuan Lembur** → setujui/tolak.
-6. Menu **Gaji Karyawan** → lihat rekap dummy, export CSV.
-7. Menu **Laporan** → ringkasan per karyawan.
-8. Menu **Notifikasi** → badge jumlah, tandai semua dibaca.
+**Sebagai admin** (`admin` / `admin123`, via tautan "Masuk sebagai Admin"):
+1. Menu **Pendaftaran Baru** → ACC / Tolak karyawan pending (dengan dialog
+   konfirmasi, tombol tidak bisa diklik dua kali).
+2. Menu **Monitoring Lokasi** → menampilkan karyawan yang sedang bekerja
+   beserta status area (DALAM AREA / LUAR AREA / PERINGATAN 10 MENIT / GPS
+   TIDAK TERSEDIA / SUDAH PULANG).
+3. Menu **Riwayat Lokasi** → menampilkan kejadian keluar-area, dengan
+   filter Hari ini/Kemarin/7 hari/Semua dan pencarian nama/ID.
+4. Menu **Pengaturan** → menampilkan koordinat, radius, dan durasi yang
+   sedang aktif.
 
-**Sebagai Karyawan aktif** (`LKN001` / `123456`):
-1. Login → Dashboard menampilkan status "BELUM ABSEN".
-2. Tekan **Absen Masuk** → izinkan lokasi GPS browser → jika di luar radius 3
-   meter dari `OFFICE_LOCATION`, tombol konfirmasi nonaktif dengan pesan
-   jarak yang jelas (perlu koordinat asli diisi dulu agar bisa lolos).
-3. Setelah absen masuk, tombol **Absen Pulang** aktif.
-4. Menu **Cuti** → ajukan cuti → cek muncul di admin sebagai pending.
-5. Menu **Lembur** → ajukan lembur → cek muncul di admin.
-6. Menu **Profil** → ubah HP/email → simpan.
-7. Menu **Notifikasi** → cek notifikasi masuk (mis. hasil approval cuti).
-8. Ganti tema terang/gelap dari ikon di header — konsisten di semua halaman.
-9. Uji di lebar layar HP (< 430px) dan desktop (> 1400px) — tidak ada
-   horizontal scroll, bottom nav muncul di HP, sidebar muncul di desktop.
+**Sebagai karyawan aktif** (`LKN001` / `123456`):
+1. Absen Masuk di dalam radius 15 meter → berhasil, modal sukses tampil.
+2. Coba Absen Masuk lagi hari yang sama → ditolak.
+3. Berjalan (atau ubah lokasi GPS perangkat) ke luar radius 15 meter selama
+   10 menit penuh setelah absen masuk → admin mendapat notifikasi
+   "⚠️ Peringatan Lokasi" sekali saja.
+4. Kembali ke dalam radius → admin mendapat notifikasi "kembali ke area
+   kerja"; keluar lagi setelah itu akan membuat kejadian baru yang terpisah.
+5. Absen Pulang di dalam radius → berhasil, monitoring 10-menit berhenti.
+6. Refresh halaman setelah absen masuk (sebelum absen pulang) → status
+   "sudah absen masuk" & monitoring tetap berjalan; Absen Pulang tetap bisa
+   dilakukan setelahnya.
+7. Logout setelah absen masuk → sesi benar-benar terhapus, monitoring
+   berhenti sepenuhnya.
 
-## 8. Catatan Keamanan (Demo)
+## G. Cara Mengubah Koordinat Kantor
 
-- Password di-"hash" dengan fungsi sangat sederhana di `store.js`
-  (`hashPassword`) — **hanya agar tidak plaintext di localStorage demo**,
-  BUKAN algoritma aman untuk produksi.
-- Akses admin tetap memerlukan login (username + password), 5x tap hanya
-  membuka form login admin, bukan bypass.
-- Sebelum produksi: tambahkan validasi sisi server, HTTPS, rate limiting
-  login, dan audit trail untuk semua aksi admin (approve/reject/reset
-  password).
+Edit `js/config.js`:
+
+```js
+OFFICE_LOCATION: {
+  latitude: -6.4568847,   // ganti sesuai kantor baru
+  longitude: 106.7299525  // ganti sesuai kantor baru
+},
+```
+
+Google Maps short-link (`maps.app.goo.gl/...`) **tidak bisa** di-resolve
+menjadi latitude/longitude langsung dari JavaScript di browser (dibatasi
+oleh kebijakan cross-origin). Cara mengambil koordinat baru:
+1. Buka lokasi kantor baru di Google Maps.
+2. Tekan-tahan (HP) atau klik-kanan (desktop) tepat di titik kantor.
+3. Salin angka yang muncul (format `-x.xxxxxx, y.yyyyyy`) ke `config.js`.
+
+## H. Cara Mengubah Radius
+
+Edit `CONFIG.ATTENDANCE_RADIUS` di `js/config.js` (satuan meter). Radius
+yang sama otomatis berlaku untuk absen masuk **dan** absen pulang — tidak
+perlu (dan tidak boleh) diatur terpisah di file lain.
+
+## I. Cara Mengubah Durasi Peringatan Keluar Area
+
+Edit `CONFIG.OUTSIDE_AREA_MINUTES` di `js/config.js` (satuan menit).
+
+## J. Keterbatasan LocalStorage (Wajib Dibaca)
+
+Aplikasi ini **masih memakai LocalStorage**, bukan database sungguhan.
+Konsekuensinya:
+
+- Data (akun, absensi, notifikasi, riwayat lokasi) **hanya tersimpan di
+  browser/perangkat masing-masing** — tidak ada server pusat.
+- **Tidak ada sinkronisasi real-time antar-HP.** Halaman **Monitoring
+  Lokasi** admin hanya bisa melihat data karyawan yang absen dari
+  **peramban/perangkat yang sama** dengan admin. Ini bukan bug yang bisa
+  "diperbaiki" tanpa backend sungguhan — ini keterbatasan mendasar dari
+  LocalStorage.
+- Data bisa hilang jika cache/penyimpanan browser dibersihkan, atau kalau
+  karyawan berpindah perangkat/browser.
+- Password disimpan dengan fungsi hash sangat sederhana (`hashPassword` di
+  `store.js`) — **hanya agar tidak plaintext**, BUKAN algoritma aman untuk
+  produksi.
+
+## K. Yang Perlu Dilakukan Sebelum Firebase
+
+1. **Autentikasi**: ganti `Store.login`/`registerEmployee`/`hashPassword`
+   dengan **Firebase Authentication** (email/password atau custom auth
+   dengan ID karyawan sebagai identifier).
+2. **Data**: ganti seluruh fungsi baca/tulis di `store.js`
+   (`getUsers`/`saveUsers`, `getAttendance`/`saveAttendanceList`, dst.)
+   dengan pemanggilan **Cloud Firestore** — struktur data (bentuk objek
+   user/attendance/zoneEvent) sengaja dibuat rapi di `store.js` supaya
+   pemetaan ke koleksi Firestore jadi lurus, satu fungsi ganti satu query.
+3. **Monitoring lokasi real-time**: pindahkan `Store.setPresence()` ke
+   **Firestore** (atau Realtime Database) dengan `onSnapshot`/listener,
+   supaya admin benar-benar bisa memantau semua karyawan lintas perangkat
+   secara real-time — ini yang tidak mungkin dicapai dengan LocalStorage.
+4. **Notifikasi ke admin**: pertimbangkan **Firebase Cloud Messaging**
+   supaya notifikasi "keluar area 10 menit" bisa sampai ke HP admin bahkan
+   saat dashboard admin tidak sedang dibuka.
+5. **Keamanan**: pindahkan validasi role (admin vs karyawan) ke
+   **Firestore Security Rules** di sisi server — jangan hanya mengandalkan
+   pengecekan di frontend seperti sekarang.
+6. Pertahankan nama fungsi di `store.js` (`login`, `checkIn`,
+   `createLocationEvent`, dst.) supaya `auth.js`/`employee.js`/`admin.js`
+   **tidak perlu diubah sama sekali** saat backend-nya diganti.
+
+## L. Checklist Fitur (Semua Sudah Bekerja)
+
+- [x] Registrasi + semua validasi (field kosong, ID duplikat, password tidak
+      sama, ID admin ditolak).
+- [x] Status pending → approval admin → login diizinkan.
+- [x] Login dengan pesan error yang jelas untuk setiap kondisi (pending,
+      ditolak, password salah, akun tidak ada).
+- [x] Absen masuk & pulang dengan radius tunggal 15 meter.
+- [x] Validasi GPS (proses "mengambil lokasi", jarak, akurasi, status) —
+      GPS error tidak pernah dianggap absensi berhasil.
+- [x] Monitoring GPS otomatis mulai setelah absen masuk, berhenti setelah
+      absen pulang/logout/sesi berakhir — dan **dilanjutkan otomatis**
+      setelah refresh halaman jika karyawan belum absen pulang.
+- [x] Peringatan keluar-area 10 menit dengan satu notifikasi per kejadian,
+      tidak berulang, dan event baru terpisah tiap kali keluar lagi.
+- [x] Halaman Monitoring Lokasi & Riwayat Lokasi + Pengaturan di admin.
+- [x] Modal terpusat, anti tumpuk, anti klik-ganda di seluruh aplikasi.
+- [x] Akses admin lewat tautan yang jelas, bukan gimmick tersembunyi.

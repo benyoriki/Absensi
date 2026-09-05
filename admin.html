@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="css/style.css?v=5" />
+<link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
 <a class="skip-link" href="#main">Langsung ke konten utama</a>
@@ -49,12 +49,15 @@
       <button class="sidebar__link" data-nav="karyawan"><span class="inline-icon" data-icon="users" data-icon-size="18"></span> Data Karyawan</button>
       <p class="sidebar__group-label">Absensi</p>
       <button class="sidebar__link" data-nav="absensi"><span class="inline-icon" data-icon="clipboard" data-icon-size="18"></span> Rekap Absensi</button>
+      <button class="sidebar__link" data-nav="monitoring"><span class="inline-icon" data-icon="satellite" data-icon-size="18"></span> Monitoring Lokasi</button>
+      <button class="sidebar__link" data-nav="riwayat-lokasi"><span class="inline-icon" data-icon="chart" data-icon-size="18"></span> Riwayat Lokasi</button>
       <button class="sidebar__link" data-nav="cuti"><span class="inline-icon" data-icon="umbrella" data-icon-size="18"></span> Pengajuan Cuti</button>
       <button class="sidebar__link" data-nav="lembur"><span class="inline-icon" data-icon="clock" data-icon-size="18"></span> Pengajuan Lembur</button>
       <p class="sidebar__group-label">Keuangan &amp; Laporan</p>
       <button class="sidebar__link" data-nav="gaji"><span class="inline-icon" data-icon="dollar" data-icon-size="18"></span> Gaji Karyawan</button>
       <button class="sidebar__link" data-nav="laporan"><span class="inline-icon" data-icon="fileText" data-icon-size="18"></span> Laporan</button>
       <p class="sidebar__group-label">Lainnya</p>
+      <button class="sidebar__link" data-nav="pengaturan"><span class="inline-icon" data-icon="pin" data-icon-size="18"></span> Pengaturan</button>
       <button class="sidebar__link" data-nav="notifikasi"><span class="inline-icon" data-icon="bell" data-icon-size="18"></span> Notifikasi</button>
       <button class="sidebar__link" id="sidebar-logout"><span class="inline-icon" data-icon="logout" data-icon-size="18"></span> Keluar</button>
     </nav>
@@ -63,7 +66,7 @@
 
       <!-- ===================== DASHBOARD ===================== -->
       <section data-page="dashboard">
-        <div class="page-title"><h2>Dashboard Admin</h2><p>Ringkasan kehadiran & aktivitas hari ini.</p><p class="fine-print" style="opacity:.55;margin-top:.4em">Build kode: v5 (2026-09-04)</p></div>
+        <div class="page-title"><h2>Dashboard Admin</h2><p>Ringkasan kehadiran & aktivitas hari ini.</p><p class="fine-print" style="opacity:.55;margin-top:.4em">Build kode: v7 (2026-09-05)</p></div>
 
         <div class="grid-stats" id="stat-cards"></div>
 
@@ -141,6 +144,42 @@
         </section>
       </section>
 
+      <!-- ===================== MONITORING LOKASI ===================== -->
+      <section data-page="monitoring" hidden>
+        <div class="page-title"><h2>Monitoring Lokasi</h2><p>Karyawan yang sedang bekerja (sudah absen masuk, belum absen pulang) dan status area kerja mereka saat ini.</p></div>
+        <p class="fine-print" style="margin-bottom:1em">Data lokasi diperbarui dari perangkat masing-masing karyawan pada peramban yang sama. Karena aplikasi ini masih memakai LocalStorage (tahap prototipe), data lokasi TIDAK mengalir otomatis antar-HP secara real-time — lihat catatan di halaman Pengaturan.</p>
+        <section class="card">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Nama</th><th>ID</th><th>Waktu Masuk</th><th>Jarak dari Kantor</th><th>Akurasi GPS</th><th>Status Area</th><th>Update Terakhir</th></tr></thead>
+              <tbody id="monitoring-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <!-- ===================== RIWAYAT LOKASI ===================== -->
+      <section data-page="riwayat-lokasi" hidden>
+        <div class="page-title"><h2>Riwayat Lokasi</h2><p>Riwayat kejadian keluar area kerja (&gt; 15 meter selama 10 menit).</p></div>
+        <section class="card">
+          <div class="chip-group" style="margin-bottom:1em">
+            <button class="chip is-active" data-zrange="today">Hari ini</button>
+            <button class="chip" data-zrange="yesterday">Kemarin</button>
+            <button class="chip" data-zrange="week">7 hari terakhir</button>
+            <button class="chip" data-zrange="all">Semua</button>
+          </div>
+          <div class="field-row" style="margin-bottom:1em">
+            <input id="riwayat-lokasi-search" type="search" placeholder="Cari nama atau ID karyawan…" />
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Nama</th><th>ID</th><th>Mulai Keluar</th><th>Durasi</th><th>Jarak Terakhir</th><th>Waktu Kembali</th><th>Status</th></tr></thead>
+              <tbody id="riwayat-lokasi-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
       <!-- ===================== PENGAJUAN CUTI ===================== -->
       <section data-page="cuti" hidden>
         <div class="page-title"><h2>Pengajuan Cuti</h2><p>Setujui atau tolak permintaan cuti karyawan.</p></div>
@@ -199,6 +238,27 @@
         </section>
       </section>
 
+      <!-- ===================== PENGATURAN KANTOR ===================== -->
+      <section data-page="pengaturan" hidden>
+        <div class="page-title"><h2>Pengaturan Kantor</h2><p>Konfigurasi lokasi & aturan absensi yang sedang aktif.</p></div>
+        <section class="card">
+          <dl class="stat-list">
+            <div class="stat-list__item"><dt>Latitude Kantor</dt><dd class="mono" id="setting-lat">-</dd></div>
+            <div class="stat-list__item"><dt>Longitude Kantor</dt><dd class="mono" id="setting-lon">-</dd></div>
+            <div class="stat-list__item"><dt>Radius Absensi</dt><dd class="mono" id="setting-radius">-</dd></div>
+            <div class="stat-list__item"><dt>Akurasi GPS Maksimum Diterima</dt><dd class="mono" id="setting-accuracy">-</dd></div>
+            <div class="stat-list__item"><dt>Batas Peringatan Keluar Area</dt><dd class="mono" id="setting-outside">-</dd></div>
+            <div class="stat-list__item"><dt>Batas Jam Terlambat</dt><dd class="mono" id="setting-late">-</dd></div>
+          </dl>
+          <button id="setting-open-maps-btn" type="button" class="btn btn--ghost btn--block mt-1">Buka Lokasi Kantor di Google Maps</button>
+          <p class="fine-print mt-1">Untuk mengubah nilai di atas, edit <code>CONFIG</code> pada berkas <code>js/config.js</code> (tahap prototipe ini belum memiliki panel pengaturan yang tersambung ke database sungguhan).</p>
+        </section>
+        <section class="card mt-1">
+          <div class="card__head"><h3>Keterbatasan LocalStorage</h3></div>
+          <p class="fine-print">Aplikasi ini masih memakai LocalStorage sebagai penyimpanan sementara (tahap prototipe). Artinya: data hanya tersimpan di peramban/perangkat masing-masing, TIDAK ada sinkronisasi otomatis antar-HP secara real-time, dan data bisa hilang jika cache/penyimpanan peramban dibersihkan. Untuk produksi, sistem ini perlu dipindahkan ke backend sungguhan (mis. Firebase Authentication + Firestore).</p>
+        </section>
+      </section>
+
       <!-- ===================== NOTIFIKASI ===================== -->
       <section data-page="notifikasi" hidden>
         <div class="page-title flex-between">
@@ -224,10 +284,13 @@
   <div class="modal" style="max-width:340px">
     <div class="modal__head"><h2>Menu Lainnya</h2><button class="icon-btn" id="more-close-btn" aria-label="Tutup">✕</button></div>
     <div class="stack">
+      <button class="sidebar__link" data-nav="monitoring"><span class="inline-icon" data-icon="satellite" data-icon-size="18"></span> Monitoring Lokasi</button>
+      <button class="sidebar__link" data-nav="riwayat-lokasi"><span class="inline-icon" data-icon="chart" data-icon-size="18"></span> Riwayat Lokasi</button>
       <button class="sidebar__link" data-nav="cuti"><span class="inline-icon" data-icon="umbrella" data-icon-size="18"></span> Pengajuan Cuti</button>
       <button class="sidebar__link" data-nav="lembur"><span class="inline-icon" data-icon="clock" data-icon-size="18"></span> Pengajuan Lembur</button>
       <button class="sidebar__link" data-nav="gaji"><span class="inline-icon" data-icon="dollar" data-icon-size="18"></span> Gaji Karyawan</button>
       <button class="sidebar__link" data-nav="laporan"><span class="inline-icon" data-icon="fileText" data-icon-size="18"></span> Laporan</button>
+      <button class="sidebar__link" data-nav="pengaturan"><span class="inline-icon" data-icon="pin" data-icon-size="18"></span> Pengaturan</button>
       <button class="sidebar__link" data-nav="notifikasi"><span class="inline-icon" data-icon="bell" data-icon-size="18"></span> Notifikasi</button>
       <button class="sidebar__link" id="more-logout-btn"><span class="inline-icon" data-icon="logout" data-icon-size="18"></span> Keluar</button>
     </div>
@@ -265,8 +328,11 @@
 
 <div id="toast-region" class="toast-region" aria-live="polite"></div>
 
-<script src="js/store.js?v=5"></script>
-<script src="js/ui-common.js?v=5"></script>
-<script src="js/admin.js?v=5"></script>
+<script src="js/config.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui-common.js"></script>
+<script src="js/modal.js"></script>
+<script src="js/geo.js"></script>
+<script src="js/admin.js"></script>
 </body>
 </html>
