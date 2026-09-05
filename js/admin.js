@@ -4,6 +4,11 @@
 (function () {
   "use strict";
 
+  if (window.__rakabuAdminInitialized) return;
+  window.__rakabuAdminInitialized = true;
+
+  if (!assertDependenciesLoaded(["Store", "CONFIG", "Modal"])) return;
+
   const admin = Store.currentUser();
   if (!admin || admin.role !== "admin") {
     window.location.replace("index.html");
@@ -15,12 +20,18 @@
   let rejectContext = null; // { kind: 'user'|'leave'|'overtime', id }
 
   document.addEventListener("DOMContentLoaded", () => {
-    cacheDom();
-    bindNav();
-    bindGlobalEvents();
-    el.avatarBtn.textContent = initials(admin.name);
-    initClock();
-    renderAll();
+    try {
+      cacheDom();
+      bindNav();
+      bindGlobalEvents();
+      el.avatarBtn.textContent = initials(admin.name);
+      initClock();
+      renderAll();
+    } catch (err) {
+      // Lihat catatan yang sama di js/employee.js: tampilkan error yang
+      // jelas alih-alih membiarkan dashboard admin "mati total" diam-diam.
+      showFatalErrorBanner(err && err.message ? err.message : String(err));
+    }
   });
 
   function cacheDom() {
@@ -28,6 +39,8 @@
       "stat-cards","attendance-donut","attendance-legend","weekly-bar-chart","recent-activity-list",
       "pendaftaran-tbody","pendaftaran-empty","karyawan-search","karyawan-tbody",
       "absensi-tbody","export-attendance-btn",
+      "monitoring-tbody","riwayat-lokasi-tbody","riwayat-lokasi-search",
+      "setting-lat","setting-lon","setting-radius","setting-accuracy","setting-outside","setting-late","setting-open-maps-btn",
       "cuti-tbody","lembur-tbody",
       "gaji-tbody","gaji-period-label","export-gaji-btn",
       "laporan-summary","laporan-tbody",
@@ -61,18 +74,20 @@
     document.querySelectorAll("[data-nav]").forEach((btn) => {
       btn.addEventListener("click", () => { route(btn.dataset.nav); closeMore(); });
     });
-    el.moreBtn.addEventListener("click", () => { showModal(el.moreModal); });
+    el.moreBtn.addEventListener("click", () => { Modal.show("more-modal"); });
     el.moreCloseBtn.addEventListener("click", closeMore);
-    el.moreModal.addEventListener("click", (e) => { if (e.target === el.moreModal) closeMore(); });
-    function closeMore() { el.moreModal.hidden = true; }
+    function closeMore() { Modal.hide("more-modal"); }
     window.addEventListener("hashchange", () => route(location.hash.replace("#", "")));
   }
   function route(page) {
-    const valid = ["dashboard","pendaftaran","karyawan","absensi","cuti","lembur","gaji","laporan","notifikasi"];
+    const valid = ["dashboard","pendaftaran","karyawan","absensi","monitoring","riwayat-lokasi","cuti","lembur","gaji","laporan","pengaturan","notifikasi"];
     if (!valid.includes(page)) page = "dashboard";
     document.querySelectorAll("[data-page]").forEach((sec) => { sec.hidden = sec.dataset.page !== page; });
     document.querySelectorAll("[data-nav]").forEach((btn) => btn.classList.toggle("is-active", btn.dataset.nav === page));
     if (page === "notifikasi") { Store.markAllRead("admin"); renderNotifications(); updateNotifBadge(); }
+    if (page === "monitoring") renderMonitoring();
+    if (page === "riwayat-lokasi") renderRiwayatLokasi("today");
+    if (page === "pengaturan") renderPengaturan();
     location.hash = page;
   }
 
@@ -88,19 +103,32 @@
         renderAbsensi(chip.dataset.arange);
       });
     });
+    document.querySelectorAll('[data-zrange]').forEach((chip) => {
+      chip.addEventListener("click", () => {
+        document.querySelectorAll('[data-zrange]').forEach((c) => c.classList.remove("is-active"));
+        chip.classList.add("is-active");
+        renderRiwayatLokasi(chip.dataset.zrange);
+      });
+    });
+    el.riwayatLokasiSearch.addEventListener("input", () => renderRiwayatLokasi());
+    el.settingOpenMapsBtn.addEventListener("click", () => window.open(CONFIG.OFFICE_MAPS_URL, "_blank"));
     el.exportAttendanceBtn.addEventListener("click", exportAttendanceCsv);
     el.exportGajiBtn.addEventListener("click", exportGajiCsv);
 
-    el.rejectModalClose.addEventListener("click", () => el.rejectModal.hidden = true);
+    el.rejectModalClose.addEventListener("click", () => Modal.hide("reject-modal"));
     el.rejectForm.addEventListener("submit", onSubmitReject);
-    el.confirmCancelBtn.addEventListener("click", () => el.confirmModal.hidden = true);
+    el.confirmCancelBtn.addEventListener("click", () => Modal.hide("confirm-modal"));
     el.confirmOkBtn.addEventListener("click", () => {
-      if (confirmCallback) confirmCallback();
-      el.confirmModal.hidden = true;
+      Modal.runOnce(el.confirmOkBtn, async () => { if (confirmCallback) await confirmCallback(); Modal.hide("confirm-modal"); });
     });
-    [el.employeeModal, el.rejectModal, el.confirmModal].forEach((overlay) => {
-      overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.hidden = true; });
-    });
+
+    // Halaman Monitoring Lokasi diperbarui otomatis setiap beberapa detik
+    // selama admin sedang membukanya, supaya terasa "hidup" tanpa harus
+    // refresh manual (tetap dibatasi pada data yang tersedia di browser
+    // yang sama — lihat catatan keterbatasan LocalStorage).
+    setInterval(() => {
+      if (location.hash.replace("#", "") === "monitoring") renderMonitoring();
+    }, 5000);
   }
 
   function doLogout() { Store.logout(); window.location.replace("index.html"); }
@@ -108,25 +136,14 @@
   // Bug fix (anti tumpuk-modal): sebelumnya setiap modal (Menu Lainnya,
   // Detail Karyawan, Tolak, Konfirmasi) hanya mengatur `hidden` pada dirinya
   // sendiri tanpa pernah menutup modal lain yang mungkin masih terbuka.
-  // Jika dua modal kebetulan tampil bersamaan (mis. karena double-klik atau
-  // urutan event yang tidak terduga), keduanya bertumpuk secara visual
-  // (dua overlay gelap + dua kotak dialog saling menimpa) dan admin bisa
-  // merasa dashboard "macet"/tidak bisa dipakai — persis seperti pada
-  // laporan bug ("Tolak" menumpuk dengan "Konfirmasi"). Sekarang SETIAP
-  // pembukaan modal dipusatkan lewat showModal(), yang menutup semua modal
-  // lain terlebih dahulu, sehingga hanya satu modal yang mungkin terbuka
-  // di satu waktu.
-  function allModals() {
-    return [el.moreModal, el.employeeModal, el.rejectModal, el.confirmModal].filter(Boolean);
-  }
-  function closeAllModals() { allModals().forEach((m) => { m.hidden = true; }); }
-  function showModal(modalEl) { closeAllModals(); modalEl.hidden = false; }
+  // Sekarang SEMUA modal dibuka/ditutup lewat Modal (js/modal.js), yang
+  // memusatkan aturan "hanya satu modal aktif" di satu tempat.
 
   function askConfirm(title, message, onConfirm) {
     el.confirmTitle.textContent = title;
     el.confirmMessage.textContent = message;
     confirmCallback = onConfirm;
-    showModal(el.confirmModal);
+    Modal.show("confirm-modal");
   }
 
   function initClock() {
@@ -284,21 +301,25 @@
       rejectContext = { kind: "user", id: b.dataset.reject };
       el.rejectModalTitle.textContent = "Tolak Pendaftaran";
       el.rejectReason.value = "";
-      showModal(el.rejectModal);
+      Modal.show("reject-modal");
     }));
   }
 
+  let rejectSubmitting = false;
   function onSubmitReject(e) {
     e.preventDefault();
+    if (rejectSubmitting) return;
+    rejectSubmitting = true;
     const reason = el.rejectReason.value.trim();
-    if (!rejectContext) return;
+    if (!rejectContext) { rejectSubmitting = false; return; }
     if (rejectContext.kind === "user") Store.rejectUser(rejectContext.id, reason);
     if (rejectContext.kind === "leave") Store.decideLeave(rejectContext.id, "rejected", reason);
     if (rejectContext.kind === "overtime") Store.decideOvertime(rejectContext.id, "rejected", reason);
-    el.rejectModal.hidden = true;
+    Modal.hide("reject-modal");
     showToast("Pengajuan ditolak.", "warning");
     rejectContext = null;
     renderAll();
+    rejectSubmitting = false;
   }
 
   /* ------------------------------------------------------------------ */
@@ -377,17 +398,17 @@
         <button type="submit" class="btn btn--ghost btn--block mt-1">Simpan Perubahan</button>
       </form>
     `;
-    showModal(el.employeeModal);
-    document.getElementById("employee-modal-close").addEventListener("click", () => el.employeeModal.hidden = true);
+    Modal.show("employee-modal");
+    document.getElementById("employee-modal-close").addEventListener("click", () => Modal.hide("employee-modal"));
 
     const activateBtn = el.employeeModalContent.querySelector('[data-action="activate"]');
     if (activateBtn) activateBtn.addEventListener("click", () => {
-      Store.approveUser(u.id); showToast("Karyawan diaktifkan.", "success"); el.employeeModal.hidden = true; renderAll();
+      Store.approveUser(u.id); showToast("Karyawan diaktifkan.", "success"); Modal.hide("employee-modal"); renderAll();
     });
     const deactivateBtn = el.employeeModalContent.querySelector('[data-action="deactivate"]');
     if (deactivateBtn) deactivateBtn.addEventListener("click", () => {
       askConfirm("Nonaktifkan Karyawan", `Nonaktifkan akun ${u.name}? Karyawan tidak akan bisa login.`, () => {
-        Store.setUserStatus(u.id, "disabled"); showToast("Karyawan dinonaktifkan.", "warning"); el.employeeModal.hidden = true; renderAll();
+        Store.setUserStatus(u.id, "disabled"); showToast("Karyawan dinonaktifkan.", "warning"); Modal.hide("employee-modal"); renderAll();
       });
     });
     const resetBtn = el.employeeModalContent.querySelector('[data-action="reset-password"]');
@@ -404,7 +425,7 @@
         department: document.getElementById("edit-department").value.trim()
       });
       showToast("Data karyawan diperbarui.", "success");
-      el.employeeModal.hidden = true;
+      Modal.hide("employee-modal");
       renderAll();
     });
   }
@@ -452,6 +473,92 @@
   }
 
   /* ------------------------------------------------------------------ */
+  /* MONITORING LOKASI (karyawan yang sedang bekerja hari ini)           */
+  /* ------------------------------------------------------------------ */
+  function renderMonitoring() {
+    const todayKey = Store.localDateKey();
+    const workingToday = Store.getAttendance().filter((a) => a.date === todayKey && a.checkIn);
+    if (!workingToday.length) {
+      el.monitoringTbody.innerHTML = `<tr><td colspan="7">${emptyStateBlock("Belum ada karyawan yang absen masuk hari ini.")}</td></tr>`;
+      return;
+    }
+    el.monitoringTbody.innerHTML = workingToday.map((a) => {
+      const u = Store.findUserById(a.userId);
+      const presence = Store.getPresenceFor(a.userId);
+      const activeEvent = Store.activeZoneEventFor(a.userId);
+      const { label, cls } = monitoringStatus(a, activeEvent, presence);
+      return `<tr>
+        <td>${escapeHtml(u ? u.name : a.userId)}</td>
+        <td class="mono">${escapeHtml(a.userId)}</td>
+        <td class="mono">${a.checkIn}</td>
+        <td class="mono">${presence ? presence.distance.toFixed(1) + " m" : "—"}</td>
+        <td class="mono">${presence ? "±" + Math.round(presence.accuracy) + " m" : "—"}</td>
+        <td><span class="badge ${cls}">${label}</span></td>
+        <td class="text-sm text-muted">${presence ? timeAgoID(presence.updatedAt) : "Menunggu data lokasi…"}</td>
+      </tr>`;
+    }).join("");
+  }
+  function monitoringStatus(attendanceRecord, activeEvent, presence) {
+    if (attendanceRecord.checkOut) return { label: "SUDAH PULANG", cls: "badge--neutral" };
+    if (activeEvent) return { label: `PERINGATAN ${CONFIG.OUTSIDE_AREA_MINUTES} MENIT`, cls: "badge--danger" };
+    if (!presence) return { label: "GPS TIDAK TERSEDIA", cls: "badge--neutral" };
+    return presence.distance <= CONFIG.ATTENDANCE_RADIUS
+      ? { label: "DALAM AREA", cls: "badge--success" }
+      : { label: "LUAR AREA", cls: "badge--warning" };
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* RIWAYAT LOKASI (kejadian keluar area)                               */
+  /* ------------------------------------------------------------------ */
+  let riwayatLokasiRange = "today";
+  function renderRiwayatLokasi(range) {
+    if (range) riwayatLokasiRange = range;
+    const now = new Date();
+    let list = Store.getZoneEvents();
+    const q = (el.riwayatLokasiSearch.value || "").toLowerCase();
+
+    if (riwayatLokasiRange === "today") {
+      const key = Store.localDateKey();
+      list = list.filter((z) => Store.localDateKey(new Date(z.reachedAt)) === key);
+    } else if (riwayatLokasiRange === "yesterday") {
+      const y = new Date(now); y.setDate(now.getDate() - 1);
+      const key = Store.localDateKey(y);
+      list = list.filter((z) => Store.localDateKey(new Date(z.reachedAt)) === key);
+    } else if (riwayatLokasiRange === "week") {
+      const weekAgo = new Date(now); weekAgo.setDate(now.getDate() - 7);
+      list = list.filter((z) => z.reachedAt >= weekAgo.getTime());
+    }
+    if (q) list = list.filter((z) => { const u = Store.findUserById(z.userId); return ((u ? u.name : "") + z.userId).toLowerCase().includes(q); });
+
+    if (!list.length) { el.riwayatLokasiTbody.innerHTML = `<tr><td colspan="7">${emptyStateBlock("Tidak ada riwayat keluar area pada rentang ini.")}</td></tr>`; return; }
+    el.riwayatLokasiTbody.innerHTML = list.map((z) => {
+      const u = Store.findUserById(z.userId);
+      const durasi = (z.returnedAt || Date.now()) - z.outsideSince;
+      return `<tr>
+        <td>${escapeHtml(u ? u.name : z.userId)}</td>
+        <td class="mono">${escapeHtml(z.userId)}</td>
+        <td class="mono">${new Date(z.outsideSince).toLocaleString("id-ID")}</td>
+        <td class="mono">${Store.formatDuration(durasi)}</td>
+        <td class="mono">${z.lastDistance != null ? z.lastDistance.toFixed(1) + " m" : "—"}</td>
+        <td class="mono">${z.returnedAt ? new Date(z.returnedAt).toLocaleString("id-ID") : "—"}</td>
+        <td>${z.status === "active" ? '<span class="badge badge--danger">Aktif</span>' : '<span class="badge badge--success">Selesai</span>'}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* PENGATURAN KANTOR                                                   */
+  /* ------------------------------------------------------------------ */
+  function renderPengaturan() {
+    el.settingLat.textContent = CONFIG.OFFICE_LOCATION.latitude.toFixed(7);
+    el.settingLon.textContent = CONFIG.OFFICE_LOCATION.longitude.toFixed(7);
+    el.settingRadius.textContent = CONFIG.ATTENDANCE_RADIUS + " meter";
+    el.settingAccuracy.textContent = CONFIG.MAX_ACCEPTABLE_ACCURACY + " meter";
+    el.settingOutside.textContent = CONFIG.OUTSIDE_AREA_MINUTES + " menit";
+    el.settingLate.textContent = CONFIG.LATE_AFTER;
+  }
+
+  /* ------------------------------------------------------------------ */
   /* PENGAJUAN CUTI (approval)                                           */
   /* ------------------------------------------------------------------ */
   function renderCuti() {
@@ -474,13 +581,14 @@
       </tr>`;
     }).join("");
     el.cutiTbody.querySelectorAll("[data-lv-approve]").forEach((b) => b.addEventListener("click", () => {
+      if (b.disabled) return; b.disabled = true;
       Store.decideLeave(b.dataset.lvApprove, "approved", ""); showToast("Cuti disetujui.", "success"); renderAll();
     }));
     el.cutiTbody.querySelectorAll("[data-lv-reject]").forEach((b) => b.addEventListener("click", () => {
       rejectContext = { kind: "leave", id: b.dataset.lvReject };
       el.rejectModalTitle.textContent = "Tolak Pengajuan Cuti";
       el.rejectReason.value = "";
-      showModal(el.rejectModal);
+      Modal.show("reject-modal");
     }));
   }
   function leaveStatusPill(status) {
@@ -512,13 +620,14 @@
       </tr>`;
     }).join("");
     el.lemburTbody.querySelectorAll("[data-ot-approve]").forEach((b) => b.addEventListener("click", () => {
+      if (b.disabled) return; b.disabled = true;
       Store.decideOvertime(b.dataset.otApprove, "approved", ""); showToast("Lembur disetujui.", "success"); renderAll();
     }));
     el.lemburTbody.querySelectorAll("[data-ot-reject]").forEach((b) => b.addEventListener("click", () => {
       rejectContext = { kind: "overtime", id: b.dataset.otReject };
       el.rejectModalTitle.textContent = "Tolak Pengajuan Lembur";
       el.rejectReason.value = "";
-      showModal(el.rejectModal);
+      Modal.show("reject-modal");
     }));
   }
 

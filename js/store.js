@@ -27,6 +27,7 @@ const Store = (function () {
     notifications: "rakabu_notifications",
     salary: "rakabu_salary",
     zoneEvents: "rakabu_zone_events",
+    presence: "rakabu_presence",
     session: "rakabu_session",
     theme: "rakabu_theme",
     seeded: "rakabu_seeded_v1"
@@ -253,7 +254,17 @@ const Store = (function () {
 
   function registerEmployee(data) {
     const users = getUsers();
-    if (users.some(u => u.username.toLowerCase() === data.username.toLowerCase())) {
+    const wantedId = String(data.username || "").toLowerCase();
+    // Bug fix: sebelumnya tidak ada pengecekan terhadap ID/username admin,
+    // sehingga karyawan bisa (sengaja/tidak sengaja) mendaftar memakai ID
+    // yang sama dengan akun admin. Sekarang ID admin (baik yang sudah ada
+    // di data maupun kata kunci umum "admin") ditolak secara eksplisit.
+    const isAdminWord = wantedId === "admin";
+    const clashesWithAdmin = users.some(u => u.role === "admin" && u.username.toLowerCase() === wantedId);
+    if (isAdminWord || clashesWithAdmin) {
+      return { ok: false, error: "ID Karyawan tidak boleh menggunakan ID admin." };
+    }
+    if (users.some(u => u.username.toLowerCase() === wantedId)) {
       return { ok: false, error: "ID Karyawan sudah terdaftar. Gunakan ID lain atau hubungi admin." };
     }
     if (users.some(u => u.email && u.email.toLowerCase() === data.email.toLowerCase())) {
@@ -347,7 +358,8 @@ const Store = (function () {
     const dateKey = localDateKey();
     let record = list.find(a => a.userId === userId && a.date === dateKey);
     const timeStr = new Date().toTimeString().slice(0, 5);
-    const isLate = timeStr > "08:15";
+    const lateAfter = (typeof CONFIG !== "undefined" && CONFIG.LATE_AFTER) || "08:15";
+    const isLate = timeStr > lateAfter;
     if (!record) {
       record = {
         id: uid("att"), userId, date: dateKey, checkIn: timeStr, checkOut: null,
@@ -383,41 +395,101 @@ const Store = (function () {
   }
 
   /* ------------------------------------------------------------------ */
-  /* ZONE / GEOFENCE EVENTS (karyawan keluar area kerja)                */
+  /* ZONE / GEOFENCE EVENTS (karyawan keluar area kerja > 10 menit)     */
   /* ------------------------------------------------------------------ */
+  // Bentuk record zoneEvent:
+  //   { id, userId, status: "active"|"resolved",
+  //     outsideSince, reachedAt, returnedAt,
+  //     lastLat, lastLon, lastDistance, lastAccuracy, createdAt }
   function getZoneEvents() { return read(KEYS.zoneEvents, []); }
-  function addZoneEvent(evt) {
+  function saveZoneEvents(list) { return write(KEYS.zoneEvents, list); }
+
+  function zoneEventsByUser(userId) {
+    return getZoneEvents().filter(z => z.userId === userId).sort((a, b) => b.createdAt - a.createdAt);
+  }
+  function activeZoneEventFor(userId) {
+    return getZoneEvents().find(z => z.userId === userId && z.status === "active") || null;
+  }
+
+  /**
+   * Dipanggil ketika ZoneMonitor (geo.js) mendeteksi karyawan berada di
+   * luar radius kantor selama CONFIG.OUTSIDE_AREA_MINUTES PENUH. Satu
+   * kejadian keluar area = satu event + satu notifikasi admin (tidak
+   * berulang setiap detik).
+   */
+  function createLocationEvent(userId, meta) {
     const list = getZoneEvents();
-    const record = Object.assign({ id: uid("zone"), createdAt: Date.now(), reasonGiven: false }, evt);
+    const record = {
+      id: uid("zone"), userId, status: "active",
+      outsideSince: meta.outsideSince, reachedAt: meta.reachedAt, returnedAt: null,
+      lastLat: meta.lat, lastLon: meta.lon, lastDistance: meta.distance, lastAccuracy: meta.accuracy,
+      createdAt: Date.now()
+    };
     list.unshift(record);
-    write(KEYS.zoneEvents, list);
+    saveZoneEvents(list);
+
+    const user = findUserById(userId);
+    const name = user ? user.name : userId;
+    addNotification({
+      audience: "admin", type: "zone",
+      title: "⚠️ Peringatan Lokasi",
+      message: `${name} berada di luar area kerja selama ${CONFIG.OUTSIDE_AREA_MINUTES} menit. Jarak terakhir: ${meta.distance.toFixed(1)} m dari kantor.`,
+      refId: record.id
+    });
     return record;
   }
-  function updateZoneEvent(id, patch) {
+
+  /**
+   * Dipanggil ketika karyawan kembali ke dalam radius SETELAH event
+   * OUTSIDE_AREA tercatat. Menandai event sebagai selesai (resolved) dan
+   * mengirim satu notifikasi "kembali ke area" — tidak digabung dengan
+   * kejadian keluar-area berikutnya jika karyawan keluar lagi nanti.
+   */
+  function resolveLocationEvent(id, meta) {
     const list = getZoneEvents();
     const idx = list.findIndex(z => z.id === id);
     if (idx === -1) return null;
-    list[idx] = Object.assign({}, list[idx], patch);
-    write(KEYS.zoneEvents, list);
+    list[idx] = Object.assign({}, list[idx], {
+      status: "resolved", returnedAt: Date.now(),
+      lastLat: meta ? meta.lat : list[idx].lastLat,
+      lastLon: meta ? meta.lon : list[idx].lastLon,
+      lastDistance: meta ? meta.distance : list[idx].lastDistance
+    });
+    saveZoneEvents(list);
+
+    const user = findUserById(list[idx].userId);
+    const name = user ? user.name : list[idx].userId;
+    addNotification({
+      audience: "admin", type: "zone",
+      title: "Kembali ke Area Kerja",
+      message: `${name} kembali ke area kerja.`,
+      refId: id
+    });
     return list[idx];
   }
-  function submitZoneReason(id, reason, distance, durationSec) {
-    const updated = updateZoneEvent(id, { reasonGiven: true, reason, distance, durationSec });
-    if (updated) {
-      const user = findUserById(updated.userId);
-      addNotification({
-        audience: "admin", type: "zone",
-        title: (user ? user.name : updated.userId) + " keluar area kerja",
-        message: `Durasi: ${formatDuration(durationSec)} — Jarak maksimum: ${distance.toFixed(1)} m — Alasan: ${reason}`,
-        refId: updated.id
-      });
-    }
-    return updated;
-  }
-  function formatDuration(sec) {
-    const m = Math.floor(sec / 60), s = Math.round(sec % 60);
+
+  function formatDuration(ms) {
+    const totalSec = Math.max(0, Math.round(ms / 1000));
+    const m = Math.floor(totalSec / 60), s = totalSec % 60;
     return `${m} menit ${s} detik`;
   }
+
+  /* ------------------------------------------------------------------ */
+  /* PRESENCE (posisi GPS terakhir karyawan yang sedang bekerja)         */
+  /* ------------------------------------------------------------------ */
+  // CATATAN JUJUR TENTANG KETERBATASAN LOCALSTORAGE:
+  // Presence ini HANYA terlihat oleh admin jika admin membuka dashboard
+  // pada PERAMBAN/PERANGKAT YANG SAMA dengan karyawan (LocalStorage tidak
+  // disinkronkan lintas perangkat). Ini BUKAN monitoring real-time
+  // antar-HP — untuk itu, sistem perlu dipindahkan ke backend sungguhan
+  // (mis. Firebase Realtime Database/Firestore) di tahap berikutnya.
+  function getPresenceMap() { return read(KEYS.presence, {}); }
+  function setPresence(userId, data) {
+    const map = getPresenceMap();
+    map[userId] = Object.assign({ userId, updatedAt: Date.now() }, data);
+    write(KEYS.presence, map);
+  }
+  function getPresenceFor(userId) { return getPresenceMap()[userId] || null; }
 
   /* ------------------------------------------------------------------ */
   /* LEAVE (CUTI)                                                       */
@@ -535,7 +607,8 @@ const Store = (function () {
     getUsers, saveUsers, findUserByUsername, findUserById, registerEmployee,
     login, logout, currentUser, getSession, updateUser, approveUser, rejectUser, setUserStatus,
     getAttendance, getTodayRecord, checkIn, checkOut, attendanceByUser,
-    getZoneEvents, addZoneEvent, updateZoneEvent, submitZoneReason, formatDuration,
+    getZoneEvents, zoneEventsByUser, activeZoneEventFor, createLocationEvent, resolveLocationEvent, formatDuration,
+    getPresenceMap, setPresence, getPresenceFor,
     getLeave, leaveByUser, submitLeave, decideLeave,
     getOvertime, overtimeByUser, submitOvertime, decideOvertime,
     getSalary, salaryByUser, currentPeriod,

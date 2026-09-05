@@ -7,6 +7,8 @@
   let photoDataUrl = null;
 
   document.addEventListener("DOMContentLoaded", () => {
+    if (!assertDependenciesLoaded(["Store", "CONFIG", "Modal"])) return;
+
     const photoPickBtn = document.getElementById("photo-pick-btn");
     const photoInput = document.getElementById("photo-input");
     const photoPreview = document.getElementById("photo-preview");

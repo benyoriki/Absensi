@@ -5,6 +5,8 @@
   "use strict";
 
   document.addEventListener("DOMContentLoaded", () => {
+    if (!assertDependenciesLoaded(["Store", "CONFIG", "Modal"])) return;
+
     // Jika sudah login, langsung arahkan ke dashboard masing-masing.
     const existing = Store.currentUser();
     if (existing) {
@@ -47,21 +49,19 @@
       label.innerHTML = isLoading ? '<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.4)"></span> Memproses…' : "MASUK";
     }
 
-    /* ---------------- 5x tap logo -> admin access ---------------- */
-    let tapCount = 0;
-    let tapTimer = null;
-    const brandTarget = document.getElementById("brand-tap-target");
-    brandTarget.addEventListener("click", () => {
-      tapCount++;
-      clearTimeout(tapTimer);
-      tapTimer = setTimeout(() => { tapCount = 0; }, 2000);
-      if (tapCount >= 5) {
-        tapCount = 0;
+    /* ---------------- Akses admin (tautan jelas, bukan tap tersembunyi) --- */
+    // Bug fix: sebelumnya akses admin hanya bisa dibuka dengan mengetuk
+    // logo 5 kali dalam 2 detik — cara ini membingungkan dan tidak jelas
+    // bagi pengguna. Sekarang tersedia tautan "Masuk sebagai Admin" yang
+    // terlihat jelas di halaman login karyawan.
+    const adminAccessLink = document.getElementById("admin-access-link");
+    if (adminAccessLink) {
+      adminAccessLink.addEventListener("click", () => {
         viewLogin.hidden = true;
         viewAdminLogin.hidden = false;
         document.getElementById("admin-username").focus();
-      }
-    });
+      });
+    }
 
     document.getElementById("back-to-login-btn").addEventListener("click", () => {
       viewAdminLogin.hidden = true;
@@ -70,8 +70,13 @@
 
     /* ---------------- Login admin ---------------- */
     const adminForm = document.getElementById("admin-login-form");
+    let adminSubmitting = false;
     adminForm.addEventListener("submit", (e) => {
       e.preventDefault();
+      // Bug fix (anti klik-ganda): tanpa penjaga ini, menekan tombol
+      // submit berkali-kali dengan cepat bisa memicu beberapa proses
+      // redirect sekaligus.
+      if (adminSubmitting) return;
       clearErrors(["admin-username-error", "admin-pin-error"]);
       const username = document.getElementById("admin-username").value.trim();
       const pin = document.getElementById("admin-pin").value;
@@ -84,6 +89,7 @@
         showToast(result.error, "error");
         return;
       }
+      adminSubmitting = true;
       showToast("Verifikasi admin berhasil.", "success");
       setTimeout(() => window.location.href = "admin.html", 350);
     });

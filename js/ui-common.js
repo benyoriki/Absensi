@@ -3,6 +3,68 @@
    Dipakai di semua halaman: toast, tema terang/gelap, util kecil.
    ========================================================================== */
 
+/* ==========================================================================
+   PELACAK ERROR YANG TERLIHAT DI LAYAR (bukan hanya console)
+   ==========================================================================
+   Sebelumnya, kalau ada skrip yang gagal dimuat (mis. karena preview/hosting
+   tertentu tidak mendukung query string "?v=..." pada <script src>, atau
+   ada bug JavaScript lain yang tak tertangani), halaman jadi "mati total"
+   tanpa petunjuk apa pun bagi pengguna — semua tombol tampak tidak
+   merespons dan tidak ada cara mengetahui sebabnya tanpa membuka console
+   developer. Fungsi ini menampilkan pesan error mencolok LANGSUNG DI ATAS
+   HALAMAN begitu ada error, supaya masalah (dan solusinya) langsung
+   terlihat oleh siapa pun yang sedang menguji aplikasi, bukan cuma
+   developer.
+   ========================================================================== */
+function showFatalErrorBanner(message) {
+  let banner = document.getElementById("fatal-error-banner");
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = "fatal-error-banner";
+    banner.style.cssText = "position:fixed;top:0;left:0;right:0;z-index:99999;background:#dc2626;color:#fff;padding:.9em 1.1em;font:600 13px/1.5 system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.25)";
+    document.documentElement.appendChild(banner);
+  }
+  banner.textContent = "⚠️ Terjadi kesalahan teknis: " + message + " — Coba muat ulang halaman. Jika masih terjadi, hubungi admin/pengembang dengan menyertakan pesan ini.";
+}
+
+(function installGlobalErrorReporter() {
+  window.addEventListener("error", (e) => {
+    showFatalErrorBanner((e && e.message) || "Skrip gagal dijalankan.");
+  });
+  window.addEventListener("unhandledrejection", (e) => {
+    const reason = e && e.reason;
+    showFatalErrorBanner((reason && reason.message) ? reason.message : "Proses gagal (promise ditolak).");
+  });
+})();
+
+/**
+ * Dipanggil di baris PALING ATAS setiap skrip halaman (auth.js, register.js,
+ * employee.js, admin.js) untuk memastikan skrip-skrip pustaka (config.js,
+ * store.js, modal.js, dst.) benar-benar berhasil dimuat SEBELUM kode
+ * halaman mencoba memakainya. Kalau ada yang belum terdefinisi, tampilkan
+ * pesan yang jelas alih-alih membiarkan seluruh halaman diam-diam berhenti
+ * bekerja tanpa penjelasan.
+ */
+function assertDependenciesLoaded(names) {
+  const missing = names.filter((n) => {
+    try {
+      // eslint-disable-next-line no-eval
+      return eval("typeof " + n) === "undefined";
+    } catch (e) {
+      return true;
+    }
+  });
+  if (missing.length) {
+    showFatalErrorBanner(
+      "Berkas berikut gagal dimuat: " + missing.map((n) => n + ".js").join(", ") +
+      " (folder js/ mungkin tidak lengkap, atau server preview tidak mendukung path yang dipakai)."
+    );
+    return false;
+  }
+  return true;
+}
+
+
 function showToast(message, type) {
   const region = document.getElementById("toast-region");
   if (!region) return;
@@ -135,5 +197,9 @@ document.addEventListener("DOMContentLoaded", () => {
   initTheme();
   initPasswordToggles();
   hydrateIcons();
+  // Catatan: manajemen modal (buka/tutup, anti-tumpuk, ESC, klik overlay,
+  // anti klik-ganda) sekarang SEPENUHNYA dipusatkan di js/modal.js (lihat
+  // objek global `Modal`). Jangan menambahkan logika modal terpisah di
+  // sini lagi supaya tidak ada dua sistem modal yang saling tumpang tindih.
 });
 
