@@ -8,11 +8,12 @@
    Berisi dua hal:
    1. GeoMonitor — watchPosition() untuk menampilkan jarak & akurasi GPS
       secara realtime di kartu lokasi karyawan (dipakai sejak dashboard
-      dibuka, bukan hanya saat proses absen).
+      dibuka, bukan hanya saat proses absen). "safe" di sini mengacu ke
+      CONFIG.ATTENDANCE_RADIUS (radius absen), bukan radius area kerja.
    2. ZoneMonitor — pemantauan "keluar area kerja" yang HANYA aktif setelah
       karyawan absen masuk dan HARUS berhenti setelah absen pulang/logout/
       halaman ditutup/sesi berakhir. Jika karyawan berada di luar
-      CONFIG.ATTENDANCE_RADIUS selama CONFIG.OUTSIDE_AREA_MINUTES penuh,
+      CONFIG.OUTSIDE_AREA_RADIUS selama CONFIG.OUTSIDE_AREA_MINUTES penuh,
       ZoneMonitor memicu satu event "keluar area". Jika karyawan kembali
       sebelum durasi tersebut tercapai, timer dibatalkan tanpa membuat
       event apa pun (tidak ada notifikasi palsu).
@@ -119,6 +120,44 @@ function notifyBrowser(title, body) {
   }
 }
 
+/**
+ * ALARM keluar area kerja — bunyi beep (Web Audio API, tidak perlu file
+ * audio eksternal) + getaran perangkat (jika didukung). Dipanggil oleh
+ * employee.js saat ZoneMonitor melaporkan onOutsideLimitReached, supaya
+ * peringatan tidak hanya berupa teks toast/notifikasi diam-diam yang bisa
+ * terlewat, tapi benar-benar terdengar oleh karyawan.
+ */
+function playZoneAlarm() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (AudioCtx) {
+      const ctx = new AudioCtx();
+      const now = ctx.currentTime;
+      // Tiga bunyi "beep" berurutan menyerupai pola alarm peringatan.
+      [0, 0.35, 0.7].forEach((offset) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "square";
+        osc.frequency.value = 880;
+        osc.connect(gain).connect(ctx.destination);
+        const start = now + offset;
+        gain.gain.setValueAtTime(0.0001, start);
+        gain.gain.exponentialRampToValueAtTime(0.25, start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.28);
+        osc.start(start);
+        osc.stop(start + 0.3);
+      });
+      // Tutup AudioContext setelah selesai supaya tidak menumpuk resource
+      // kalau alarm ini terpicu berkali-kali dalam satu sesi.
+      setTimeout(() => { try { ctx.close(); } catch (e) { /* ignore */ } }, 1500);
+    }
+  } catch (e) { /* Web Audio tidak didukung — abaikan, notifikasi teks tetap tampil */ }
+
+  if (navigator.vibrate) {
+    try { navigator.vibrate([300, 120, 300, 120, 300]); } catch (e) { /* ignore */ }
+  }
+}
+
 /* ==========================================================================
    ZONE MONITOR — peringatan keluar area kerja selama CONFIG.OUTSIDE_AREA_MINUTES
    ==========================================================================
@@ -127,6 +166,11 @@ function notifyBrowser(title, body) {
    aktif — sebagai gantinya, setiap update posisi memeriksa apakah cukup
    waktu SUDAH LEWAT sejak `outsideSince` (timestamp asli), sehingga tetap
    akurat walau perangkat tidur/berpindah tab sesaat.
+
+   PENTING: zona "aman" di sini memakai CONFIG.OUTSIDE_AREA_RADIUS (radius
+   area kerja, mis. 15 meter) — BUKAN CONFIG.ATTENDANCE_RADIUS (radius
+   absen masuk/pulang, mis. 5 meter). Keduanya sengaja berbeda, lihat
+   penjelasan di js/config.js.
 
    callbacks:
    - onEnterOutside({distance})         → karyawan baru saja keluar radius
@@ -143,7 +187,7 @@ function createZoneMonitor(callbacks) {
   function handlePosition(pos) {
     const { latitude, longitude, accuracy } = pos.coords;
     const distance = distanceToOffice(latitude, longitude);
-    const inside = distance <= CONFIG.ATTENDANCE_RADIUS;
+    const inside = distance <= CONFIG.OUTSIDE_AREA_RADIUS;
     const now = Date.now();
 
     if (inside) {

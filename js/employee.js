@@ -37,11 +37,15 @@
     onError: (msg) => { setLocationNote(msg); }
   });
 
-  // ZoneMonitor: fitur "keluar area 10 menit" — lihat js/geo.js. HANYA
+  // ZoneMonitor: fitur "keluar area kerja" — lihat js/geo.js. HANYA
   // dijalankan setelah absen masuk (lihat finalizeAttendance & resume di
   // bawah) dan HARUS dihentikan setelah absen pulang / logout / sesi
   // berakhir. Tidak pernah dijalankan sejak halaman login/dashboard dibuka.
   let zoneActive = false;
+  // Menyimpan id event zona yang sedang menunggu diisi alasannya oleh
+  // karyawan (lihat openZoneReasonPrompt / bindEvents untuk tombol
+  // kirim/lewati). null = tidak ada modal alasan yang perlu ditampilkan.
+  let pendingReasonEventId = null;
   const zoneMonitor = createZoneMonitor({
     onEnterOutside() { updateZonePill("outside"); },
     onReturnSafe() { updateZonePill("inside"); },
@@ -50,6 +54,12 @@
       updateZonePill("limit-reached");
       showToast(`Anda berada di luar area kerja selama ${CONFIG.OUTSIDE_AREA_MINUTES} menit. Admin telah diberi tahu.`, "warning");
       notifyBrowser("⚠️ Peringatan Lokasi", `Anda berada di luar area kerja selama ${CONFIG.OUTSIDE_AREA_MINUTES} menit.`);
+      // ALARM: bunyi beep + getar (lihat playZoneAlarm di js/geo.js) supaya
+      // peringatan benar-benar terdengar/terasa, bukan cuma teks diam-diam.
+      playZoneAlarm();
+      // Minta karyawan mengisi alasan keluar area — pesan ini akan dikirim
+      // ke Dashboard Admin (lihat Store.setLocationEventReason).
+      openZoneReasonPrompt(evt.id);
       return evt;
     },
     onReturnAfterEvent(meta) {
@@ -59,6 +69,22 @@
     },
     onError(msg) { setLocationNote(msg); }
   });
+
+  function openZoneReasonPrompt(eventId) {
+    if (!el.zoneReasonModal) return;
+    pendingReasonEventId = eventId;
+    if (el.zoneReasonInput) el.zoneReasonInput.value = "";
+    if (el.zoneReasonError) el.zoneReasonError.hidden = true;
+    Modal.show("zone-reason-modal");
+  }
+
+  function submitZoneReason(reasonText) {
+    if (!pendingReasonEventId) { Modal.hide("zone-reason-modal"); return; }
+    Store.setLocationEventReason(pendingReasonEventId, reasonText);
+    pendingReasonEventId = null;
+    Modal.hide("zone-reason-modal");
+    showToast("Alasan terkirim ke admin.", "success");
+  }
 
   function startZoneMonitoring() {
     if (zoneActive) return;
@@ -130,6 +156,14 @@
     const todayRecord = Store.getTodayRecord(user.id);
     if (todayRecord && todayRecord.checkIn && !todayRecord.checkOut) {
       startZoneMonitoring();
+      // Kalau ada event keluar-area yang masih aktif DAN belum diisi
+      // alasannya (mis. karyawan me-refresh halaman sebelum sempat
+      // mengisi/melewati modal alasan), tampilkan lagi modalnya — supaya
+      // me-refresh halaman bukan cara untuk menghindari mengisi alasan.
+      const activeEvt = Store.activeZoneEventFor(user.id);
+      if (activeEvt && !activeEvt.reason) {
+        openZoneReasonPrompt(activeEvt.id);
+      }
     }
 
     route(location.hash.replace("#", "") || "dashboard");
@@ -143,8 +177,8 @@
   function cacheDom() {
     [
       "greeting","today-date-label","attendance-status-badge","hero-checkin","hero-checkout",
-      "location-status-pill","radar-dot","stat-distance","stat-accuracy","stat-updated",
-      "progress-fill","location-permission-note","open-maps-btn",
+      "location-status-pill","radar-dot","radar-limit-label","stat-distance","stat-accuracy","stat-updated",
+      "progress-fill","progress-caption","location-permission-note","open-maps-btn",
       "check-in-btn","check-out-btn","check-in-sub","check-out-sub",
       "today-schedule","leave-remaining","leave-used","leave-quota",
       "riwayat-list","jadwal-list",
@@ -155,6 +189,7 @@
       "notif-list","mark-all-read-btn","notif-btn","notif-dot","avatar-btn",
       "attendance-modal","attendance-modal-body","attendance-modal-close",
       "success-modal","success-name","success-time","success-distance","success-close-btn",
+      "zone-reason-modal","zone-reason-input","zone-reason-error","zone-reason-skip-btn","zone-reason-submit-btn",
       "more-btn","more-modal","more-close-btn","more-logout-btn","sidebar-logout"
     ].forEach((id) => { el[toCamel(id)] = document.getElementById(id); });
   }
@@ -222,6 +257,22 @@
     el.overtimeForm.addEventListener("submit", onSubmitOvertime);
     el.profileForm.addEventListener("submit", onSubmitProfile);
     el.markAllReadBtn.addEventListener("click", () => { Store.markAllRead(user.id); renderNotifications(); updateNotifBadge(); });
+
+    // Modal alasan keluar zona kerja (lihat openZoneReasonPrompt/submitZoneReason).
+    if (el.zoneReasonSubmitBtn) {
+      el.zoneReasonSubmitBtn.addEventListener("click", () => {
+        const val = (el.zoneReasonInput && el.zoneReasonInput.value || "").trim();
+        if (!val) {
+          if (el.zoneReasonError) el.zoneReasonError.hidden = false;
+          return;
+        }
+        if (el.zoneReasonError) el.zoneReasonError.hidden = true;
+        submitZoneReason(val);
+      });
+    }
+    if (el.zoneReasonSkipBtn) {
+      el.zoneReasonSkipBtn.addEventListener("click", () => submitZoneReason(""));
+    }
   }
 
   function doLogout() {
@@ -241,6 +292,13 @@
   function renderStaticInfo() {
     el.greeting.textContent = `Selamat datang, ${user.name.split(" ")[0]} 👋`;
     el.avatarBtn.textContent = initials(user.name);
+    // Bug fix: label radius sebelumnya di-hardcode di HTML ("15m" / "15
+    // meter"), jadi kalau CONFIG.ATTENDANCE_RADIUS diubah, teksnya jadi
+    // salah/basi. Sekarang selalu diisi dari CONFIG saat halaman dimuat.
+    if (el.radarLimitLabel) el.radarLimitLabel.textContent = CONFIG.ATTENDANCE_RADIUS + "m";
+    if (el.progressCaption) {
+      el.progressCaption.innerHTML = `Batas absensi: <strong>${CONFIG.ATTENDANCE_RADIUS} meter</strong> dari kantor. Area kerja: <strong>${CONFIG.OUTSIDE_AREA_RADIUS} meter</strong> (peringatan jika keluar &gt; ${CONFIG.OUTSIDE_AREA_MINUTES} menit).`;
+    }
   }
 
   function initClock() {

@@ -42,13 +42,49 @@ function showFatalErrorBanner(message) {
   // event "error" versi lain yang HANYA terdeteksi lewat capturing phase.
   // Tanpa ini, skrip yang gagal dimuat akan diam-diam membuat seluruh
   // halaman berhenti berfungsi tanpa pesan apa pun.
+  //
+  // Bug fix (v8): SEBELUMNYA listener ini bereaksi terhadap SEMUA <script>
+  // dan <link> yang gagal dimuat, TERMASUK resource kosmetik pihak ketiga
+  // seperti font Google (fonts.googleapis.com/fonts.gstatic.com). Kalau
+  // jaringan pengguna memblokir domain Google Fonts (ad-blocker, DNS
+  // privasi, firewall kantor/sekolah, koneksi lambat, dsb. — situasi yang
+  // sangat umum), banner merah "Terjadi kesalahan teknis" akan muncul
+  // menutupi bagian atas layar SETIAP KALI halaman dibuka, padahal seluruh
+  // tombol dan fitur di baliknya sebenarnya berfungsi normal (font hanya
+  // memengaruhi tampilan huruf, bukan logika aplikasi). Ini membuat
+  // pengguna mengira seluruh aplikasi "rusak total" padahal tidak.
+  //
+  // Sekarang:
+  // - HANYA resource SATU-ORIGIN (file aplikasi sendiri: js/*.js,
+  //   css/style.css) yang dianggap kegagalan fatal, karena tanpa file-file
+  //   itu aplikasi memang benar-benar tidak bisa berjalan.
+  // - Resource PIHAK KETIGA/lintas-origin (font Google, CDN, dsb.) yang
+  //   gagal dimuat hanya dicatat ke console sebagai peringatan ringan —
+  //   TIDAK menampilkan banner fatal, karena kegagalannya tidak
+  //   memengaruhi fungsi tombol/absensi sama sekali.
   window.addEventListener("error", (e) => {
     const target = e && e.target;
-    if (target && (target.tagName === "SCRIPT" || target.tagName === "LINK")) {
-      const src = target.src || target.href || "(tidak diketahui)";
-      showFatalErrorBanner("Gagal memuat berkas: " + src + ". Coba muat ulang halaman dengan paksa (hard refresh) untuk membersihkan cache lama.");
+    if (!target || (target.tagName !== "SCRIPT" && target.tagName !== "LINK")) return;
+    const src = target.src || target.href || "";
+    if (!isSameOriginResource(src)) {
+      console.warn("Resource pihak ketiga gagal dimuat (diabaikan, tidak fatal):", src || "(tidak diketahui)");
+      return;
     }
+    showFatalErrorBanner("Gagal memuat berkas: " + (src || "(tidak diketahui)") + ". Coba muat ulang halaman dengan paksa (hard refresh) untuk membersihkan cache lama.");
   }, true);
+
+  function isSameOriginResource(url) {
+    if (!url) return false;
+    try {
+      const resolved = new URL(url, window.location.href);
+      return resolved.origin === window.location.origin;
+    } catch (e) {
+      // URL relatif yang gagal di-parse tetap dianggap satu-origin (lebih
+      // aman salah menganggap fatal daripada diam-diam mengabaikan file
+      // sendiri yang benar-benar gagal dimuat).
+      return true;
+    }
+  }
 })();
 
 /**

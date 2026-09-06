@@ -400,7 +400,8 @@ const Store = (function () {
   // Bentuk record zoneEvent:
   //   { id, userId, status: "active"|"resolved",
   //     outsideSince, reachedAt, returnedAt,
-  //     lastLat, lastLon, lastDistance, lastAccuracy, createdAt }
+  //     lastLat, lastLon, lastDistance, lastAccuracy, createdAt,
+  //     reason, reasonAt }
   function getZoneEvents() { return read(KEYS.zoneEvents, []); }
   function saveZoneEvents(list) { return write(KEYS.zoneEvents, list); }
 
@@ -423,6 +424,7 @@ const Store = (function () {
       id: uid("zone"), userId, status: "active",
       outsideSince: meta.outsideSince, reachedAt: meta.reachedAt, returnedAt: null,
       lastLat: meta.lat, lastLon: meta.lon, lastDistance: meta.distance, lastAccuracy: meta.accuracy,
+      reason: null, reasonAt: null,
       createdAt: Date.now()
     };
     list.unshift(record);
@@ -437,6 +439,33 @@ const Store = (function () {
       refId: record.id
     });
     return record;
+  }
+
+  /**
+   * Dipanggil ketika karyawan mengisi (atau melewati) formulir alasan
+   * keluar area yang muncul otomatis setelah alarm berbunyi (lihat
+   * employee.js). Alasan ini disimpan pada record zoneEvent yang
+   * bersangkutan DAN dikirim sebagai notifikasi terpisah ke admin, supaya
+   * admin bisa langsung membaca alasannya tanpa perlu membuka detail
+   * riwayat lokasi satu per satu.
+   */
+  function setLocationEventReason(id, reason) {
+    const list = getZoneEvents();
+    const idx = list.findIndex(z => z.id === id);
+    if (idx === -1) return null;
+    const cleanReason = (reason || "").trim() || "(Karyawan tidak mengisi alasan)";
+    list[idx] = Object.assign({}, list[idx], { reason: cleanReason, reasonAt: Date.now() });
+    saveZoneEvents(list);
+
+    const user = findUserById(list[idx].userId);
+    const name = user ? user.name : list[idx].userId;
+    addNotification({
+      audience: "admin", type: "zone",
+      title: "💬 Alasan Keluar Area",
+      message: `${name}: "${cleanReason}"`,
+      refId: id
+    });
+    return list[idx];
   }
 
   /**
@@ -607,7 +636,7 @@ const Store = (function () {
     getUsers, saveUsers, findUserByUsername, findUserById, registerEmployee,
     login, logout, currentUser, getSession, updateUser, approveUser, rejectUser, setUserStatus,
     getAttendance, getTodayRecord, checkIn, checkOut, attendanceByUser,
-    getZoneEvents, zoneEventsByUser, activeZoneEventFor, createLocationEvent, resolveLocationEvent, formatDuration,
+    getZoneEvents, zoneEventsByUser, activeZoneEventFor, createLocationEvent, resolveLocationEvent, setLocationEventReason, formatDuration,
     getPresenceMap, setPresence, getPresenceFor,
     getLeave, leaveByUser, submitLeave, decideLeave,
     getOvertime, overtimeByUser, submitOvertime, decideOvertime,

@@ -40,7 +40,7 @@
       "pendaftaran-tbody","pendaftaran-empty","karyawan-search","karyawan-tbody",
       "absensi-tbody","export-attendance-btn",
       "monitoring-tbody","riwayat-lokasi-tbody","riwayat-lokasi-search",
-      "setting-lat","setting-lon","setting-radius","setting-accuracy","setting-outside","setting-late","setting-open-maps-btn",
+      "setting-lat","setting-lon","setting-radius","setting-outside-radius","setting-accuracy","setting-outside","setting-late","setting-open-maps-btn",
       "cuti-tbody","lembur-tbody",
       "gaji-tbody","gaji-period-label","export-gaji-btn",
       "laporan-summary","laporan-tbody",
@@ -502,7 +502,13 @@
     if (attendanceRecord.checkOut) return { label: "SUDAH PULANG", cls: "badge--neutral" };
     if (activeEvent) return { label: `PERINGATAN ${CONFIG.OUTSIDE_AREA_MINUTES} MENIT`, cls: "badge--danger" };
     if (!presence) return { label: "GPS TIDAK TERSEDIA", cls: "badge--neutral" };
-    return presence.distance <= CONFIG.ATTENDANCE_RADIUS
+    // Bug fix: status "DALAM AREA"/"LUAR AREA" di tabel monitoring HARUS
+    // memakai CONFIG.OUTSIDE_AREA_RADIUS (radius area kerja, mis. 15m),
+    // BUKAN CONFIG.ATTENDANCE_RADIUS (radius absen, mis. 5m). Kalau tetap
+    // memakai radius absen yang jauh lebih sempit, hampir semua karyawan
+    // akan tampak "LUAR AREA" terus-menerus begitu mereka beranjak sedikit
+    // dari titik absen, padahal masih wajar berada di area kerja.
+    return presence.distance <= CONFIG.OUTSIDE_AREA_RADIUS
       ? { label: "DALAM AREA", cls: "badge--success" }
       : { label: "LUAR AREA", cls: "badge--warning" };
   }
@@ -513,6 +519,9 @@
   let riwayatLokasiRange = "today";
   function renderRiwayatLokasi(range) {
     if (range) riwayatLokasiRange = range;
+    if (el.riwayatLokasiSubtitle) {
+      el.riwayatLokasiSubtitle.textContent = `Riwayat kejadian keluar area kerja (> ${CONFIG.OUTSIDE_AREA_RADIUS} meter selama ${CONFIG.OUTSIDE_AREA_MINUTES} menit).`;
+    }
     const now = new Date();
     let list = Store.getZoneEvents();
     const q = (el.riwayatLokasiSearch.value || "").toLowerCase();
@@ -530,7 +539,7 @@
     }
     if (q) list = list.filter((z) => { const u = Store.findUserById(z.userId); return ((u ? u.name : "") + z.userId).toLowerCase().includes(q); });
 
-    if (!list.length) { el.riwayatLokasiTbody.innerHTML = `<tr><td colspan="7">${emptyStateBlock("Tidak ada riwayat keluar area pada rentang ini.")}</td></tr>`; return; }
+    if (!list.length) { el.riwayatLokasiTbody.innerHTML = `<tr><td colspan="8">${emptyStateBlock("Tidak ada riwayat keluar area pada rentang ini.")}</td></tr>`; return; }
     el.riwayatLokasiTbody.innerHTML = list.map((z) => {
       const u = Store.findUserById(z.userId);
       const durasi = (z.returnedAt || Date.now()) - z.outsideSince;
@@ -542,6 +551,7 @@
         <td class="mono">${z.lastDistance != null ? z.lastDistance.toFixed(1) + " m" : "—"}</td>
         <td class="mono">${z.returnedAt ? new Date(z.returnedAt).toLocaleString("id-ID") : "—"}</td>
         <td>${z.status === "active" ? '<span class="badge badge--danger">Aktif</span>' : '<span class="badge badge--success">Selesai</span>'}</td>
+        <td class="text-sm">${z.reason ? escapeHtml(z.reason) : '<span class="text-muted">Belum diisi</span>'}</td>
       </tr>`;
     }).join("");
   }
@@ -553,6 +563,7 @@
     el.settingLat.textContent = CONFIG.OFFICE_LOCATION.latitude.toFixed(7);
     el.settingLon.textContent = CONFIG.OFFICE_LOCATION.longitude.toFixed(7);
     el.settingRadius.textContent = CONFIG.ATTENDANCE_RADIUS + " meter";
+    el.settingOutsideRadius.textContent = CONFIG.OUTSIDE_AREA_RADIUS + " meter";
     el.settingAccuracy.textContent = CONFIG.MAX_ACCEPTABLE_ACCURACY + " meter";
     el.settingOutside.textContent = CONFIG.OUTSIDE_AREA_MINUTES + " menit";
     el.settingLate.textContent = CONFIG.LATE_AFTER;
