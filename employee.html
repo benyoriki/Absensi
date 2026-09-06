@@ -17,9 +17,29 @@
       }
       b.textContent = "\u26A0\uFE0F Gagal memuat berkas: " + msg + " \u2014 coba muat ulang halaman dengan paksa (hard refresh) untuk membersihkan cache lama.";
     }
+    function isSameOriginResource(url) {
+      if (!url) return false;
+      try {
+        var resolved = new URL(url, window.location.href);
+        return resolved.origin === window.location.origin;
+      } catch (e) {
+        return true;
+      }
+    }
     window.addEventListener("error", function (e) {
       var t = e && e.target;
-      if (t && (t.tagName === "SCRIPT" || t.tagName === "LINK")) banner(t.src || t.href || "(tidak diketahui)");
+      if (!t || (t.tagName !== "SCRIPT" && t.tagName !== "LINK")) return;
+      var src = t.src || t.href || "";
+      // Bug fix (v8): jangan anggap fatal kalau yang gagal dimuat adalah
+      // resource kosmetik pihak ketiga (mis. font Google) — itu tidak
+      // memengaruhi fungsi tombol/absensi sama sekali, hanya tampilan
+      // huruf. Hanya file aplikasi sendiri (js/*.js, css/style.css) yang
+      // kegagalannya benar-benar fatal.
+      if (!isSameOriginResource(src)) {
+        if (window.console && console.warn) console.warn("Resource pihak ketiga gagal dimuat (diabaikan, tidak fatal):", src || "(tidak diketahui)");
+        return;
+      }
+      banner(src || "(tidak diketahui)");
     }, true);
   })();
   </script>
@@ -89,7 +109,7 @@
         <div class="page-title">
           <h2 id="greeting">Halo 👋</h2>
           <p id="today-date-label">-</p>
-          <p class="fine-print" style="opacity:.55;margin-top:.4em">Build kode: v7 (2026-09-05)</p>
+          <p class="fine-print" style="opacity:.55;margin-top:.4em">Build kode: v9 (2026-09-06)</p>
         </div>
 
         <div class="stack">
@@ -116,7 +136,7 @@
                   <div class="radar__ring radar__ring--outer"></div>
                   <div class="radar__ring radar__ring--mid"></div>
                   <div class="radar__ring radar__ring--office"></div>
-                  <span class="radar__limit-label">15m</span>
+                  <span class="radar__limit-label" id="radar-limit-label">—m</span>
                   <div class="radar__tick radar__tick--n"></div>
                   <div class="radar__tick radar__tick--s"></div>
                   <div class="radar__tick radar__tick--e"></div>
@@ -131,7 +151,7 @@
                 <div class="stat-list__item"><dt>Update terakhir</dt><dd id="stat-updated" class="mono">—</dd></div>
               </dl>
               <div class="progress-track"><div id="progress-fill" class="progress-track__fill"></div></div>
-              <p class="progress-caption" id="progress-caption">Batas absensi: <strong>15 meter</strong> dari kantor.</p>
+              <p class="progress-caption" id="progress-caption">Batas absensi: <strong>— meter</strong> dari kantor.</p>
               <button id="open-maps-btn" type="button" class="btn btn--ghost btn--block mt-1">Buka Google Maps</button>
               <p id="location-permission-note" class="fine-print"></p>
             </section>
@@ -355,13 +375,31 @@
   </div>
 </div>
 
+<!-- ============ ZONA ALARM: MODAL ALASAN KELUAR AREA KERJA ============ -->
+<div id="zone-reason-modal" class="modal-overlay" hidden role="alertdialog" aria-modal="true" aria-labelledby="zone-reason-title">
+  <div class="modal">
+    <div class="modal__head">
+      <h2 id="zone-reason-title">⚠️ Anda Keluar Area Kerja</h2>
+    </div>
+    <p class="text-sm text-muted" id="zone-reason-desc" style="margin-bottom:.9em">
+      Sistem mendeteksi Anda berada di luar area kerja selama beberapa waktu. Mohon isi alasannya — pesan ini akan langsung dikirim ke Dashboard Admin.
+    </p>
+    <textarea id="zone-reason-input" rows="3" placeholder="Contoh: Mengantar dokumen ke kantor cabang, survei lapangan, dll." style="width:100%;resize:vertical;font-family:inherit;padding:.7em .8em;border-radius:var(--radius-md);border:1px solid var(--border);background:var(--surface-sunken);color:inherit"></textarea>
+    <p id="zone-reason-error" class="field-error" hidden>Mohon isi alasan terlebih dahulu, atau tekan "Lewati".</p>
+    <div style="display:flex;gap:.8em;margin-top:1.2em">
+      <button id="zone-reason-skip-btn" type="button" class="btn btn--ghost" style="flex:1">Lewati</button>
+      <button id="zone-reason-submit-btn" type="button" class="btn btn--primary" style="flex:1">Kirim Alasan</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast-region" class="toast-region" aria-live="polite"></div>
 
-<script src="js/config.js?v=8"></script>
-<script src="js/store.js?v=8"></script>
-<script src="js/ui-common.js?v=8"></script>
-<script src="js/modal.js?v=8"></script>
-<script src="js/geo.js?v=8"></script>
-<script src="js/employee.js?v=8"></script>
+<script src="js/config.js?v=9"></script>
+<script src="js/store.js?v=9"></script>
+<script src="js/ui-common.js?v=9"></script>
+<script src="js/modal.js?v=9"></script>
+<script src="js/geo.js?v=9"></script>
+<script src="js/employee.js?v=9"></script>
 </body>
 </html>

@@ -17,9 +17,29 @@
       }
       b.textContent = "\u26A0\uFE0F Gagal memuat berkas: " + msg + " \u2014 coba muat ulang halaman dengan paksa (hard refresh) untuk membersihkan cache lama.";
     }
+    function isSameOriginResource(url) {
+      if (!url) return false;
+      try {
+        var resolved = new URL(url, window.location.href);
+        return resolved.origin === window.location.origin;
+      } catch (e) {
+        return true;
+      }
+    }
     window.addEventListener("error", function (e) {
       var t = e && e.target;
-      if (t && (t.tagName === "SCRIPT" || t.tagName === "LINK")) banner(t.src || t.href || "(tidak diketahui)");
+      if (!t || (t.tagName !== "SCRIPT" && t.tagName !== "LINK")) return;
+      var src = t.src || t.href || "";
+      // Bug fix (v8): jangan anggap fatal kalau yang gagal dimuat adalah
+      // resource kosmetik pihak ketiga (mis. font Google) — itu tidak
+      // memengaruhi fungsi tombol/absensi sama sekali, hanya tampilan
+      // huruf. Hanya file aplikasi sendiri (js/*.js, css/style.css) yang
+      // kegagalannya benar-benar fatal.
+      if (!isSameOriginResource(src)) {
+        if (window.console && console.warn) console.warn("Resource pihak ketiga gagal dimuat (diabaikan, tidak fatal):", src || "(tidak diketahui)");
+        return;
+      }
+      banner(src || "(tidak diketahui)");
     }, true);
   })();
   </script>
@@ -88,7 +108,7 @@
 
       <!-- ===================== DASHBOARD ===================== -->
       <section data-page="dashboard">
-        <div class="page-title"><h2>Dashboard Admin</h2><p>Ringkasan kehadiran & aktivitas hari ini.</p><p class="fine-print" style="opacity:.55;margin-top:.4em">Build kode: v7 (2026-09-05)</p></div>
+        <div class="page-title"><h2>Dashboard Admin</h2><p>Ringkasan kehadiran & aktivitas hari ini.</p><p class="fine-print" style="opacity:.55;margin-top:.4em">Build kode: v9 (2026-09-06)</p></div>
 
         <div class="grid-stats" id="stat-cards"></div>
 
@@ -182,7 +202,7 @@
 
       <!-- ===================== RIWAYAT LOKASI ===================== -->
       <section data-page="riwayat-lokasi" hidden>
-        <div class="page-title"><h2>Riwayat Lokasi</h2><p>Riwayat kejadian keluar area kerja (&gt; 15 meter selama 10 menit).</p></div>
+        <div class="page-title"><h2>Riwayat Lokasi</h2><p id="riwayat-lokasi-subtitle">Riwayat kejadian keluar area kerja.</p></div>
         <section class="card">
           <div class="chip-group" style="margin-bottom:1em">
             <button class="chip is-active" data-zrange="today">Hari ini</button>
@@ -195,7 +215,7 @@
           </div>
           <div class="table-wrap">
             <table class="data-table">
-              <thead><tr><th>Nama</th><th>ID</th><th>Mulai Keluar</th><th>Durasi</th><th>Jarak Terakhir</th><th>Waktu Kembali</th><th>Status</th></tr></thead>
+              <thead><tr><th>Nama</th><th>ID</th><th>Mulai Keluar</th><th>Durasi</th><th>Jarak Terakhir</th><th>Waktu Kembali</th><th>Status</th><th>Alasan</th></tr></thead>
               <tbody id="riwayat-lokasi-tbody"></tbody>
             </table>
           </div>
@@ -267,7 +287,8 @@
           <dl class="stat-list">
             <div class="stat-list__item"><dt>Latitude Kantor</dt><dd class="mono" id="setting-lat">-</dd></div>
             <div class="stat-list__item"><dt>Longitude Kantor</dt><dd class="mono" id="setting-lon">-</dd></div>
-            <div class="stat-list__item"><dt>Radius Absensi</dt><dd class="mono" id="setting-radius">-</dd></div>
+            <div class="stat-list__item"><dt>Radius Absensi (Masuk/Pulang)</dt><dd class="mono" id="setting-radius">-</dd></div>
+            <div class="stat-list__item"><dt>Radius Area Kerja (Alarm)</dt><dd class="mono" id="setting-outside-radius">-</dd></div>
             <div class="stat-list__item"><dt>Akurasi GPS Maksimum Diterima</dt><dd class="mono" id="setting-accuracy">-</dd></div>
             <div class="stat-list__item"><dt>Batas Peringatan Keluar Area</dt><dd class="mono" id="setting-outside">-</dd></div>
             <div class="stat-list__item"><dt>Batas Jam Terlambat</dt><dd class="mono" id="setting-late">-</dd></div>
@@ -350,11 +371,11 @@
 
 <div id="toast-region" class="toast-region" aria-live="polite"></div>
 
-<script src="js/config.js?v=8"></script>
-<script src="js/store.js?v=8"></script>
-<script src="js/ui-common.js?v=8"></script>
-<script src="js/modal.js?v=8"></script>
-<script src="js/geo.js?v=8"></script>
-<script src="js/admin.js?v=8"></script>
+<script src="js/config.js?v=9"></script>
+<script src="js/store.js?v=9"></script>
+<script src="js/ui-common.js?v=9"></script>
+<script src="js/modal.js?v=9"></script>
+<script src="js/geo.js?v=9"></script>
+<script src="js/admin.js?v=9"></script>
 </body>
 </html>

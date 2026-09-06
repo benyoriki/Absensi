@@ -1,10 +1,44 @@
-# Rakabu Attendance — PT Rakabu Sapi Kita (Build v7)
+# Rakabu Attendance — PT Rakabu Sapi Kita (Build v9)
 
 Sistem absensi karyawan berbasis browser (HTML/CSS/JavaScript murni, tanpa
-framework, tanpa build step, siap dijalankan di GitHub Pages). Build v7 ini
-adalah **rombak total** dari v6: bug lama diperbaiki, fitur "keluar area 10
-menit" dibangun ulang dari nol, dan struktur data dirapikan agar mudah
-dipindahkan ke Firebase di tahap berikutnya.
+framework, tanpa build step, siap dijalankan di GitHub Pages).
+
+---
+
+## A0. Perubahan di Build v9 (paling baru)
+
+1. **Bug CSS kritis diperbaiki**: elemen dengan atribut `hidden` (semua
+   modal, badge notifikasi) tidak benar-benar tersembunyi secara visual
+   karena `.modal-overlay{ display:flex }`/`.notif-dot{ display:flex }`
+   punya spesifisitas CSS yang sama dengan aturan bawaan `[hidden]{
+   display:none }` — akibatnya modal bisa "nyangkut" tampil terus,
+   menutupi seluruh layar dan memblokir semua tombol di baliknya. Diperbaiki
+   dengan satu aturan global `[hidden]{ display:none !important; }` di
+   `css/style.css`.
+2. **Banner error palsu diperbaiki**: sebelumnya kegagalan memuat resource
+   pihak ketiga (font Google) ikut memicu banner "kesalahan teknis fatal".
+   Sekarang hanya file milik aplikasi sendiri (satu-origin) yang dianggap
+   fatal.
+3. **Koordinat kantor diperbarui** dari link Google Maps terbaru:
+   `https://maps.app.goo.gl/9XcuWc9yYGqRSCoZA?g_st=ac` →
+   **-6.456902, 106.729954**.
+4. **DUA radius terpisah** (sebelumnya hanya satu radius 15m untuk semua):
+   - `CONFIG.ATTENDANCE_RADIUS = 5` meter — radius Absen Masuk & Pulang.
+   - `CONFIG.OUTSIDE_AREA_RADIUS = 15` meter — radius area kerja; keluar
+     dari radius ini selama `OUTSIDE_AREA_MINUTES` (10 menit) penuh memicu
+     alarm.
+5. **Alarm suara + getar** ditambahkan (`playZoneAlarm()` di `js/geo.js`,
+   beep via Web Audio API + `navigator.vibrate`) — sebelumnya peringatan
+   keluar-area hanya berupa toast/notifikasi teks yang bisa terlewat.
+6. **Modal alasan keluar area** — begitu alarm berbunyi, karyawan diminta
+   mengisi alasan (atau menekan "Lewati") lewat modal baru
+   `#zone-reason-modal` di `employee.html`. Alasan tersimpan di record
+   zoneEvent (`Store.setLocationEventReason`) dan otomatis muncul sebagai
+   notifikasi baru + kolom "Alasan" di halaman **Riwayat Lokasi** admin.
+7. Teks radius yang sebelumnya di-hardcode di HTML (label radar, caption
+   "Batas absensi", subtitle Riwayat Lokasi) sekarang diisi dinamis dari
+   `CONFIG` saat halaman dimuat, supaya tidak basi lagi kalau radius diubah
+   di masa depan.
 
 ---
 
@@ -162,8 +196,8 @@ Edit `js/config.js`:
 
 ```js
 OFFICE_LOCATION: {
-  latitude: -6.4568847,   // ganti sesuai kantor baru
-  longitude: 106.7299525  // ganti sesuai kantor baru
+  latitude: -6.456902,   // ganti sesuai kantor baru
+  longitude: 106.729954  // ganti sesuai kantor baru
 },
 ```
 
@@ -176,9 +210,19 @@ oleh kebijakan cross-origin). Cara mengambil koordinat baru:
 
 ## H. Cara Mengubah Radius
 
-Edit `CONFIG.ATTENDANCE_RADIUS` di `js/config.js` (satuan meter). Radius
-yang sama otomatis berlaku untuk absen masuk **dan** absen pulang — tidak
-perlu (dan tidak boleh) diatur terpisah di file lain.
+Ada **dua radius terpisah** di `js/config.js`, jangan disamakan:
+
+- `CONFIG.ATTENDANCE_RADIUS` (meter) — radius untuk tombol **Absen Masuk**
+  & **Absen Pulang**. Karyawan di luar radius ini tidak bisa menekan tombol
+  absen sama sekali.
+- `CONFIG.OUTSIDE_AREA_RADIUS` (meter) — radius **area kerja** setelah
+  absen masuk. Selama karyawan masih di dalam radius ini statusnya aman;
+  begitu keluar radius ini selama `OUTSIDE_AREA_MINUTES` penuh, alarm +
+  modal alasan akan muncul dan admin diberi notifikasi.
+
+`OUTSIDE_AREA_RADIUS` sebaiknya selalu dibuat **lebih besar** dari
+`ATTENDANCE_RADIUS`, supaya karyawan tidak langsung dianggap "keluar area
+kerja" hanya karena bergeser sedikit dari titik absen presisi.
 
 ## I. Cara Mengubah Durasi Peringatan Keluar Area
 
@@ -233,14 +277,18 @@ Konsekuensinya:
 - [x] Status pending → approval admin → login diizinkan.
 - [x] Login dengan pesan error yang jelas untuk setiap kondisi (pending,
       ditolak, password salah, akun tidak ada).
-- [x] Absen masuk & pulang dengan radius tunggal 15 meter.
+- [x] Absen masuk & pulang dengan radius `ATTENDANCE_RADIUS` (5 meter).
 - [x] Validasi GPS (proses "mengambil lokasi", jarak, akurasi, status) —
       GPS error tidak pernah dianggap absensi berhasil.
 - [x] Monitoring GPS otomatis mulai setelah absen masuk, berhenti setelah
       absen pulang/logout/sesi berakhir — dan **dilanjutkan otomatis**
       setelah refresh halaman jika karyawan belum absen pulang.
-- [x] Peringatan keluar-area 10 menit dengan satu notifikasi per kejadian,
-      tidak berulang, dan event baru terpisah tiap kali keluar lagi.
-- [x] Halaman Monitoring Lokasi & Riwayat Lokasi + Pengaturan di admin.
-- [x] Modal terpusat, anti tumpuk, anti klik-ganda di seluruh aplikasi.
+- [x] Peringatan keluar-area `OUTSIDE_AREA_RADIUS` (15 meter) selama
+      `OUTSIDE_AREA_MINUTES` (10 menit): alarm suara + getar, satu kejadian
+      per periode keluar, modal alasan wajib/lewati yang dikirim ke admin.
+- [x] Halaman Monitoring Lokasi & Riwayat Lokasi (+ kolom Alasan) +
+      Pengaturan di admin.
+- [x] Modal terpusat, anti tumpuk, anti klik-ganda, dan benar-benar
+      tersembunyi (`[hidden]{ display:none !important }`) di seluruh
+      aplikasi.
 - [x] Akses admin lewat tautan yang jelas, bukan gimmick tersembunyi.
