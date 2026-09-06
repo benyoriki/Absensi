@@ -258,7 +258,7 @@
       </li>`).join("") : emptyStateHtml("Belum ada aktivitas.");
   }
   function iconColorForType(type) {
-    return { registration: "var(--info-600)", leave: "var(--brand-600)", overtime: "var(--cyan-500)", zone: "var(--danger-600)", info: "var(--text-400)" }[type] || "var(--brand-600)";
+    return { registration: "var(--info-600)", leave: "var(--brand-600)", overtime: "var(--gold-500)", zone: "var(--danger-600)", info: "var(--text-400)" }[type] || "var(--brand-600)";
   }
 
   /* ------------------------------------------------------------------ */

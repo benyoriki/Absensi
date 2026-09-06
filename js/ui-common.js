@@ -173,7 +173,7 @@ function showToast(message, type) {
 }
 
 function initTheme() {
-  const saved = (window.Store && Store.getTheme()) || null;
+  const saved = (typeof Store !== "undefined" && Store.getTheme()) || null;
   const preferred = saved || (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
   applyTheme(preferred);
   const btn = document.getElementById("theme-toggle");
@@ -185,7 +185,7 @@ function initTheme() {
 
 function applyTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme === "dark" ? "dark" : "light");
-  if (window.Store) Store.setTheme(theme);
+  if (typeof Store !== "undefined") Store.setTheme(theme);
   const icon = document.getElementById("theme-icon");
   if (icon) {
     icon.innerHTML = theme === "dark"
