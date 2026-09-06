@@ -47,30 +47,50 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Rakabu Attendance — PT Rakabu Sapi Kita</title>
 <meta name="description" content="Sistem absensi & manajemen HR PT Rakabu Sapi Kita." />
-<link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+<link rel="icon" type="image/png" sizes="192x192" href="assets/logo-192.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="assets/logo-32.png" />
+<link rel="apple-touch-icon" href="assets/logo-192.png" />
 <link rel="manifest" href="manifest.webmanifest" />
+<meta name="theme-color" content="#0E7490" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Rakabu Attendance" />
+<meta name="mobile-web-app-capable" content="yes" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="css/style.css?v=11" />
+<link rel="stylesheet" href="css/style.css?v=13" />
 </head>
 <body>
+<div id="app-loading-screen" class="loading-screen" aria-hidden="true">
+  <div class="loading-screen__inner">
+    <div class="loading-screen__badge">
+      <span class="loading-screen__ping"></span>
+      <span class="loading-screen__ping"></span>
+      <img src="assets/logo-192.png" alt="" width="88" height="88" />
+    </div>
+    <div class="loading-screen__text">
+      <strong>Rakabu Attendance</strong>
+      <span>Memuat halaman…</span>
+    <span class="loading-screen__credit">website developer benyoriki.com</span>
+    </div>
+  </div>
+</div>
 <a class="skip-link" href="#main">Langsung ke konten utama</a>
 
 <div class="auth-shell">
-  <button id="theme-toggle" class="icon-btn theme-toggle-float" type="button" aria-label="Ganti tampilan terang/gelap">
-    <svg id="theme-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-    </svg>
-  </button>
-
   <main id="main" class="auth-card" role="main">
+    <button id="theme-toggle" class="icon-btn theme-toggle-float" type="button" aria-label="Ganti tampilan terang/gelap">
+      <svg id="theme-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+      </svg>
+    </button>
 
     <!-- ============ LOGIN VIEW ============ -->
     <div id="view-login">
       <div class="auth-brand">
         <span class="auth-brand__mark" aria-hidden="true">
-          <svg viewBox="0 0 40 40" width="24" height="24"><circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" stroke-width="2.6" opacity="0.5"/><circle cx="20" cy="20" r="10" fill="currentColor"/></svg>
+          <img src="assets/logo-192.png" alt="" class="auth-brand__mark-img" />
         </span>
         <div class="auth-brand__text">
           <h1>Rakabu Attendance</h1>
@@ -100,6 +120,11 @@
 
       <p class="auth-foot">Belum punya akun? <a href="register.html" class="link-btn" style="text-decoration:none">Daftar sekarang</a></p>
       <p class="auth-foot"><button type="button" id="admin-access-link" class="link-btn" style="background:none;border:none;padding:0;font:inherit;cursor:pointer">Masuk sebagai Admin</button></p>
+      <p class="auth-foot" style="margin-top:.6em">
+        <a href="https://www.instagram.com/nusabeef.id/" target="_blank" rel="noopener" class="link-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:.35em">
+          <span class="inline-icon" data-icon="instagram" data-icon-size="15"></span> @nusabeef.id
+        </a>
+      </p>
 
       <div class="auth-security">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;margin-top:2px" aria-hidden="true"><path d="M12 3l7 3v5c0 4.6-3 8.7-7 10-4-1.3-7-5.4-7-10V6l7-3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
@@ -107,14 +132,13 @@
       </div>
 
       <p class="fine-print" style="text-align:center;margin-top:1em">Demo — Karyawan: <b>LKN001</b> / <b>123456</b></p>
-      <p class="fine-print" style="text-align:center;opacity:.5">Build v11 (2026-09-06) — kalau nomor build ini TIDAK berubah setelah Anda deploy ulang, browser Anda kemungkinan menyajikan salinan lama dari cache. Coba muat ulang dengan paksa (hard refresh) atau buka di mode Incognito.</p>
     </div>
 
     <!-- ============ ADMIN LOGIN VIEW (muncul via tautan "Masuk sebagai Admin") ============ -->
     <div id="view-admin-login" hidden>
       <div class="auth-brand">
-        <span class="auth-brand__mark" aria-hidden="true" style="background:linear-gradient(145deg,#161A3B,#4338CA)">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 4.6-3 8.7-7 10-4-1.3-7-5.4-7-10V6l7-3Z" stroke="white" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        <span class="auth-brand__mark" aria-hidden="true">
+          <img src="assets/logo-192.png" alt="" class="auth-brand__mark-img" />
         </span>
         <div class="auth-brand__text">
           <h1>Admin Access</h1>
@@ -146,10 +170,10 @@
 
 <div id="toast-region" class="toast-region" aria-live="polite"></div>
 
-<script src="js/config.js?v=9"></script>
-<script src="js/store.js?v=9"></script>
-<script src="js/ui-common.js?v=9"></script>
-<script src="js/modal.js?v=9"></script>
-<script src="js/auth.js?v=9"></script>
+<script src="js/config.js?v=13"></script>
+<script src="js/store.js?v=13"></script>
+<script src="js/ui-common.js?v=13"></script>
+<script src="js/modal.js?v=13"></script>
+<script src="js/auth.js?v=13"></script>
 </body>
 </html>

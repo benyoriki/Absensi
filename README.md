@@ -1,7 +1,30 @@
-# Rakabu Attendance — PT Rakabu Sapi Kita (Build v9)
+# Rakabu Attendance — PT Rakabu Sapi Kita (Build v12)
 
 Sistem absensi karyawan berbasis browser (HTML/CSS/JavaScript murni, tanpa
 framework, tanpa build step, siap dijalankan di GitHub Pages).
+
+---
+
+## A-1. Perubahan di Build v12 (paling baru)
+
+1. **Logo resmi Nusa Beef** dipasang menggantikan semua placeholder ikon
+   lama (header karyawan & admin, halaman login/daftar/login-admin,
+   favicon, ikon PWA). Sumber: `assets/logo-master.png` diproses otomatis
+   (deteksi lingkaran, crop presisi, latar transparan) menjadi
+   `logo-192/512/maskable-512/48/32.png`.
+2. **PWA benar-benar bisa di-install** ke Home Screen HP: manifest
+   diperbarui (ikon baru, warna tema, `scope`), ditambah
+   `apple-touch-icon` + meta tag iOS, dan **Service Worker baru**
+   (`sw.js`) untuk app-shell caching sehingga situs tetap bisa dibuka
+   walau koneksi terputus (aman — semua data absensi memang tersimpan di
+   localStorage perangkat, bukan di server).
+3. **Loading screen baru** bertema "mengunci sinyal GPS" (logo + cincin
+   ping menyebar seperti radar) — CSS murni, tidak menambah bobot
+   halaman, otomatis hilang begitu halaman & font selesai dimuat.
+4. **Tautan Instagram resmi** (`@nusabeef.id`) ditambahkan di halaman
+   Profil karyawan, Pengaturan admin, dan footer halaman login.
+5. Bug label versi basi ("Build v8") di footer halaman login — sudah
+   diperbaiki, sekarang selalu ikut berubah setiap kali di-deploy ulang.
 
 ---
 

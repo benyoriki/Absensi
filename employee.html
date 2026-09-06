@@ -46,14 +46,35 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Dashboard Karyawan — Rakabu Attendance</title>
-<link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+<link rel="icon" type="image/png" sizes="192x192" href="assets/logo-192.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="assets/logo-32.png" />
+<link rel="apple-touch-icon" href="assets/logo-192.png" />
 <link rel="manifest" href="manifest.webmanifest" />
+<meta name="theme-color" content="#0E7490" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Rakabu Attendance" />
+<meta name="mobile-web-app-capable" content="yes" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="css/style.css?v=11" />
+<link rel="stylesheet" href="css/style.css?v=13" />
 </head>
 <body>
+<div id="app-loading-screen" class="loading-screen" aria-hidden="true">
+  <div class="loading-screen__inner">
+    <div class="loading-screen__badge">
+      <span class="loading-screen__ping"></span>
+      <span class="loading-screen__ping"></span>
+      <img src="assets/logo-192.png" alt="" width="88" height="88" />
+    </div>
+    <div class="loading-screen__text">
+      <strong>Rakabu Attendance</strong>
+      <span>Menyiapkan lokasi Anda…</span>
+    <span class="loading-screen__credit">website developer benyoriki.com</span>
+    </div>
+  </div>
+</div>
 <a class="skip-link" href="#main">Langsung ke konten utama</a>
 
 <div class="app-shell">
@@ -61,7 +82,7 @@
   <header class="app-header">
     <div class="app-header__brand">
       <span class="brand-mark" aria-hidden="true">
-        <svg viewBox="0 0 40 40" width="20" height="20"><circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" stroke-width="2.6" opacity="0.5"/><circle cx="20" cy="20" r="10" fill="currentColor"/></svg>
+        <img src="assets/logo-192.png" alt="" class="brand-mark__img" />
       </span>
       <div class="brand-text">
         <h1>Rakabu Attendance</h1>
@@ -109,7 +130,7 @@
         <div class="page-title">
           <h2 id="greeting">Halo 👋</h2>
           <p id="today-date-label">-</p>
-          <p class="fine-print" style="opacity:.55;margin-top:.4em">Build kode: v11 (2026-09-06)</p>
+          <p class="fine-print" style="opacity:.55;margin-top:.4em">Build kode: v13 (2026-09-06)</p>
         </div>
 
         <div class="stack">
@@ -309,6 +330,17 @@
           </form>
         </section>
         <section class="card mt-1">
+          <div class="card__head"><h3>Media Sosial Resmi</h3></div>
+          <a href="https://www.instagram.com/nusabeef.id/" target="_blank" rel="noopener" class="social-link-row">
+            <span class="social-link-row__icon"><span class="inline-icon" data-icon="instagram" data-icon-size="20"></span></span>
+            <span class="social-link-row__text">
+              <strong>@nusabeef.id</strong>
+              <span>Instagram · 70+ pengikut · PT. Rakabu Sapi Kita</span>
+            </span>
+            <span class="inline-icon" data-icon="arrowRight" data-icon-size="16"></span>
+          </a>
+        </section>
+        <section class="card mt-1">
           <div class="card__head"><h3>Pengaturan</h3></div>
           <button id="logout-btn" type="button" class="btn btn--danger-ghost btn--block"><span class="inline-icon" data-icon="logout" data-icon-size="18"></span> Keluar</button>
         </section>
@@ -395,11 +427,11 @@
 
 <div id="toast-region" class="toast-region" aria-live="polite"></div>
 
-<script src="js/config.js?v=9"></script>
-<script src="js/store.js?v=9"></script>
-<script src="js/ui-common.js?v=9"></script>
-<script src="js/modal.js?v=9"></script>
-<script src="js/geo.js?v=9"></script>
-<script src="js/employee.js?v=9"></script>
+<script src="js/config.js?v=13"></script>
+<script src="js/store.js?v=13"></script>
+<script src="js/ui-common.js?v=13"></script>
+<script src="js/modal.js?v=13"></script>
+<script src="js/geo.js?v=13"></script>
+<script src="js/employee.js?v=13"></script>
 </body>
 </html>
