@@ -79,6 +79,41 @@
   --shadow-lg: 0 24px 56px rgba(0,0,0,.5);
 }
 
+/* ==========================================================================
+   BUG FIX (PENTING): elemen dengan atribut HTML `hidden` HARUS selalu
+   benar-benar tersembunyi.
+   ==========================================================================
+   Akar masalah "semua tombol tidak berfungsi" / modal sukses tampil dengan
+   data kosong ("—") / modal bertumpuk (Tolak + Konfirmasi bersamaan):
+   Browser punya aturan bawaan `[hidden]{ display:none; }`, TAPI beberapa
+   class di file ini (mis. `.modal-overlay{ display:flex; }` dan
+   `.notif-dot{ display:flex; }`) juga menentukan `display` dengan
+   spesifisitas CSS yang SAMA PERSIS (satu class = satu attribute-selector).
+   Ketika spesifisitas sama, urutan penulisan yang menang — dan karena
+   aturan `.modal-overlay`/`.notif-dot` ditulis SETELAH stylesheet bawaan
+   browser, aturan itu yang menang, BUKAN `[hidden]`. Akibatnya:
+   - `Modal.hide()`/`Modal.hideAll()` (js/modal.js) MEMANG berhasil
+     memasang atribut `hidden` ke elemen modal (bisa dicek lewat
+     JavaScript/DevTools), TAPI overlay modal tetap tampil MENUTUPI seluruh
+     layar (position:fixed, z-index:400) dan tetap menangkap semua klik —
+     persis seperti "semua tombol tidak merespons".
+   - Modal sukses absen (yang di HTML memang berisi placeholder teks "—"
+     untuk Nama/Waktu/Jarak sebelum diisi JavaScript) ikut tampil sejak
+     halaman pertama kali dibuka/direfresh, PADAHAL belum pernah ada proses
+     absen sama sekali — terlihat seperti "absen berhasil" palsu berisi
+     tanda strip.
+   - Modal lain yang pernah dibuka sebelumnya (mis. "Tolak") tetap terlihat
+     tumpuk di belakang modal yang baru dibuka (mis. "Konfirmasi"), karena
+     KEDUANYA sama-sama masih ter-render `display:flex` walau salah
+     satunya sudah "hidden" secara atribut.
+
+   PERBAIKAN: aturan `[hidden]` di bawah ini SENGAJA diberi `!important`
+   dan diletakkan di paling atas (setelah reset) supaya SELALU menang atas
+   `display` apa pun yang ditentukan class lain, untuk SEMUA elemen di
+   seluruh halaman (modal, badge notifikasi, section navigasi, dst.),
+   bukan cuma menambal satu-dua class yang kebetulan ditemukan sekarang. */
+[hidden]{ display:none !important; }
+
 *,*::before,*::after{ box-sizing:border-box; }
 html,body{ height:100%; }
 body{
