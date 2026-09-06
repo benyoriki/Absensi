@@ -4,6 +4,48 @@
    ========================================================================== */
 
 /* ==========================================================================
+   LOADING SCREEN — sembunyikan begitu halaman + semua asetnya (font, dst.)
+   selesai dimuat, dengan durasi tampil minimum supaya tidak "berkedip"
+   kalau perangkat sangat cepat (durasi minimum ini murni untuk kenyamanan
+   visual, bukan menunda fungsi apa pun).
+   ========================================================================== */
+(function initLoadingScreen() {
+  const MIN_VISIBLE_MS = 6000;
+  const shownAt = Date.now();
+  function hide() {
+    const el = document.getElementById("app-loading-screen");
+    if (!el) return;
+    const wait = Math.max(0, MIN_VISIBLE_MS - (Date.now() - shownAt));
+    setTimeout(() => {
+      el.classList.add("is-hidden");
+      setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 500);
+    }, wait);
+  }
+  if (document.readyState === "complete") hide();
+  else window.addEventListener("load", hide);
+  // Jaring pengaman: kalau karena sebab apa pun event "load" tidak pernah
+  // tertembak (mis. ada request pihak ketiga yang menggantung), jangan
+  // sampai loading screen menutupi halaman selamanya. Diberi jeda lebih
+  // lama dari MIN_VISIBLE_MS supaya tidak memotong durasi tampil normal.
+  setTimeout(hide, 9000);
+})();
+
+/* ==========================================================================
+   SERVICE WORKER — supaya situs ini benar-benar bisa di-"Install" ke Home
+   Screen HP (bukan cuma bookmark/shortcut) dan tetap bisa dibuka walau
+   koneksi terputus. Didaftarkan secara diam-diam; kalau browser tidak
+   mendukung (atau dibuka langsung dari file:// tanpa server), diabaikan
+   tanpa mengganggu apa pun.
+   ========================================================================== */
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+  window.addEventListener("load", () => {
+    try {
+      navigator.serviceWorker.register("sw.js").catch(() => { /* diam-diam abaikan; app tetap jalan normal tanpa SW */ });
+    } catch (e) { /* lingkungan tak lazim (mis. WebView tertentu) — abaikan, tidak kritikal */ }
+  });
+}
+
+/* ==========================================================================
    PELACAK ERROR YANG TERLIHAT DI LAYAR (bukan hanya console)
    ==========================================================================
    Sebelumnya, kalau ada skrip yang gagal dimuat (mis. karena preview/hosting
@@ -225,6 +267,7 @@ const Icons = {
   plusCircle: '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
   satellite: '<path d="M14 4l3 3-2.2 2.2-3-3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.7 9.3l3 3-3 3-3-3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M11.8 9.2l3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M4 20l3-3M17 3l1.6-1.6M20 6.4 18.4 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
   slash: '<path d="M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M12 3.5A8.5 8.5 0 1 0 20.5 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  instagram: '<rect x="3.5" y="3.5" width="17" height="17" rx="5" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.7"/><circle cx="17.1" cy="6.9" r="1.1" fill="currentColor"/>',
   none: '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6" opacity=".4"/>'
 };
 

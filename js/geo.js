@@ -116,7 +116,7 @@ function requestNotificationPermission() {
 
 function notifyBrowser(title, body) {
   if ("Notification" in window && Notification.permission === "granted") {
-    try { new Notification(title, { body, icon: "assets/favicon.svg" }); } catch (e) { /* ignore */ }
+    try { new Notification(title, { body, icon: "assets/logo-192.png" }); } catch (e) { /* ignore */ }
   }
 }
 
