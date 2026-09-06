@@ -5,47 +5,58 @@
 
 :root{
   color-scheme: light;
-  /* --- Brand: "instrument" teal/cyan — deliberately not the generic
-     indigo/violet SaaS default. Reinforces the GPS/radar subject matter
-     (precision geofencing for a livestock operation) rather than reading
-     as an arbitrary corporate purple. --- */
-  --ink-950:#081019;
-  --ink-900:#0E1A26;
-  --brand-600:#0E7490;
-  --brand-700:#0B5A70;
-  --brand-100:#E1F1F4;
-  --cyan-500:#22D3EE;
-  --cyan-100:#DEF9FC;
-  --amber-500:#F5A524;
-  --amber-100:#FCF0DC;
+  /* --- Brand: oxblood/maroon lifted directly from the Nusa Beef mark
+     (#6C1710), paired with a brass/instrument-gold accent — a livestock
+     ranch's palette (hide, leather, brass fittings on working equipment)
+     rather than a generic teal or indigo SaaS default. The gold accent
+     carries the GPS/radar "instrument" motif that the teal used to. --- */
+  --ink-950:#1B0906;
+  --ink-900:#2A130E;
+  --brand-900:#45120D;
+  --brand-700:#6C1710;
+  --brand-600:#8C2317;
+  --brand-500:#A83828;
+  --brand-100:#F5E1DB;
+  --brand-ink:var(--brand-700);
+  --gold-600:#8F5E12;
+  --gold-500:#B7791E;
+  --gold-400:#D9A84D;
+  --gold-100:#FBF0DA;
+  /* legacy aliases kept so existing markup/JS referencing the old
+     cyan/amber token names keep resolving to the new brass accent */
+  --cyan-500:var(--gold-500);
+  --cyan-100:var(--gold-100);
+  --amber-500:var(--gold-500);
+  --amber-100:var(--gold-100);
 
   /* --- Status --- */
-  --success-600:#15803D;
-  --success-100:#E4F6EA;
-  --warning-600:#C2760C;
-  --warning-100:#FBF0DC;
-  --danger-600:#DC2626;
-  --danger-100:#FCE9E9;
+  --success-600:#157F49;
+  --success-100:#E1F5E8;
+  --warning-600:#8F5E12;
+  --warning-solid:#D9A84D;
+  --warning-100:#FBF0DA;
+  --danger-600:#C4341F;
+  --danger-100:#FBE7E5;
   --info-600:#2563EB;
   --info-100:#E9EFFE;
 
   /* --- Surfaces (light) --- */
-  --bg:#F3F5F7;
+  --bg:#F5F4F2;
   --surface:#FFFFFF;
   --surface-raised:#FFFFFF;
-  --surface-sunken:#EAEEF1;
-  --border:#E1E6EA;
-  --border-strong:#C7D0D6;
-  --text-900:#0E1A26;
-  --text-700:#3D4C58;
-  --text-500:#657683;
-  --text-400:#7A8792;
-  --overlay: rgba(8,16,25,0.55);
+  --surface-sunken:#EDEBE7;
+  --border:#E4E0DA;
+  --border-strong:#CFC7BE;
+  --text-900:#1D1512;
+  --text-700:#4A3B34;
+  --text-500:#786A61;
+  --text-400:#7C6E63;
+  --overlay: rgba(20,9,7,0.55);
 
-  --shadow-sm: 0 1px 2px rgba(14,26,38,.06);
-  --shadow-md: 0 8px 24px rgba(14,26,38,.09);
-  --shadow-lg: 0 24px 56px rgba(14,26,38,.18);
-  --glow-brand: 0 0 0 1px rgba(14,116,144,.16), 0 8px 28px rgba(14,116,144,.22);
+  --shadow-sm: 0 1px 2px rgba(27,9,6,.07);
+  --shadow-md: 0 10px 26px rgba(27,9,6,.10);
+  --shadow-lg: 0 26px 58px rgba(27,9,6,.20);
+  --glow-brand: 0 0 0 1px rgba(140,35,23,.16), 0 10px 30px rgba(140,35,23,.22);
   --link-color: var(--brand-600);
 
   --radius-sm:10px;
@@ -57,36 +68,42 @@
   --font-body:'Inter', sans-serif;
   --font-mono:'JetBrains Mono', monospace;
 
-  --header-h:64px;
+  --header-h:76px;
   --sidebar-w:248px;
   --bottomnav-h:64px;
 }
 
 [data-theme="dark"]{
   color-scheme: dark;
-  --bg:#080D14;
-  --surface:#0F1720;
-  --surface-raised:#141E29;
-  --surface-sunken:#0B121A;
-  --border:#1F2C38;
-  --border-strong:#2C3D4C;
-  --text-900:#EBF1F4;
-  --text-700:#B7C6D0;
-  --text-500:#7F919D;
-  --text-400:#6E8390;
-  --overlay: rgba(3,6,10,0.72);
-  --brand-100:#0E2C33;
-  --cyan-100:#0C2A31;
-  --amber-100:#2E2107;
+  --bg:#140907;
+  --surface:#1F110D;
+  --surface-raised:#2A1712;
+  --surface-sunken:#180B08;
+  --border:#3A211A;
+  --border-strong:#4D2B21;
+  --text-900:#F5EDE9;
+  --text-700:#CDB9B0;
+  --text-500:#9C837A;
+  --text-400:#B09A8F;
+  --overlay: rgba(6,2,1,0.72);
+  --brand-100:#341410;
+  --brand-ink:var(--gold-400);
+  --gold-600:#E3A83F;
+  --gold-500:#D9A84D;
+  --gold-100:#2E2107;
   --success-100:#0E2B1B;
+  --warning-600:#E3A83F;
+  --warning-solid:#E3A83F;
   --warning-100:#2E2107;
+  --danger-600:#F16A55;
   --danger-100:#301212;
+  --info-600:#6E9EFF;
   --info-100:#122341;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
-  --shadow-md: 0 10px 28px rgba(0,0,0,.45);
-  --shadow-lg: 0 28px 64px rgba(0,0,0,.6);
-  --glow-brand: 0 0 0 1px rgba(34,211,238,.18), 0 0 32px rgba(34,211,238,.16);
-  --link-color: var(--cyan-500);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.45);
+  --shadow-md: 0 10px 28px rgba(0,0,0,.5);
+  --shadow-lg: 0 28px 64px rgba(0,0,0,.65);
+  --glow-brand: 0 0 0 1px rgba(217,168,77,.2), 0 0 32px rgba(217,168,77,.18);
+  --link-color: var(--gold-400);
 }
 
 /* ==========================================================================
@@ -261,7 +278,7 @@ textarea{ resize:vertical; min-height:80px; }
 }
 .toast--success{ background:var(--success-600); }
 .toast--error{ background:var(--danger-600); }
-.toast--warning{ background:var(--warning-600); color:#241a00; }
+.toast--warning{ background:var(--warning-solid); color:#241a00; }
 .toast--info{ background:var(--info-600); }
 @keyframes toast-in{ from{ opacity:0; transform:translateY(-8px);} to{opacity:1; transform:translateY(0);} }
 
@@ -371,6 +388,12 @@ textarea{ resize:vertical; min-height:80px; }
 .brand-mark__img{ width:100%; height:100%; border-radius:50%; object-fit:contain; display:block; }
 .app-header__brand .brand-text h1{ font-size:1rem; }
 .app-header__brand .brand-text p{ font-size:.72rem; color:var(--text-500); font-weight:600; }
+.brand-credit{
+  font-size:.62rem !important; color:var(--text-400) !important; font-weight:500 !important;
+  margin-top:.1em !important;
+}
+.brand-credit a{ color:var(--link-color); text-decoration:none; }
+.brand-credit a:hover{ text-decoration:underline; }
 .app-header__meta{ display:flex; align-items:center; gap:.5em; }
 .clock-block{ display:none; text-align:right; margin-right:.4em; }
 .clock-time{ display:block; font-weight:700; font-size:.9rem; font-family:var(--font-mono); letter-spacing:.02em; }
@@ -385,7 +408,7 @@ textarea{ resize:vertical; min-height:80px; }
 .avatar-btn{
   width:38px; height:38px; border-radius:50%;
   background:linear-gradient(155deg,var(--brand-600),var(--ink-950));
-  color:var(--cyan-100); border:1px solid var(--border); font-weight:700; display:flex; align-items:center;
+  color:#F6E9DD; border:1px solid var(--border); font-weight:700; display:flex; align-items:center;
   justify-content:center; cursor:pointer; font-size:.85rem;
 }
 
@@ -404,9 +427,10 @@ textarea{ resize:vertical; min-height:80px; }
   display:flex; align-items:center; gap:.75em; padding:.68em .8em; border-radius:var(--radius-sm);
   color:var(--text-700); font-weight:600; font-size:.88rem; cursor:pointer; margin-bottom:.15em;
   position:relative; transition:background .15s ease, color .15s ease;
+  border:none; background:none; width:100%; text-align:left;
 }
 .sidebar__link:hover{ background:var(--surface-sunken); }
-.sidebar__link.is-active{ background:var(--brand-100); color:var(--brand-700); }
+.sidebar__link.is-active{ background:var(--brand-100); color:var(--brand-ink); }
 .sidebar__link.is-active::before{
   content:""; position:absolute; left:-.9em; top:20%; bottom:20%; width:3px;
   background:var(--brand-600); border-radius:0 3px 3px 0;
@@ -455,7 +479,7 @@ h3 .inline-icon{ margin-right:.15em; color:var(--brand-600); }
   content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--accent-color, var(--brand-600));
 }
 .stat-card--success{ --accent-color:var(--success-600); }
-.stat-card--warning{ --accent-color:var(--warning-600); }
+.stat-card--warning{ --accent-color:var(--warning-solid); }
 .stat-card--danger{ --accent-color:var(--danger-600); }
 .stat-card--info{ --accent-color:var(--info-600); }
 .stat-card--neutral{ --accent-color:var(--text-400); }
@@ -490,7 +514,7 @@ h3 .inline-icon{ margin-right:.15em; color:var(--brand-600); }
    sungguhan, konsisten dengan tema radar geofencing di bawahnya. */
 .hero-card{
   background:
-    radial-gradient(120% 160% at 100% -20%, rgba(34,211,238,.35), transparent 55%),
+    radial-gradient(120% 160% at 100% -20%, rgba(217,168,77,.35), transparent 55%),
     linear-gradient(135deg, var(--brand-700) 0%, var(--ink-950) 78%);
   color:#fff; border:none; position:relative; overflow:hidden;
 }
@@ -527,7 +551,7 @@ h3 .inline-icon{ margin-right:.15em; color:var(--brand-600); }
 .radar{ position:relative; width:172px; height:172px; }
 .radar::before{
   content:""; position:absolute; inset:-14px; border-radius:50%;
-  background:radial-gradient(closest-side, rgba(14,116,144,.14), transparent 72%);
+  background:radial-gradient(closest-side, rgba(140,35,23,.14), transparent 72%);
   pointer-events:none;
 }
 .radar__ring{
@@ -536,13 +560,13 @@ h3 .inline-icon{ margin-right:.15em; color:var(--brand-600); }
 .radar__ring--outer{ inset:0; }
 .radar__ring--mid{ inset:26px; }
 .radar__ring--office{
-  inset:64px; border:1.5px solid var(--cyan-500);
-  background:radial-gradient(circle, rgba(34,211,238,.16), rgba(34,211,238,.03) 70%);
-  box-shadow:0 0 18px rgba(34,211,238,.25) inset;
+  inset:64px; border:1.5px solid var(--gold-500);
+  background:radial-gradient(circle, rgba(217,168,77,.18), rgba(217,168,77,.03) 70%);
+  box-shadow:0 0 18px rgba(217,168,77,.25) inset;
 }
 .radar__sweep{
   position:absolute; inset:0; border-radius:50%;
-  background:conic-gradient(from 0deg, rgba(34,211,238,.38), transparent 32%);
+  background:conic-gradient(from 0deg, rgba(217,168,77,.4), transparent 32%);
   animation:sweep 3.4s linear infinite;
   mix-blend-mode:var(--radar-blend, normal);
 }
@@ -554,20 +578,20 @@ h3 .inline-icon{ margin-right:.15em; color:var(--brand-600); }
 }
 .radar__center{
   position:absolute; inset:0; margin:auto; width:6px; height:6px; border-radius:50%;
-  background:var(--cyan-500); box-shadow:0 0 8px rgba(34,211,238,.7);
+  background:var(--gold-500); box-shadow:0 0 8px rgba(217,168,77,.7);
 }
 .radar__dot{
   position:absolute; width:12px; height:12px; border-radius:50%; background:var(--danger-600);
-  top:50%; left:50%; transform:translate(-50%,-50%); box-shadow:0 0 0 5px rgba(220,38,38,.16);
+  top:50%; left:50%; transform:translate(-50%,-50%); box-shadow:0 0 0 5px rgba(196,52,31,.18);
   transition:top .5s ease, left .5s ease, background .3s ease, box-shadow .3s ease;
 }
 .radar__dot.is-safe{
-  background:var(--success-600); box-shadow:0 0 0 5px rgba(21,128,61,.16), 0 0 14px rgba(21,128,61,.4);
+  background:var(--success-600); box-shadow:0 0 0 5px rgba(21,127,73,.18), 0 0 14px rgba(21,127,73,.4);
   animation:radar-pulse 2.2s ease-in-out infinite;
 }
 @keyframes radar-pulse{
-  0%,100%{ box-shadow:0 0 0 5px rgba(21,128,61,.16), 0 0 14px rgba(21,128,61,.4); }
-  50%{ box-shadow:0 0 0 8px rgba(21,128,61,.1), 0 0 20px rgba(21,128,61,.55); }
+  0%,100%{ box-shadow:0 0 0 5px rgba(21,127,73,.18), 0 0 14px rgba(21,127,73,.4); }
+  50%{ box-shadow:0 0 0 8px rgba(21,127,73,.12), 0 0 20px rgba(21,127,73,.55); }
 }
 @media (prefers-reduced-motion:reduce){
   .radar__sweep{ animation:none; }
@@ -665,7 +689,7 @@ h3 .inline-icon{ margin-right:.15em; color:var(--brand-600); }
 }
 .chip.is-active{ background:var(--brand-600); border-color:var(--brand-600); color:#fff; }
 .avatar-lg{
-  width:76px; height:76px; border-radius:50%; background:var(--brand-100); color:var(--brand-700);
+  width:76px; height:76px; border-radius:50%; background:var(--brand-100); color:var(--brand-ink);
   display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1.6rem;
   border:3px solid var(--surface); box-shadow:var(--shadow-sm);
 }
