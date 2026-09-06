@@ -39,13 +39,14 @@
   --text-900:#0E1A26;
   --text-700:#3D4C58;
   --text-500:#657683;
-  --text-400:#8B99A4;
+  --text-400:#7A8792;
   --overlay: rgba(8,16,25,0.55);
 
   --shadow-sm: 0 1px 2px rgba(14,26,38,.06);
   --shadow-md: 0 8px 24px rgba(14,26,38,.09);
   --shadow-lg: 0 24px 56px rgba(14,26,38,.18);
   --glow-brand: 0 0 0 1px rgba(14,116,144,.16), 0 8px 28px rgba(14,116,144,.22);
+  --link-color: var(--brand-600);
 
   --radius-sm:10px;
   --radius-md:16px;
@@ -72,7 +73,7 @@
   --text-900:#EBF1F4;
   --text-700:#B7C6D0;
   --text-500:#7F919D;
-  --text-400:#586B78;
+  --text-400:#6E8390;
   --overlay: rgba(3,6,10,0.72);
   --brand-100:#0E2C33;
   --cyan-100:#0C2A31;
@@ -85,6 +86,7 @@
   --shadow-md: 0 10px 28px rgba(0,0,0,.45);
   --shadow-lg: 0 28px 64px rgba(0,0,0,.6);
   --glow-brand: 0 0 0 1px rgba(34,211,238,.18), 0 0 32px rgba(34,211,238,.16);
+  --link-color: var(--cyan-500);
 }
 
 /* ==========================================================================
@@ -177,7 +179,7 @@ ul{ list-style:none; margin:0; padding:0; }
 .btn--sm{ padding:.44em .85em; font-size:.8rem; border-radius:8px; }
 .btn:disabled{ opacity:.5; cursor:not-allowed; }
 .link-btn{
-  background:none; border:none; color:var(--brand-600); font-weight:600; font-size:.86rem;
+  background:none; border:none; color:var(--link-color); font-weight:600; font-size:.86rem;
   cursor:pointer; padding:0;
 }
 .link-btn:hover{ text-decoration:underline; }
@@ -203,6 +205,7 @@ input:focus,select:focus,textarea:focus{
   box-shadow:0 0 0 3px color-mix(in srgb, var(--brand-600) 20%, transparent);
 }
 textarea{ resize:vertical; min-height:80px; }
+::placeholder{ color:var(--text-400); opacity:1; }
 .field-error{ display:block; color:var(--danger-600); font-size:.78rem; min-height:1.1em; margin-top:.3em; }
 .field-hint{ font-size:.78rem; color:var(--text-500); margin-top:.3em; }
 .field-row{ display:flex; gap:.8em; }
@@ -315,11 +318,11 @@ textarea{ resize:vertical; min-height:80px; }
 .auth-card--wide{ max-width:560px; }
 .auth-brand{ display:flex; align-items:center; gap:.7em; margin-bottom:1.6em; cursor:pointer; user-select:none; }
 .auth-brand__mark{
-  width:42px; height:42px; border-radius:12px;
-  background:linear-gradient(155deg,var(--brand-600),var(--ink-950));
-  box-shadow:0 0 0 1px rgba(34,211,238,.25) inset;
-  display:flex; align-items:center; justify-content:center; color:var(--cyan-500); flex-shrink:0;
+  width:46px; height:46px; border-radius:13px; padding:3px;
+  background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow-sm);
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
 }
+.auth-brand__mark-img{ width:100%; height:100%; border-radius:50%; object-fit:contain; display:block; }
 .auth-brand__text h1{ font-size:1.15rem; }
 .auth-brand__text p{ font-size:.78rem; color:var(--text-500); font-weight:600; }
 .auth-card h2{ font-size:1.3rem; margin-bottom:.3em; }
@@ -329,7 +332,7 @@ textarea{ resize:vertical; min-height:80px; }
   display:flex; gap:.6em; align-items:flex-start; margin-top:1.4em; padding:.85em 1em;
   background:var(--surface-sunken); border-radius:var(--radius-sm); font-size:.78rem; color:var(--text-500);
 }
-.theme-toggle-float{ position:absolute; top:1.2em; right:1.2em; }
+.theme-toggle-float{ position:absolute; top:.9em; right:.9em; z-index:2; }
 .pw-field{ position:relative; }
 .pw-field .pw-toggle{
   position:absolute; right:.6em; top:50%; transform:translateY(0); background:none; border:none;
@@ -361,11 +364,11 @@ textarea{ resize:vertical; min-height:80px; }
 }
 .app-header__brand{ display:flex; align-items:center; gap:.7em; cursor:pointer; user-select:none; }
 .app-header__brand .brand-mark{
-  width:36px; height:36px; border-radius:10px;
-  background:linear-gradient(155deg,var(--brand-600),var(--ink-950));
-  box-shadow:0 0 0 1px rgba(34,211,238,.25) inset;
-  display:flex; align-items:center; justify-content:center; color:var(--cyan-500); flex-shrink:0;
+  width:38px; height:38px; border-radius:11px; padding:3px;
+  background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow-sm);
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
 }
+.brand-mark__img{ width:100%; height:100%; border-radius:50%; object-fit:contain; display:block; }
 .app-header__brand .brand-text h1{ font-size:1rem; }
 .app-header__brand .brand-text p{ font-size:.72rem; color:var(--text-500); font-weight:600; }
 .app-header__meta{ display:flex; align-items:center; gap:.5em; }
@@ -639,6 +642,22 @@ h3 .inline-icon{ margin-right:.15em; color:var(--brand-600); }
 .text-muted{ color:var(--text-500); }
 .text-sm{ font-size:.82rem; }
 .mt-1{ margin-top:1em; }
+
+/* ---------------- Social link row (Instagram, dll.) ---------------- */
+.social-link-row{
+  display:flex; align-items:center; gap:.9em; padding:.85em .9em; border-radius:var(--radius-sm);
+  border:1px solid var(--border); text-decoration:none; color:inherit; transition:border-color .15s ease, background .15s ease;
+}
+.social-link-row:hover{ background:var(--surface-sunken); border-color:var(--border-strong); }
+.social-link-row__icon{
+  width:38px; height:38px; border-radius:11px; flex-shrink:0;
+  background:radial-gradient(circle at 30% 30%, #F58529, #DD2A7B 55%, #8134AF 100%);
+  color:#fff; display:flex; align-items:center; justify-content:center;
+}
+.social-link-row__text{ flex:1; min-width:0; display:flex; flex-direction:column; gap:.1em; }
+.social-link-row__text strong{ font-size:.92rem; }
+.social-link-row__text span{ font-size:.78rem; color:var(--text-500); }
+.social-link-row > .inline-icon:last-child{ color:var(--text-400); flex-shrink:0; }
 .chip-group{ display:flex; flex-wrap:wrap; gap:.5em; }
 .chip{
   padding:.45em .95em; border-radius:var(--radius-pill); border:1px solid var(--border-strong);
@@ -684,3 +703,40 @@ h3 .inline-icon{ margin-right:.15em; color:var(--brand-600); }
 @media (max-width:899px){
   .main-content{ padding-left:1em; padding-right:1em; }
 }
+
+/* ==========================================================================
+   LOADING SCREEN
+   ==========================================================================
+   Konsep: "mengunci sinyal GPS" — konsisten dengan tema radar geofencing
+   di seluruh aplikasi (bukan sekadar spinner generik). Ping cincin
+   menyebar dari lambang Nusa Beef, seperti radar mencari sinyal lokasi.
+   Disembunyikan otomatis oleh js/ui-common.js begitu halaman (dan semua
+   asetnya) selesai dimuat — lihat initLoadingScreen().
+   ========================================================================== */
+.loading-screen{
+  position:fixed; inset:0; z-index:9999;
+  display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 120% at 50% 28%, var(--brand-700) 0%, var(--ink-950) 68%);
+  transition:opacity .45s ease, visibility .45s ease;
+}
+.loading-screen.is-hidden{ opacity:0; visibility:hidden; pointer-events:none; }
+.loading-screen__inner{ display:flex; flex-direction:column; align-items:center; gap:1.1em; }
+.loading-screen__badge{ position:relative; width:88px; height:88px; display:flex; align-items:center; justify-content:center; }
+.loading-screen__badge img{
+  width:100%; height:100%; border-radius:50%; position:relative; z-index:2;
+  box-shadow:0 10px 30px rgba(0,0,0,.45);
+}
+.loading-screen__ping{
+  position:absolute; inset:0; border-radius:50%; border:1.5px solid var(--cyan-500);
+  animation:loading-ping 1.8s cubic-bezier(0,0,.2,1) infinite;
+}
+.loading-screen__ping:nth-child(2){ animation-delay:.6s; }
+@keyframes loading-ping{
+  0%{ transform:scale(1); opacity:.7; }
+  100%{ transform:scale(1.9); opacity:0; }
+}
+.loading-screen__text{ text-align:center; color:#fff; }
+.loading-screen__text strong{ display:block; font-family:var(--font-display); font-size:1.05rem; font-weight:800; letter-spacing:-0.01em; }
+.loading-screen__text span{ display:block; font-size:.76rem; color:rgba(255,255,255,.62); margin-top:.25em; font-family:var(--font-mono); }
+.loading-screen__credit{ margin-top:1.6em !important; font-size:.68rem !important; color:rgba(255,255,255,.38) !important; letter-spacing:.02em; }
+@media (prefers-reduced-motion:reduce){ .loading-screen__ping{ animation:none; opacity:0; } }
