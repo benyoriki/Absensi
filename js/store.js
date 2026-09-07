@@ -28,6 +28,7 @@ const Store = (function () {
     salary: "rakabu_salary",
     zoneEvents: "rakabu_zone_events",
     presence: "rakabu_presence",
+    outsideRequests: "rakabu_outside_requests",
     session: "rakabu_session",
     theme: "rakabu_theme",
     seeded: "rakabu_seeded_v1"
@@ -365,13 +366,19 @@ const Store = (function () {
         id: uid("att"), userId, date: dateKey, checkIn: timeStr, checkOut: null,
         status: isLate ? "terlambat" : "hadir",
         checkInDistance: meta.distance, checkInAccuracy: meta.accuracy,
-        checkInLat: meta.lat, checkInLon: meta.lon
+        checkInLat: meta.lat, checkInLon: meta.lon,
+        // Bug fix (izin lokasi): jika absen ini disetujui lewat izin admin
+        // (di luar radius normal), simpan referensinya di record supaya
+        // admin bisa melihat jejaknya di Rekap Absensi, bukan cuma di
+        // halaman Izin Lokasi.
+        checkInViaException: meta.viaException || null
       };
       list.push(record);
     } else {
       record.checkIn = timeStr;
       record.status = isLate ? "terlambat" : "hadir";
       record.checkInDistance = meta.distance;
+      record.checkInViaException = meta.viaException || null;
     }
     saveAttendanceList(list);
     return record;
@@ -386,6 +393,7 @@ const Store = (function () {
     record.checkOut = timeStr;
     record.checkOutDistance = meta.distance;
     record.checkOutAccuracy = meta.accuracy;
+    record.checkOutViaException = meta.viaException || null;
     saveAttendanceList(list);
     return record;
   }
@@ -521,6 +529,86 @@ const Store = (function () {
   function getPresenceFor(userId) { return getPresenceMap()[userId] || null; }
 
   /* ------------------------------------------------------------------ */
+  /* IZIN ABSEN DI LUAR LOKASI (outside-radius exception requests)      */
+  /* ------------------------------------------------------------------ */
+  // Aturan bisnis: absen masuk/pulang HANYA boleh dilakukan di dalam
+  // CONFIG.ATTENDANCE_RADIUS. Jika karyawan berada di luar radius tsb,
+  // satu-satunya jalan untuk tetap bisa absen adalah mengajukan izin ke
+  // admin (lihat employee.js renderAttendanceCheck) dan menunggu admin
+  // menyetujuinya (lihat admin.js renderIzinLokasi). Satu permintaan HANYA
+  // berlaku untuk SATU jenis absen (masuk ATAU pulang) pada SATU tanggal —
+  // bentuk record:
+  //   { id, userId, type: "check-in"|"check-out", date, distance, accuracy,
+  //     lat, lon, reason, status: "pending"|"approved"|"rejected", note,
+  //     createdAt, decidedAt, usedAt }
+  function getOutsideRequests() { return read(KEYS.outsideRequests, []); }
+  function saveOutsideRequests(list) { return write(KEYS.outsideRequests, list); }
+  function outsideRequestsByUser(userId) {
+    return getOutsideRequests().filter(r => r.userId === userId).sort((a, b) => b.createdAt - a.createdAt);
+  }
+  /** Permintaan yang masih menunggu keputusan admin, untuk jenis & hari ini. */
+  function pendingOutsideRequestFor(userId, type) {
+    const dateKey = localDateKey();
+    return getOutsideRequests().find(r => r.userId === userId && r.type === type && r.date === dateKey && r.status === "pending") || null;
+  }
+  /** Permintaan yang SUDAH disetujui admin, untuk jenis & hari ini, dan
+   *  BELUM dipakai untuk absen (supaya satu persetujuan tidak dipakai
+   *  berulang kali — meski secara alami absen masuk/pulang hanya bisa
+   *  sekali per hari, penjagaan ini tetap eksplisit untuk kejelasan). */
+  function approvedOutsideRequestFor(userId, type) {
+    const dateKey = localDateKey();
+    return getOutsideRequests().find(r => r.userId === userId && r.type === type && r.date === dateKey && r.status === "approved" && !r.usedAt) || null;
+  }
+  function submitOutsideRequest(data) {
+    const list = getOutsideRequests();
+    const record = Object.assign({
+      id: uid("out"), date: localDateKey(), status: "pending", note: "",
+      createdAt: Date.now(), decidedAt: null, usedAt: null
+    }, data);
+    list.unshift(record);
+    saveOutsideRequests(list);
+    const user = findUserById(data.userId);
+    const label = data.type === "check-in" ? "Absen Masuk" : "Absen Pulang";
+    addNotification({
+      audience: "admin", type: "outside",
+      title: "📍 Izin absen di luar lokasi",
+      message: `${user ? user.name : data.userId} meminta izin ${label} di luar radius (±${data.distance.toFixed(1)} m dari kantor).`,
+      refId: record.id
+    });
+    return record;
+  }
+  function decideOutsideRequest(id, status, note) {
+    const list = getOutsideRequests();
+    const idx = list.findIndex(r => r.id === id);
+    if (idx === -1) return null;
+    list[idx].status = status;
+    list[idx].note = note || "";
+    list[idx].decidedAt = Date.now();
+    saveOutsideRequests(list);
+    const label = list[idx].type === "check-in" ? "Absen Masuk" : "Absen Pulang";
+    addNotification({
+      audience: list[idx].userId, type: "outside",
+      title: status === "approved" ? "✅ Izin lokasi disetujui" : "❌ Izin lokasi ditolak",
+      message: `Permintaan ${label} di luar lokasi Anda ${status === "approved" ? "disetujui. Silakan coba absen lagi." : "ditolak."}` + (note ? " Catatan: " + note : ""),
+    });
+    return list[idx];
+  }
+  /** Ditandai "terpakai" begitu absen benar-benar tersimpan lewat izin ini
+   *  (lihat finalizeAttendance di employee.js), supaya admin bisa melihat
+   *  mana persetujuan yang sudah benar-benar dipakai untuk absen. */
+  function consumeOutsideRequest(id) {
+    const list = getOutsideRequests();
+    const idx = list.findIndex(r => r.id === id);
+    if (idx === -1) return null;
+    list[idx].usedAt = Date.now();
+    saveOutsideRequests(list);
+    return list[idx];
+  }
+  function pendingOutsideRequestsCount() {
+    return getOutsideRequests().filter(r => r.status === "pending").length;
+  }
+
+  /* ------------------------------------------------------------------ */
   /* LEAVE (CUTI)                                                       */
   /* ------------------------------------------------------------------ */
   function getLeave() { return read(KEYS.leave, []); }
@@ -638,6 +726,8 @@ const Store = (function () {
     getAttendance, getTodayRecord, checkIn, checkOut, attendanceByUser,
     getZoneEvents, zoneEventsByUser, activeZoneEventFor, createLocationEvent, resolveLocationEvent, setLocationEventReason, formatDuration,
     getPresenceMap, setPresence, getPresenceFor,
+    getOutsideRequests, outsideRequestsByUser, pendingOutsideRequestFor, approvedOutsideRequestFor,
+    submitOutsideRequest, decideOutsideRequest, consumeOutsideRequest, pendingOutsideRequestsCount,
     getLeave, leaveByUser, submitLeave, decideLeave,
     getOvertime, overtimeByUser, submitOvertime, decideOvertime,
     getSalary, salaryByUser, currentPeriod,

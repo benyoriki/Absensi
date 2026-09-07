@@ -12,13 +12,42 @@
 (function initLoadingScreen() {
   const MIN_VISIBLE_MS = 6000;
   const shownAt = Date.now();
+  const bar = document.getElementById("loading-progress-bar");
+  const percentEl = document.getElementById("loading-progress-percent");
+  let rafId = null;
+  let finished = false;
+
+  function paint(pct) {
+    const clamped = Math.max(0, Math.min(100, pct));
+    if (bar) bar.style.width = clamped + "%";
+    if (percentEl) percentEl.textContent = Math.round(clamped) + "%";
+  }
+
+  // Bar naik landai mengikuti waktu tampil minimum, tapi sengaja ditahan di
+  // 96% — 4% terakhir baru diisi penuh oleh hide() di bawah, tepat saat
+  // halaman betul-betul selesai dimuat. Supaya progress yang terlihat tidak
+  // pernah berbohong (bar 100% padahal masih memuat).
+  function tick() {
+    if (finished) return;
+    const elapsed = Date.now() - shownAt;
+    const pct = Math.min(96, (elapsed / MIN_VISIBLE_MS) * 100);
+    paint(pct);
+    if (pct < 96) rafId = requestAnimationFrame(tick);
+  }
+  rafId = requestAnimationFrame(tick);
+
   function hide() {
     const el = document.getElementById("app-loading-screen");
     if (!el) return;
     const wait = Math.max(0, MIN_VISIBLE_MS - (Date.now() - shownAt));
     setTimeout(() => {
-      el.classList.add("is-hidden");
-      setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 500);
+      finished = true;
+      if (rafId) cancelAnimationFrame(rafId);
+      paint(100);
+      setTimeout(() => {
+        el.classList.add("is-hidden");
+        setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 500);
+      }, 260);
     }, wait);
   }
   if (document.readyState === "complete") hide();
@@ -268,6 +297,7 @@ const Icons = {
   satellite: '<path d="M14 4l3 3-2.2 2.2-3-3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.7 9.3l3 3-3 3-3-3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M11.8 9.2l3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M4 20l3-3M17 3l1.6-1.6M20 6.4 18.4 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
   slash: '<path d="M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M12 3.5A8.5 8.5 0 1 0 20.5 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
   instagram: '<rect x="3.5" y="3.5" width="17" height="17" rx="5" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.7"/><circle cx="17.1" cy="6.9" r="1.1" fill="currentColor"/>',
+  shield: '<path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
   none: '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6" opacity=".4"/>'
 };
 

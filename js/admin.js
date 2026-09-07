@@ -40,6 +40,7 @@
       "pendaftaran-tbody","pendaftaran-empty","karyawan-search","karyawan-tbody",
       "absensi-tbody","export-attendance-btn",
       "monitoring-tbody","riwayat-lokasi-tbody","riwayat-lokasi-search",
+      "izin-lokasi-tbody","sidebar-outside-badge",
       "setting-lat","setting-lon","setting-radius","setting-outside-radius","setting-accuracy","setting-outside","setting-late","setting-open-maps-btn",
       "cuti-tbody","lembur-tbody",
       "gaji-tbody","gaji-period-label","export-gaji-btn",
@@ -59,6 +60,7 @@
     renderPendaftaran();
     renderKaryawan();
     renderAbsensi("today");
+    renderIzinLokasi();
     renderCuti();
     renderLembur();
     renderGaji();
@@ -80,7 +82,7 @@
     window.addEventListener("hashchange", () => route(location.hash.replace("#", "")));
   }
   function route(page) {
-    const valid = ["dashboard","pendaftaran","karyawan","absensi","monitoring","riwayat-lokasi","cuti","lembur","gaji","laporan","pengaturan","notifikasi"];
+    const valid = ["dashboard","pendaftaran","karyawan","absensi","monitoring","riwayat-lokasi","izin-lokasi","cuti","lembur","gaji","laporan","pengaturan","notifikasi"];
     if (!valid.includes(page)) page = "dashboard";
     document.querySelectorAll("[data-page]").forEach((sec) => { sec.hidden = sec.dataset.page !== page; });
     document.querySelectorAll("[data-nav]").forEach((btn) => btn.classList.toggle("is-active", btn.dataset.nav === page));
@@ -258,7 +260,7 @@
       </li>`).join("") : emptyStateHtml("Belum ada aktivitas.");
   }
   function iconColorForType(type) {
-    return { registration: "var(--info-600)", leave: "var(--brand-600)", overtime: "var(--gold-500)", zone: "var(--danger-600)", info: "var(--text-400)" }[type] || "var(--brand-600)";
+    return { registration: "var(--info-600)", leave: "var(--brand-600)", overtime: "var(--gold-500)", zone: "var(--danger-600)", outside: "var(--warning-600)", info: "var(--text-400)" }[type] || "var(--brand-600)";
   }
 
   /* ------------------------------------------------------------------ */
@@ -315,6 +317,7 @@
     if (rejectContext.kind === "user") Store.rejectUser(rejectContext.id, reason);
     if (rejectContext.kind === "leave") Store.decideLeave(rejectContext.id, "rejected", reason);
     if (rejectContext.kind === "overtime") Store.decideOvertime(rejectContext.id, "rejected", reason);
+    if (rejectContext.kind === "outside") Store.decideOutsideRequest(rejectContext.id, "rejected", reason);
     Modal.hide("reject-modal");
     showToast("Pengajuan ditolak.", "warning");
     rejectContext = null;
@@ -447,12 +450,14 @@
     if (!list.length) { el.absensiTbody.innerHTML = `<tr><td colspan="6">${emptyStateBlock("Tidak ada data absensi pada rentang ini.")}</td></tr>`; return; }
     el.absensiTbody.innerHTML = list.map((a) => {
       const u = Store.findUserById(a.userId);
+      const exceptionNote = (a.checkInViaException || a.checkOutViaException)
+        ? ' <span class="text-sm text-muted" title="Absen di luar radius, disetujui admin">📍izin</span>' : "";
       return `<tr>
         <td>${escapeHtml(u ? u.name : a.userId)}</td>
         <td>${formatDateID(a.date)}</td>
         <td class="mono">${a.checkIn || "—"}</td>
         <td class="mono">${a.checkOut || "—"}</td>
-        <td class="mono">${a.checkInDistance != null ? a.checkInDistance.toFixed(1) + " m" : "—"}</td>
+        <td class="mono">${a.checkInDistance != null ? a.checkInDistance.toFixed(1) + " m" : "—"}${exceptionNote}</td>
         <td>${statusBadge(a.status)}</td>
       </tr>`;
     }).join("");
@@ -554,6 +559,60 @@
         <td class="text-sm">${z.reason ? escapeHtml(z.reason) : '<span class="text-muted">Belum diisi</span>'}</td>
       </tr>`;
     }).join("");
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* IZIN ABSEN DI LUAR LOKASI (approval)                                */
+  /* ------------------------------------------------------------------ */
+  // Karyawan hanya bisa absen masuk/pulang di dalam CONFIG.ATTENDANCE_RADIUS
+  // (lihat employee.js). Kalau mereka di luar radius, satu-satunya jalan
+  // adalah mengajukan izin di sini — admin menyetujui/menolak per
+  // permintaan (berlaku untuk satu jenis absen, satu hari saja).
+  function renderIzinLokasi() {
+    const list = Store.getOutsideRequests().sort((a, b) => b.createdAt - a.createdAt);
+
+    const pendingCount = list.filter((r) => r.status === "pending").length;
+    if (el.sidebarOutsideBadge) {
+      el.sidebarOutsideBadge.hidden = pendingCount === 0;
+      el.sidebarOutsideBadge.textContent = pendingCount;
+    }
+
+    if (!list.length) { el.izinLokasiTbody.innerHTML = `<tr><td colspan="7">${emptyStateBlock("Belum ada permintaan izin lokasi.")}</td></tr>`; return; }
+    el.izinLokasiTbody.innerHTML = list.map((r) => {
+      const u = Store.findUserById(r.userId);
+      const typeLabel = r.type === "check-in" ? "Absen Masuk" : "Absen Pulang";
+      let statusCell = leaveStatusPill(r.status);
+      if (r.status === "approved") {
+        statusCell += r.usedAt
+          ? ' <span class="text-sm text-muted">· sudah dipakai</span>'
+          : ' <span class="text-sm text-muted">· belum dipakai</span>';
+      }
+      return `<tr>
+        <td>${escapeHtml(u ? u.name : r.userId)}</td>
+        <td>${typeLabel}</td>
+        <td>${formatDateID(r.date)}</td>
+        <td class="mono">${r.distance.toFixed(1)} m</td>
+        <td>${escapeHtml(r.reason)}</td>
+        <td>${statusCell}</td>
+        <td>${r.status === "pending" ? `
+          <div style="display:flex;gap:.4em;flex-wrap:wrap">
+            <button class="btn btn--primary btn--sm" data-out-approve="${r.id}">Setujui</button>
+            <button class="btn btn--danger-ghost btn--sm" data-out-reject="${r.id}">Tolak</button>
+          </div>` : (r.note ? `<span class="text-sm text-muted">${escapeHtml(r.note)}</span>` : "—")}</td>
+      </tr>`;
+    }).join("");
+    el.izinLokasiTbody.querySelectorAll("[data-out-approve]").forEach((b) => b.addEventListener("click", () => {
+      if (b.disabled) return; b.disabled = true;
+      Store.decideOutsideRequest(b.dataset.outApprove, "approved", "");
+      showToast("Izin lokasi disetujui.", "success");
+      renderAll();
+    }));
+    el.izinLokasiTbody.querySelectorAll("[data-out-reject]").forEach((b) => b.addEventListener("click", () => {
+      rejectContext = { kind: "outside", id: b.dataset.outReject };
+      el.rejectModalTitle.textContent = "Tolak Izin Lokasi";
+      el.rejectReason.value = "";
+      Modal.show("reject-modal");
+    }));
   }
 
   /* ------------------------------------------------------------------ */

@@ -449,18 +449,49 @@
   function renderAttendanceCheck(type, meta) {
     const withinRadius = meta.distance <= CONFIG.ATTENDANCE_RADIUS;
     const accuracyOk = meta.accuracy <= CONFIG.MAX_ACCEPTABLE_ACCURACY;
-    // Sesuai spesifikasi: absen hanya boleh jika BERADA dalam radius DAN
-    // akurasi GPS cukup baik (bukan sekadar peringatan).
-    const canProceed = withinRadius && accuracyOk;
+
+    // Aturan bisnis: absen HANYA boleh di dalam radius kantor. Satu-satunya
+    // jalan lain adalah admin memberi izin eksplisit untuk hari ini (lihat
+    // Store.approvedOutsideRequestFor). Kalau belum ada izin sama sekali,
+    // karyawan bisa mengajukan permintaan lewat form di bawah — bukan
+    // otomatis lolos hanya karena mengisi alasan.
+    const approvedException = !withinRadius ? Store.approvedOutsideRequestFor(user.id, type) : null;
+    const pendingException = !withinRadius && !approvedException ? Store.pendingOutsideRequestFor(user.id, type) : null;
+    const canProceed = (withinRadius || approvedException) && accuracyOk;
+
+    const statusBadge = withinRadius
+      ? '<span class="badge badge--success">Boleh Absen</span>'
+      : approvedException
+        ? '<span class="badge badge--success">Diizinkan Admin</span>'
+        : '<span class="badge badge--danger">DI LUAR RADIUS</span>';
+
+    let outsideBlock = "";
+    if (!withinRadius) {
+      if (approvedException) {
+        outsideBlock = `<p style="color:var(--success-600);font-size:.86rem;font-weight:600">✅ Admin mengizinkan Anda ${type === "check-in" ? "absen masuk" : "absen pulang"} di luar radius kantor hari ini.</p>`;
+      } else if (pendingException) {
+        outsideBlock = `
+          <p style="color:var(--warning-600);font-size:.86rem;font-weight:600">⏳ Permintaan izin Anda sedang menunggu persetujuan admin.</p>
+          <p class="text-muted text-sm">Alasan yang Anda kirim: "${escapeHtml(pendingException.reason || "-")}"</p>`;
+      } else {
+        outsideBlock = `
+          <p style="color:var(--danger-600);font-size:.86rem;font-weight:600">❌ Anda berada ${meta.distance.toFixed(1)} meter dari kantor. Absensi hanya dapat dilakukan dalam radius ${CONFIG.ATTENDANCE_RADIUS} meter.</p>
+          <p class="text-muted text-sm" style="margin-top:.5em">Jika Anda memang perlu absen dari lokasi ini (mis. tugas lapangan), ajukan izin ke admin di bawah ini.</p>
+          <label for="outside-reason-input">Alasan absen di luar lokasi</label>
+          <textarea id="outside-reason-input" placeholder="Contoh: Sedang tugas di kandang blok C…" rows="2"></textarea>
+          <p id="outside-reason-error" class="field-error" hidden>Alasan wajib diisi.</p>
+          <button id="outside-request-btn" type="button" class="btn btn--ghost btn--block mt-1">📍 Ajukan Izin ke Admin</button>`;
+      }
+    }
 
     el.attendanceModalBody.innerHTML = `
       <dl class="stat-list" style="text-align:left;margin-bottom:1em">
         <div class="stat-list__item"><dt>Jarak dari kantor</dt><dd class="mono">${meta.distance.toFixed(1)} m dari kantor</dd></div>
         <div class="stat-list__item"><dt>Akurasi GPS</dt><dd class="mono">${Math.round(meta.accuracy)} meter</dd></div>
         <div class="stat-list__item"><dt>Jam</dt><dd class="mono">${new Date().toTimeString().slice(0,8)}</dd></div>
-        <div class="stat-list__item"><dt>Status</dt><dd>${withinRadius ? '<span class="badge badge--success">Boleh Absen</span>' : '<span class="badge badge--danger">DI LUAR RADIUS</span>'}</dd></div>
+        <div class="stat-list__item"><dt>Status</dt><dd>${statusBadge}</dd></div>
       </dl>
-      ${!withinRadius ? `<p style="color:var(--danger-600);font-size:.86rem;font-weight:600">❌ Anda berada ${meta.distance.toFixed(1)} meter dari kantor. Absensi hanya dapat dilakukan dalam radius ${CONFIG.ATTENDANCE_RADIUS} meter.</p>` : ""}
+      ${outsideBlock}
       ${withinRadius && !accuracyOk ? `<p style="color:var(--warning-600);font-size:.86rem;font-weight:600">⚠️ GPS belum cukup akurat (±${Math.round(meta.accuracy)} m). Tunggu beberapa detik lalu coba lagi.</p>` : ""}
       <button id="attendance-confirm-btn" type="button" class="btn btn--primary btn--block mt-1" ${canProceed ? "" : "disabled"}>
         ${type === "check-in" ? "Konfirmasi Absen Masuk" : "Konfirmasi Absen Pulang"}
@@ -469,9 +500,27 @@
     `;
     const confirmBtn = document.getElementById("attendance-confirm-btn");
     if (confirmBtn) confirmBtn.addEventListener("click", () => {
-      Modal.runOnce(confirmBtn, () => finalizeAttendance(type, meta), "Menyimpan…");
+      const finalMeta = approvedException ? Object.assign({}, meta, { viaException: approvedException.id }) : meta;
+      Modal.runOnce(confirmBtn, () => finalizeAttendance(type, finalMeta), "Menyimpan…");
     });
     document.getElementById("attendance-retry-btn").addEventListener("click", () => runAttendanceFlow(type));
+
+    const outsideBtn = document.getElementById("outside-request-btn");
+    if (outsideBtn) outsideBtn.addEventListener("click", () => {
+      const input = document.getElementById("outside-reason-input");
+      const errEl = document.getElementById("outside-reason-error");
+      const reasonText = (input && input.value || "").trim();
+      if (!reasonText) { if (errEl) errEl.hidden = false; return; }
+      if (errEl) errEl.hidden = true;
+      Modal.runOnce(outsideBtn, async () => {
+        Store.submitOutsideRequest({
+          userId: user.id, type, reason: reasonText,
+          distance: meta.distance, accuracy: meta.accuracy, lat: meta.lat, lon: meta.lon
+        });
+        showToast("Permintaan izin terkirim ke admin.", "success");
+        renderAttendanceCheck(type, meta);
+      }, "Mengirim…");
+    });
   }
 
   function finalizeAttendance(type, meta) {
@@ -498,13 +547,17 @@
       showToast("Gagal menyimpan absen. Silakan coba lagi.", "error");
       return;
     }
+    // Kalau absen ini terjadi lewat izin admin (di luar radius normal),
+    // tandai izin tsb sebagai "terpakai" supaya tidak dianggap masih
+    // berlaku untuk absen berikutnya (lihat Store.approvedOutsideRequestFor).
+    if (meta.viaException) Store.consumeOutsideRequest(meta.viaException);
     Modal.hide("attendance-modal");
     updateAttendanceStatusUI(record);
     renderRiwayat("week");
 
     el.successName.textContent = user.name || "—";
     el.successTime.textContent = (type === "check-in" ? record.checkIn : record.checkOut) || "—";
-    el.successDistance.textContent = meta.distance.toFixed(1) + " m";
+    el.successDistance.textContent = meta.distance.toFixed(1) + " m" + (meta.viaException ? " (izin admin)" : "");
     document.getElementById("success-title").textContent = type === "check-in" ? "Absen Masuk Berhasil" : "Absen Pulang Berhasil";
     Modal.show("success-modal");
   }
