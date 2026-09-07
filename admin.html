@@ -58,7 +58,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="css/style.css?v=14" />
+<link rel="stylesheet" href="css/style.css?v=15" />
 </head>
 <body>
 <div id="app-loading-screen" class="loading-screen" aria-hidden="true">
@@ -71,6 +71,8 @@
     <div class="loading-screen__text">
       <strong>Rakabu Attendance</strong>
       <span>Menyiapkan dashboard…</span>
+      <div class="loading-screen__progress"><div class="loading-screen__progress-bar" id="loading-progress-bar"></div></div>
+      <span class="loading-screen__percent" id="loading-progress-percent">0%</span>
     <span class="loading-screen__credit">website developer benyoriki.com</span>
     </div>
   </div>
@@ -115,6 +117,7 @@
       <button class="sidebar__link" data-nav="absensi"><span class="inline-icon" data-icon="clipboard" data-icon-size="18"></span> Rekap Absensi</button>
       <button class="sidebar__link" data-nav="monitoring"><span class="inline-icon" data-icon="satellite" data-icon-size="18"></span> Monitoring Lokasi</button>
       <button class="sidebar__link" data-nav="riwayat-lokasi"><span class="inline-icon" data-icon="chart" data-icon-size="18"></span> Riwayat Lokasi</button>
+      <button class="sidebar__link" data-nav="izin-lokasi"><span class="inline-icon" data-icon="shield" data-icon-size="18"></span> Izin Luar Lokasi <span id="sidebar-outside-badge" class="pill pill--danger" style="margin-left:auto" hidden>0</span></button>
       <button class="sidebar__link" data-nav="cuti"><span class="inline-icon" data-icon="umbrella" data-icon-size="18"></span> Pengajuan Cuti</button>
       <button class="sidebar__link" data-nav="lembur"><span class="inline-icon" data-icon="clock" data-icon-size="18"></span> Pengajuan Lembur</button>
       <p class="sidebar__group-label">Keuangan &amp; Laporan</p>
@@ -130,7 +133,7 @@
 
       <!-- ===================== DASHBOARD ===================== -->
       <section data-page="dashboard">
-        <div class="page-title"><h2>Dashboard Admin</h2><p>Ringkasan kehadiran & aktivitas hari ini.</p><p class="fine-print" style="opacity:.55;margin-top:.4em">Build kode: v14 (2026-09-06)</p></div>
+        <div class="page-title"><h2>Dashboard Admin</h2><p>Ringkasan kehadiran & aktivitas hari ini.</p><p class="fine-print" style="opacity:.55;margin-top:.4em">Build kode: v15 (2026-09-07)</p></div>
 
         <div class="grid-stats" id="stat-cards"></div>
 
@@ -239,6 +242,19 @@
             <table class="data-table">
               <thead><tr><th>Nama</th><th>ID</th><th>Mulai Keluar</th><th>Durasi</th><th>Jarak Terakhir</th><th>Waktu Kembali</th><th>Status</th><th>Alasan</th></tr></thead>
               <tbody id="riwayat-lokasi-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <!-- ===================== IZIN ABSEN LUAR LOKASI ===================== -->
+      <section data-page="izin-lokasi" hidden>
+        <div class="page-title"><h2>Izin Absen Luar Lokasi</h2><p>Karyawan hanya bisa absen masuk/pulang di dalam radius kantor. Setujui atau tolak permintaan absen di luar radius di bawah ini.</p></div>
+        <section class="card">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Nama</th><th>Jenis</th><th>Tanggal</th><th>Jarak</th><th>Alasan</th><th>Status</th><th>Aksi</th></tr></thead>
+              <tbody id="izin-lokasi-tbody"></tbody>
             </table>
           </div>
         </section>
@@ -362,6 +378,7 @@
     <div class="stack">
       <button class="sidebar__link" data-nav="monitoring"><span class="inline-icon" data-icon="satellite" data-icon-size="18"></span> Monitoring Lokasi</button>
       <button class="sidebar__link" data-nav="riwayat-lokasi"><span class="inline-icon" data-icon="chart" data-icon-size="18"></span> Riwayat Lokasi</button>
+      <button class="sidebar__link" data-nav="izin-lokasi"><span class="inline-icon" data-icon="shield" data-icon-size="18"></span> Izin Luar Lokasi</button>
       <button class="sidebar__link" data-nav="cuti"><span class="inline-icon" data-icon="umbrella" data-icon-size="18"></span> Pengajuan Cuti</button>
       <button class="sidebar__link" data-nav="lembur"><span class="inline-icon" data-icon="clock" data-icon-size="18"></span> Pengajuan Lembur</button>
       <button class="sidebar__link" data-nav="gaji"><span class="inline-icon" data-icon="dollar" data-icon-size="18"></span> Gaji Karyawan</button>
@@ -404,11 +421,11 @@
 
 <div id="toast-region" class="toast-region" aria-live="polite"></div>
 
-<script src="js/config.js?v=14"></script>
-<script src="js/store.js?v=14"></script>
-<script src="js/ui-common.js?v=14"></script>
-<script src="js/modal.js?v=14"></script>
-<script src="js/geo.js?v=14"></script>
-<script src="js/admin.js?v=14"></script>
+<script src="js/config.js?v=15"></script>
+<script src="js/store.js?v=15"></script>
+<script src="js/ui-common.js?v=15"></script>
+<script src="js/modal.js?v=15"></script>
+<script src="js/geo.js?v=15"></script>
+<script src="js/admin.js?v=15"></script>
 </body>
 </html>
