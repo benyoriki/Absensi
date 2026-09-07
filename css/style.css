@@ -762,5 +762,19 @@ h3 .inline-icon{ margin-right:.15em; color:var(--brand-600); }
 .loading-screen__text{ text-align:center; color:#fff; }
 .loading-screen__text strong{ display:block; font-family:var(--font-display); font-size:1.05rem; font-weight:800; letter-spacing:-0.01em; }
 .loading-screen__text span{ display:block; font-size:.76rem; color:rgba(255,255,255,.62); margin-top:.25em; font-family:var(--font-mono); }
+.loading-screen__progress{
+  width:180px; height:5px; border-radius:var(--radius-pill); margin:1.1em auto 0;
+  background:rgba(255,255,255,.16); overflow:hidden;
+}
+.loading-screen__progress-bar{
+  width:0%; height:100%; border-radius:var(--radius-pill);
+  background:linear-gradient(90deg, var(--gold-500), var(--gold-400));
+  box-shadow:0 0 10px rgba(217,168,77,.6);
+  transition:width .2s linear;
+}
+.loading-screen__percent{
+  display:block; margin-top:.5em !important; font-size:.68rem !important;
+  color:rgba(255,255,255,.5) !important; font-family:var(--font-mono); letter-spacing:.03em;
+}
 .loading-screen__credit{ margin-top:1.6em !important; font-size:.68rem !important; color:rgba(255,255,255,.38) !important; letter-spacing:.02em; }
-@media (prefers-reduced-motion:reduce){ .loading-screen__ping{ animation:none; opacity:0; } }
+@media (prefers-reduced-motion:reduce){ .loading-screen__ping{ animation:none; opacity:0; } .loading-screen__progress-bar{ transition:none; } }
