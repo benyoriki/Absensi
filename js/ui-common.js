@@ -275,6 +275,31 @@ function formatDateID(dateKey) {
   return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+/* ==========================================================================
+   SHIFT KERJA — helper tampilan (dipakai admin.js & employee.js)
+   ========================================================================== */
+const SHIFT_DAY_LABELS = { 1: "Sen", 2: "Sel", 3: "Rab", 4: "Kam", 5: "Jum", 6: "Sab", 7: "Min" };
+const SHIFT_DAY_LABELS_FULL = { 1: "Senin", 2: "Selasa", 3: "Rabu", 4: "Kamis", 5: "Jumat", 6: "Sabtu", 7: "Minggu" };
+
+/** Ringkasan hari kerja shift, mis. "Sen–Jum" untuk [1,2,3,4,5] berurutan,
+ *  atau "Sen, Sel, Kam" untuk hari yang tidak berurutan. */
+function shiftDaysLabel(days) {
+  if (!Array.isArray(days) || !days.length) return "-";
+  const sorted = [...days].sort((a, b) => a - b);
+  const isConsecutive = sorted.every((d, i) => i === 0 || d === sorted[i - 1] + 1);
+  if (isConsecutive && sorted.length > 1) {
+    return `${SHIFT_DAY_LABELS[sorted[0]]}–${SHIFT_DAY_LABELS[sorted[sorted.length - 1]]}`;
+  }
+  return sorted.map((d) => SHIFT_DAY_LABELS[d]).join(", ");
+}
+
+/** Opsi <select> shift kerja untuk form admin (assign karyawan / filter). */
+function shiftOptionsHtml(selectedId) {
+  const shifts = Store.getShifts();
+  if (!shifts.length) return `<option value="">Belum ada shift</option>`;
+  return shifts.map((s) => `<option value="${escapeHtml(s.id)}" ${s.id === selectedId ? "selected" : ""}>${escapeHtml(s.name)} (${s.start}–${s.end})</option>`).join("");
+}
+
 function timeAgoID(ts) {
   const diff = Date.now() - ts;
   const min = Math.floor(diff / 60000);

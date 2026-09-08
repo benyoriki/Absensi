@@ -180,7 +180,7 @@
       "location-status-pill","radar-dot","radar-limit-label","stat-distance","stat-accuracy","stat-updated",
       "progress-fill","progress-caption","location-permission-note","open-maps-btn",
       "check-in-btn","check-out-btn","check-in-sub","check-out-sub",
-      "today-schedule","leave-remaining","leave-used","leave-quota",
+      "today-schedule","today-shift-name","leave-remaining","leave-used","leave-quota",
       "riwayat-list","jadwal-list",
       "cuti-remaining","cuti-quota","cuti-used","leave-form","leave-type","leave-start","leave-end","leave-reason","leave-form-error","leave-history-list",
       "overtime-form","ot-date","ot-start","ot-end","ot-task","ot-reason","ot-form-error","overtime-history-list",
@@ -241,7 +241,7 @@
   /* EVENTS                                                              */
   /* ------------------------------------------------------------------ */
   function bindEvents() {
-    el.openMapsBtn.addEventListener("click", () => window.open(OFFICE_MAPS_URL, "_blank", "noopener"));
+    el.openMapsBtn.addEventListener("click", () => window.open(CONFIG.OFFICE_MAPS_URL, "_blank", "noopener"));
     el.checkInBtn.addEventListener("click", () => runAttendanceFlow("check-in"));
     el.checkOutBtn.addEventListener("click", () => runAttendanceFlow("check-out"));
     el.attendanceModalClose.addEventListener("click", () => Modal.hide("attendance-modal"));
@@ -306,6 +306,15 @@
     if (el.radarLimitLabel) el.radarLimitLabel.textContent = CONFIG.ATTENDANCE_RADIUS + "m";
     if (el.progressCaption) {
       el.progressCaption.innerHTML = `Batas absensi: <strong>${CONFIG.ATTENDANCE_RADIUS} meter</strong> dari kantor. Area kerja: <strong>${CONFIG.OUTSIDE_AREA_RADIUS} meter</strong> (peringatan jika keluar &gt; ${CONFIG.OUTSIDE_AREA_MINUTES} menit).`;
+    }
+    // Jadwal hari ini sekarang diambil dari SHIFT yang ditautkan admin ke
+    // akun karyawan (bukan lagi teks "08:00–17:00" yang di-hardcode di
+    // HTML) — lihat Store.getEffectiveSchedule().
+    if (el.todaySchedule) {
+      const fresh = Store.findUserById(user.id) || user;
+      const schedule = Store.getEffectiveSchedule(fresh);
+      el.todaySchedule.textContent = schedule.isWorkday ? `${schedule.start} – ${schedule.end}` : "Libur hari ini";
+      if (el.todayShiftName) el.todayShiftName.textContent = schedule.name;
     }
   }
 
@@ -610,16 +619,24 @@
   /* JADWAL KERJA                                                        */
   /* ------------------------------------------------------------------ */
   function renderJadwal() {
-    const days = [
-      ["Senin", "08:00 – 17:00"], ["Selasa", "08:00 – 17:00"], ["Rabu", "08:00 – 17:00"],
-      ["Kamis", "08:00 – 17:00"], ["Jumat", "08:00 – 17:00"], ["Sabtu", "Libur"], ["Minggu", "Libur"]
-    ];
-    el.jadwalList.innerHTML = days.map(([d, t]) => `
+    const fresh = Store.findUserById(user.id) || user;
+    const shift = fresh.shiftId ? Store.findShiftById(fresh.shiftId) : null;
+    const days = [1, 2, 3, 4, 5, 6, 7].map((iso) => {
+      const isWorkday = shift ? shift.days.includes(iso) : (iso >= 1 && iso <= 5);
+      const label = isWorkday ? `${shift ? shift.start : "08:00"} – ${shift ? shift.end : "17:00"}` : "Libur";
+      return [SHIFT_DAY_LABELS_FULL[iso], label];
+    });
+    if (el.todayShiftName) {
+      el.todayShiftName.textContent = shift ? `Shift: ${shift.name}` : "Jadwal Standar";
+    }
+    el.jadwalList.innerHTML = `
+      ${shift ? `<li class="fine-print" style="padding:.4em 0">${escapeHtml(shift.name)}${shift.note ? " · " + escapeHtml(shift.note) : ""}</li>` : ""}
+      ${days.map(([d, t]) => `
       <li>
         <div class="history-list__dot" style="background:${t === "Libur" ? "var(--text-400)" : "var(--brand-600)"}"></div>
         <div class="history-list__body"><div class="history-list__time">${d}</div></div>
         <span class="mono text-sm">${t}</span>
-      </li>`).join("");
+      </li>`).join("")}`;
   }
 
   /* ------------------------------------------------------------------ */

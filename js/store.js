@@ -26,6 +26,8 @@ const Store = (function () {
     overtime: "rakabu_overtime",
     notifications: "rakabu_notifications",
     salary: "rakabu_salary",
+    shifts: "rakabu_shifts",
+    officeSettings: "rakabu_office_settings",
     zoneEvents: "rakabu_zone_events",
     presence: "rakabu_presence",
     outsideRequests: "rakabu_outside_requests",
@@ -54,6 +56,18 @@ const Store = (function () {
   }
   function uid(prefix) {
     return (prefix || "id") + "_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+
+  // Menambah `mins` menit ke waktu berformat "HH:MM" (dipakai untuk
+  // menghitung batas telat = jam masuk shift + toleransi). Membungkus
+  // lewat tengah malam dengan aman (mis. shift malam 23:50 + 15 = 00:05).
+  function addMinutesToTime(hhmm, mins) {
+    const [h, m] = String(hhmm || "00:00").split(":").map(Number);
+    let total = (h * 60 + m + (mins || 0)) % 1440;
+    if (total < 0) total += 1440;
+    const H = String(Math.floor(total / 60)).padStart(2, "0");
+    const M = String(total % 60).padStart(2, "0");
+    return `${H}:${M}`;
   }
 
   /**
@@ -89,6 +103,45 @@ const Store = (function () {
     const now = Date.now();
     const day = 24 * 60 * 60 * 1000;
 
+    // ------------------------------------------------------------------
+    // SHIFT KERJA — jadwal jam kerja yang bisa ditambah/diedit admin lewat
+    // menu "Shift Kerja". Setiap karyawan (field `shiftId` pada user)
+    // ditautkan ke salah satu shift di bawah ini. `days` berisi indeks hari
+    // kerja (1=Senin … 7=Minggu, ISO) — hari di luar daftar ini dianggap
+    // libur untuk shift tsb.
+    const shifts = [
+      {
+        id: "SHIFT_REGULER",
+        name: "Reguler (Kantor)",
+        start: "08:00",
+        end: "17:00",
+        days: [1, 2, 3, 4, 5],
+        color: "brand",
+        note: "Jadwal standar Senin–Jumat.",
+        createdAt: now - 400 * day
+      },
+      {
+        id: "SHIFT_PAGI",
+        name: "Shift Pagi (Operasional)",
+        start: "06:00",
+        end: "14:00",
+        days: [1, 2, 3, 4, 5, 6],
+        color: "success",
+        note: "Untuk tim kandang & operasional pagi.",
+        createdAt: now - 400 * day
+      },
+      {
+        id: "SHIFT_SIANG",
+        name: "Shift Siang (Operasional)",
+        start: "14:00",
+        end: "22:00",
+        days: [1, 2, 3, 4, 5, 6],
+        color: "warning",
+        note: "Lanjutan shift pagi untuk tim operasional.",
+        createdAt: now - 400 * day
+      }
+    ];
+
     const users = [
       {
         id: "ADM001",
@@ -117,6 +170,7 @@ const Store = (function () {
         phone: "081234567890",
         position: "Staff IT",
         department: "IT",
+        shiftId: "SHIFT_REGULER",
         status: "active",
         joinDate: "2023-03-01",
         leaveQuota: 12,
@@ -133,6 +187,7 @@ const Store = (function () {
         phone: "081234500001",
         position: "Staff Kandang",
         department: "Operasional",
+        shiftId: "SHIFT_PAGI",
         status: "active",
         joinDate: "2023-06-15",
         leaveQuota: 12,
@@ -149,6 +204,7 @@ const Store = (function () {
         phone: "081234500002",
         position: "Staff Gudang Pakan",
         department: "Gudang",
+        shiftId: "SHIFT_REGULER",
         status: "pending",
         joinDate: null,
         leaveQuota: 12,
@@ -226,6 +282,7 @@ const Store = (function () {
     write(KEYS.overtime, overtime);
     write(KEYS.notifications, notifications);
     write(KEYS.salary, salary);
+    write(KEYS.shifts, shifts);
     write(KEYS.zoneEvents, []);
     write(KEYS.seeded, true);
   }
@@ -283,6 +340,7 @@ const Store = (function () {
       phone: data.phone,
       position: data.position,
       department: data.department,
+      shiftId: "SHIFT_REGULER",
       status: "pending",
       joinDate: null,
       leaveQuota: 12,
@@ -361,7 +419,11 @@ const Store = (function () {
     const dateKey = localDateKey();
     let record = list.find(a => a.userId === userId && a.date === dateKey);
     const timeStr = new Date().toTimeString().slice(0, 5);
-    const lateAfter = (typeof CONFIG !== "undefined" && CONFIG.LATE_AFTER) || "08:15";
+    // Batas telat sekarang dihitung dari SHIFT karyawan (jam masuk shift +
+    // toleransi), bukan lagi satu angka global — lihat getEffectiveSchedule().
+    const user = findUserById(userId);
+    const schedule = getEffectiveSchedule(user);
+    const lateAfter = schedule.lateAfter || ((typeof CONFIG !== "undefined" && CONFIG.LATE_AFTER) || "08:15");
     const isLate = timeStr > lateAfter;
     if (!record) {
       record = {
@@ -404,9 +466,222 @@ const Store = (function () {
     return getAttendance().filter(a => a.userId === userId).sort((a, b) => b.date.localeCompare(a.date));
   }
 
+  /**
+   * Koreksi jam masuk / jam pulang oleh admin (mis. karyawan lupa absen,
+   * HP mati, GPS gagal, dsb). Membuat record baru kalau belum ada untuk
+   * tanggal tsb (absen manual), atau memperbarui record yang sudah ada.
+   * Setiap perubahan WAJIB disertai catatan (`note`) dan dicatat sebagai
+   * jejak audit (`editedByAdmin`) + notifikasi ke karyawan bersangkutan,
+   * supaya perubahan jam kerja selalu transparan.
+   */
+  function adminUpdateAttendance(userId, dateKey, updates, adminName, note) {
+    const list = getAttendance();
+    let record = list.find(a => a.userId === userId && a.date === dateKey);
+    const isNew = !record;
+    if (!record) {
+      record = { id: uid("att"), userId, date: dateKey, checkIn: null, checkOut: null, status: "hadir" };
+      list.push(record);
+    }
+    if (updates.checkIn !== undefined) record.checkIn = updates.checkIn || null;
+    if (updates.checkOut !== undefined) record.checkOut = updates.checkOut || null;
+    if (updates.status !== undefined) record.status = updates.status;
+    record.editedByAdmin = {
+      by: adminName || "Admin", at: Date.now(), note: note || "", createdRecord: isNew
+    };
+    saveAttendanceList(list);
+    addNotification({
+      audience: userId, type: "info",
+      title: isNew ? "Absensi ditambahkan admin" : "Jam absensi diperbarui admin",
+      message: `Data absensi tanggal ${dateKey} ${isNew ? "ditambahkan" : "dikoreksi"} oleh ${adminName || "Admin"}` + (note ? `. Catatan: ${note}` : ".")
+    });
+    return record;
+  }
+
   /* ------------------------------------------------------------------ */
-  /* ZONE / GEOFENCE EVENTS (karyawan keluar area kerja > 10 menit)     */
+  /* SHIFT KERJA                                                        */
   /* ------------------------------------------------------------------ */
+  // Bentuk record shift:
+  //   { id, name, start ("HH:MM"), end ("HH:MM"), days ([1..7], 1=Senin),
+  //     color, note, createdAt }
+  function getShifts() { return read(KEYS.shifts, []); }
+  function saveShifts(list) { return write(KEYS.shifts, list); }
+  function findShiftById(id) { return getShifts().find(s => s.id === id) || null; }
+
+  function addShift(data) {
+    const list = getShifts();
+    const record = {
+      id: uid("shift"),
+      name: data.name,
+      start: data.start,
+      end: data.end,
+      days: Array.isArray(data.days) && data.days.length ? data.days : [1, 2, 3, 4, 5],
+      color: data.color || "brand",
+      note: data.note || "",
+      createdAt: Date.now()
+    };
+    list.push(record);
+    saveShifts(list);
+    return record;
+  }
+
+  function updateShift(id, updates) {
+    const list = getShifts();
+    const record = list.find(s => s.id === id);
+    if (!record) return null;
+    Object.assign(record, updates);
+    saveShifts(list);
+    return record;
+  }
+
+  /** Menghapus shift. Karyawan yang masih memakai shift ini otomatis
+   *  dipindahkan ke `fallbackShiftId` (jika ada) supaya tidak ada
+   *  karyawan yang kehilangan jadwal kerja. */
+  function deleteShift(id, fallbackShiftId) {
+    const shiftList = getShifts().filter(s => s.id !== id);
+    saveShifts(shiftList);
+    const users = getUsers();
+    let changed = false;
+    users.forEach(u => {
+      if (u.shiftId === id) { u.shiftId = fallbackShiftId || null; changed = true; }
+    });
+    if (changed) saveUsers(users);
+  }
+
+  function usersCountByShift(shiftId) {
+    return getUsers().filter(u => u.role === "employee" && u.shiftId === shiftId).length;
+  }
+
+  function assignUserShift(userId, shiftId) {
+    return updateUser(userId, { shiftId });
+  }
+
+  /**
+   * Jadwal kerja EFEKTIF milik seorang karyawan untuk hari ini: dari shift
+   * yang ditautkan padanya, atau jadwal cadangan (CONFIG) jika karyawan
+   * belum punya shift (mis. akun lama sebelum fitur ini ada).
+   * `dayIso` = 1..7 (1=Senin..7=Minggu), default hari ini.
+   */
+  function getEffectiveSchedule(user, dayIso) {
+    const fallback = {
+      start: "08:00", end: "17:00", days: [1, 2, 3, 4, 5], name: "Jadwal Standar", isFallback: true
+    };
+    const shift = user && user.shiftId ? findShiftById(user.shiftId) : null;
+    const sched = shift || fallback;
+    const iso = dayIso || (new Date().getDay() === 0 ? 7 : new Date().getDay());
+    const isWorkday = sched.days.includes(iso);
+    const graceMin = (typeof CONFIG !== "undefined" && CONFIG.LATE_GRACE_MINUTES) || 15;
+    return {
+      name: sched.name || "Jadwal Standar",
+      start: sched.start, end: sched.end, days: sched.days,
+      isWorkday, isFallback: !!sched.isFallback,
+      lateAfter: addMinutesToTime(sched.start, graceMin)
+    };
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* PENGATURAN LOKASI KANTOR (koordinat, radius absensi, dsb.)          */
+  /* ------------------------------------------------------------------ */
+  // Nilai bawaan (default) diambil sekali dari CONFIG persis saat modul ini
+  // pertama kali dimuat — yaitu SEBELUM ada override apa pun diterapkan.
+  // Karena config.js selalu dieksekusi ulang dari awal di setiap page
+  // load (bukan disimpan), snapshot ini selalu = nilai asli di js/config.js,
+  // sehingga bisa dipakai admin untuk "Kembalikan ke Default" kapan saja.
+  const DEFAULT_OFFICE_SETTINGS = (typeof CONFIG !== "undefined") ? {
+    latitude: CONFIG.OFFICE_LOCATION.latitude,
+    longitude: CONFIG.OFFICE_LOCATION.longitude,
+    mapsUrl: CONFIG.OFFICE_MAPS_URL,
+    attendanceRadius: CONFIG.ATTENDANCE_RADIUS,
+    outsideAreaRadius: CONFIG.OUTSIDE_AREA_RADIUS
+  } : null;
+
+  function buildGoogleMapsUrl(lat, lon) {
+    return `https://www.google.com/maps?q=${lat},${lon}`;
+  }
+
+  /** Validasi input form "Edit Lokasi Kantor" sebelum disimpan. Mengembalikan
+   *  { ok:true, data } atau { ok:false, error } — TIDAK PERNAH melempar
+   *  exception, supaya UI selalu bisa menampilkan pesan yang jelas alih-alih
+   *  layar putih/error tak tertangani. */
+  function validateOfficeSettings(input) {
+    const lat = Number(input.latitude);
+    const lon = Number(input.longitude);
+    const radius = Number(input.attendanceRadius);
+    const outsideRadius = Number(input.outsideAreaRadius);
+
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
+      return { ok: false, error: "Latitude harus berupa angka antara -90 sampai 90." };
+    }
+    if (!Number.isFinite(lon) || lon < -180 || lon > 180) {
+      return { ok: false, error: "Longitude harus berupa angka antara -180 sampai 180." };
+    }
+    if (lat === 0 && lon === 0) {
+      return { ok: false, error: "Koordinat (0, 0) sepertinya belum diisi dengan benar (itu titik di Samudra Atlantik, bukan kantor Anda)." };
+    }
+    if (!Number.isFinite(radius) || radius < 1 || radius > 1000) {
+      return { ok: false, error: "Radius absensi harus angka antara 1–1000 meter." };
+    }
+    if (!Number.isFinite(outsideRadius) || outsideRadius < 1 || outsideRadius > 2000) {
+      return { ok: false, error: "Radius area kerja harus angka antara 1–2000 meter." };
+    }
+    if (outsideRadius < radius) {
+      return { ok: false, error: "Radius area kerja tidak boleh lebih kecil dari radius absensi (karyawan yang baru absen masuk langsung dianggap 'keluar area')." };
+    }
+    let mapsUrl = String(input.mapsUrl || "").trim();
+    if (mapsUrl && !/^https?:\/\//i.test(mapsUrl)) {
+      return { ok: false, error: "Link Google Maps harus diawali dengan http:// atau https://" };
+    }
+    if (!mapsUrl) mapsUrl = buildGoogleMapsUrl(lat, lon);
+
+    return {
+      ok: true,
+      data: { latitude: lat, longitude: lon, attendanceRadius: Math.round(radius), outsideAreaRadius: Math.round(outsideRadius), mapsUrl }
+    };
+  }
+
+  function getOfficeSettings() {
+    return read(KEYS.officeSettings, null);
+  }
+
+  /** Menerapkan pengaturan (dari localStorage atau baru disimpan) ke objek
+   *  CONFIG yang sedang aktif. Sengaja MEMODIFIKASI properti di dalam objek
+   *  yang sudah ada (bukan mengganti CONFIG.OFFICE_LOCATION dengan objek
+   *  baru), supaya alias lama `OFFICE_LOCATION` di config.js — yang
+   *  menunjuk ke objek yang sama — tetap ikut ter-update otomatis. */
+  function applyOfficeSettingsToConfig(settings) {
+    if (!settings || typeof CONFIG === "undefined") return;
+    CONFIG.OFFICE_LOCATION.latitude = settings.latitude;
+    CONFIG.OFFICE_LOCATION.longitude = settings.longitude;
+    CONFIG.ATTENDANCE_RADIUS = settings.attendanceRadius;
+    CONFIG.OUTSIDE_AREA_RADIUS = settings.outsideAreaRadius;
+    CONFIG.OFFICE_MAPS_URL = settings.mapsUrl;
+  }
+
+  /** Simpan pengaturan baru dari form admin. Memberi tahu semua karyawan
+   *  aktif lewat notifikasi supaya mereka tidak bingung kalau tiba-tiba
+   *  tidak bisa absen (radius/lokasi berubah). */
+  function saveOfficeSettings(input, adminName) {
+    const result = validateOfficeSettings(input);
+    if (!result.ok) return result;
+    const settings = { ...result.data, updatedAt: Date.now(), updatedBy: adminName || "Admin" };
+    write(KEYS.officeSettings, settings);
+    applyOfficeSettingsToConfig(settings);
+    getUsers().filter(u => u.role === "employee" && u.status === "active").forEach(u => {
+      addNotification({
+        audience: u.id, type: "info", title: "Lokasi kantor diperbarui",
+        message: `Titik lokasi dan/atau radius absensi kantor telah diperbarui oleh ${adminName || "Admin"}. Muat ulang aplikasi jika absen tiba-tiba gagal.`
+      });
+    });
+    return { ok: true, data: settings };
+  }
+
+  function resetOfficeSettings(adminName) {
+    if (!DEFAULT_OFFICE_SETTINGS) return { ok: false, error: "Konfigurasi bawaan tidak ditemukan." };
+    localStorage.removeItem(KEYS.officeSettings);
+    applyOfficeSettingsToConfig(DEFAULT_OFFICE_SETTINGS);
+    return { ok: true, data: DEFAULT_OFFICE_SETTINGS };
+  }
+
+
   // Bentuk record zoneEvent:
   //   { id, userId, status: "active"|"resolved",
   //     outsideSince, reachedAt, returnedAt,
@@ -721,11 +996,42 @@ const Store = (function () {
 
   seedIfNeeded();
 
+  // Migrasi untuk instalasi lama (localStorage sudah pernah di-seed
+  // SEBELUM fitur Shift Kerja ada): pastikan tetap ada minimal satu shift
+  // default, dan karyawan lama tanpa shiftId ditautkan ke shift itu —
+  // supaya jadwal & perhitungan telat tidak pernah kosong.
+  (function migrateShifts() {
+    let shifts = read(KEYS.shifts, []);
+    if (!Array.isArray(shifts) || shifts.length === 0) {
+      shifts = [{
+        id: "SHIFT_REGULER", name: "Reguler (Kantor)", start: "08:00", end: "17:00",
+        days: [1, 2, 3, 4, 5], color: "brand", note: "Jadwal standar Senin–Jumat.",
+        createdAt: Date.now()
+      }];
+      write(KEYS.shifts, shifts);
+    }
+    const defaultId = shifts[0].id;
+    const users = read(KEYS.users, []);
+    let changed = false;
+    users.forEach(u => { if (u.role === "employee" && !u.shiftId) { u.shiftId = defaultId; changed = true; } });
+    if (changed) write(KEYS.users, users);
+  })();
+
+  // Terapkan override lokasi kantor (jika admin pernah menyimpan lewat menu
+  // Pengaturan) ke CONFIG yang aktif saat ini. HARUS dijalankan sebelum
+  // geo.js/employee.js/admin.js memakai CONFIG.OFFICE_LOCATION dkk — aman
+  // karena store.js selalu dimuat sebelum ketiga file itu di setiap halaman.
+  applyOfficeSettingsToConfig(getOfficeSettings());
+
   return {
     KEYS, uid, hashPassword, localDateKey,
     getUsers, saveUsers, findUserByUsername, findUserById, registerEmployee,
     login, logout, currentUser, getSession, updateUser, approveUser, rejectUser, setUserStatus,
-    getAttendance, getTodayRecord, checkIn, checkOut, attendanceByUser,
+    getAttendance, getTodayRecord, checkIn, checkOut, attendanceByUser, adminUpdateAttendance,
+    getShifts, saveShifts, findShiftById, addShift, updateShift, deleteShift,
+    usersCountByShift, assignUserShift, getEffectiveSchedule, addMinutesToTime,
+    getOfficeSettings, saveOfficeSettings, resetOfficeSettings, validateOfficeSettings,
+    buildGoogleMapsUrl, DEFAULT_OFFICE_SETTINGS,
     getZoneEvents, zoneEventsByUser, activeZoneEventFor, createLocationEvent, resolveLocationEvent, setLocationEventReason, formatDuration,
     getPresenceMap, setPresence, getPresenceFor,
     getOutsideRequests, outsideRequestsByUser, pendingOutsideRequestFor, approvedOutsideRequestFor,

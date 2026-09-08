@@ -55,11 +55,23 @@ const CONFIG = {
   OUTSIDE_AREA_MINUTES: 10,
 
   // Batas jam masuk sebelum dianggap terlambat (format HH:MM, 24 jam).
-  LATE_AFTER: "08:15"
+  // Dipakai HANYA sebagai cadangan untuk karyawan yang belum memiliki shift
+  // kerja (lihat js/store.js — Store.getEffectiveSchedule). Sejak sistem
+  // shift ditambahkan, batas telat yang sesungguhnya dihitung dari jam
+  // masuk shift masing-masing karyawan + LATE_GRACE_MINUTES di bawah.
+  LATE_AFTER: "08:15",
+
+  // Toleransi keterlambatan (menit) dihitung dari jam masuk SHIFT karyawan.
+  // Contoh: shift masuk 08:00 + toleransi 15 menit → telat jika absen > 08:15.
+  LATE_GRACE_MINUTES: 15
 };
 
-// Alias lama dipertahankan agar kompatibel jika ada kode lain yang masih
-// memanggilnya (tidak ada di v9, tapi aman untuk jaga-jaga).
-const OFFICE_LOCATION = CONFIG.OFFICE_LOCATION;
-const OFFICE_MAPS_URL = CONFIG.OFFICE_MAPS_URL;
-const ATTENDANCE_RADIUS = CONFIG.ATTENDANCE_RADIUS;
+// Catatan: alias bare (OFFICE_LOCATION / OFFICE_MAPS_URL / ATTENDANCE_RADIUS)
+// yang dulu ada di sini SUDAH DIHAPUS. Sejak menu "Lokasi Kantor" di admin
+// bisa mengubah nilai-nilai ini saat aplikasi berjalan (lihat
+// Store.saveOfficeSettings di js/store.js, yang MEMODIFIKASI properti di
+// dalam objek CONFIG secara langsung), alias primitif seperti
+// `const ATTENDANCE_RADIUS = CONFIG.ATTENDANCE_RADIUS` akan membeku ke nilai
+// LAMA dan tidak pernah ikut ter-update — sumber bug yang sangat halus.
+// SELALU baca lewat `CONFIG.OFFICE_LOCATION` / `CONFIG.OFFICE_MAPS_URL` /
+// `CONFIG.ATTENDANCE_RADIUS` dst, jangan buat alias baru untuk nilai ini.

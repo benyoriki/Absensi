@@ -38,7 +38,14 @@
     [
       "stat-cards","attendance-donut","attendance-legend","weekly-bar-chart","recent-activity-list",
       "pendaftaran-tbody","pendaftaran-empty","karyawan-search","karyawan-tbody",
-      "absensi-tbody","export-attendance-btn",
+      "absensi-tbody","export-attendance-btn","add-manual-attendance-btn",
+      "edit-attendance-modal","edit-attendance-close","edit-attendance-form",
+      "ea-user","ea-date","ea-checkin","ea-checkout","ea-status","ea-note",
+      "shift-grid","shift-users-tbody","add-shift-btn",
+      "shift-modal","shift-modal-close","shift-form","shift-id","shift-name","shift-start","shift-end","shift-days-picker","shift-note","shift-delete-btn",
+      "edit-office-location-btn","setting-updated-note",
+      "office-location-modal","office-location-close","office-location-form","office-use-my-location-btn","office-geo-status",
+      "office-lat","office-lon","office-radius","office-outside-radius","office-maps-url","office-location-error","office-reset-default-btn",
       "monitoring-tbody","riwayat-lokasi-tbody","riwayat-lokasi-search",
       "izin-lokasi-tbody","sidebar-outside-badge",
       "setting-lat","setting-lon","setting-radius","setting-outside-radius","setting-accuracy","setting-outside","setting-late","setting-open-maps-btn",
@@ -60,6 +67,7 @@
     renderPendaftaran();
     renderKaryawan();
     renderAbsensi("today");
+    renderShift();
     renderIzinLokasi();
     renderCuti();
     renderLembur();
@@ -82,11 +90,12 @@
     window.addEventListener("hashchange", () => route(location.hash.replace("#", "")));
   }
   function route(page) {
-    const valid = ["dashboard","pendaftaran","karyawan","absensi","monitoring","riwayat-lokasi","izin-lokasi","cuti","lembur","gaji","laporan","pengaturan","notifikasi"];
+    const valid = ["dashboard","pendaftaran","karyawan","absensi","shift","monitoring","riwayat-lokasi","izin-lokasi","cuti","lembur","gaji","laporan","pengaturan","notifikasi"];
     if (!valid.includes(page)) page = "dashboard";
     document.querySelectorAll("[data-page]").forEach((sec) => { sec.hidden = sec.dataset.page !== page; });
     document.querySelectorAll("[data-nav]").forEach((btn) => btn.classList.toggle("is-active", btn.dataset.nav === page));
     if (page === "notifikasi") { Store.markAllRead("admin"); renderNotifications(); updateNotifBadge(); }
+    if (page === "shift") renderShift();
     if (page === "monitoring") renderMonitoring();
     if (page === "riwayat-lokasi") renderRiwayatLokasi("today");
     if (page === "pengaturan") renderPengaturan();
@@ -116,6 +125,27 @@
     el.settingOpenMapsBtn.addEventListener("click", () => window.open(CONFIG.OFFICE_MAPS_URL, "_blank"));
     el.exportAttendanceBtn.addEventListener("click", exportAttendanceCsv);
     el.exportGajiBtn.addEventListener("click", exportGajiCsv);
+
+    // Edit / Tambah Jam Absensi
+    el.addManualAttendanceBtn.addEventListener("click", () => openEditAttendanceModal(null, null));
+    el.editAttendanceClose.addEventListener("click", () => Modal.hide("edit-attendance-modal"));
+    el.editAttendanceForm.addEventListener("submit", onSubmitEditAttendance);
+
+    // Shift Kerja
+    el.addShiftBtn.addEventListener("click", () => openShiftModal(null));
+    el.shiftModalClose.addEventListener("click", () => Modal.hide("shift-modal"));
+    el.shiftForm.addEventListener("submit", onSubmitShift);
+    el.shiftDeleteBtn.addEventListener("click", onDeleteShift);
+    el.shiftDaysPicker.querySelectorAll("[data-day]").forEach((chip) => {
+      chip.addEventListener("click", () => chip.classList.toggle("is-active"));
+    });
+
+    // Ubah Lokasi Kantor
+    el.editOfficeLocationBtn.addEventListener("click", openOfficeLocationModal);
+    el.officeLocationClose.addEventListener("click", () => Modal.hide("office-location-modal"));
+    el.officeLocationForm.addEventListener("submit", onSubmitOfficeLocation);
+    el.officeUseMyLocationBtn.addEventListener("click", onUseMyLocation);
+    el.officeResetDefaultBtn.addEventListener("click", onResetOfficeLocation);
 
     el.rejectModalClose.addEventListener("click", () => Modal.hide("reject-modal"));
     el.rejectForm.addEventListener("submit", onSubmitReject);
@@ -174,15 +204,16 @@
     const cutiHariIni = Store.getLeave().filter((l) => l.status === "approved" && todayKey >= l.startDate && todayKey <= l.endDate).length;
     const lemburBulanIni = Store.getOvertime().filter((o) => o.status === "approved" && o.date.slice(0, 7) === todayKey.slice(0, 7)).length;
 
+    const totalTerdaftar = users.length;
     const cards = [
-      { label: "TOTAL KARYAWAN", value: active.length, icon: "users", color: "info" },
-      { label: "HADIR HARI INI", value: hadir + terlambat, icon: "checkCircle", color: "success" },
-      { label: "TERLAMBAT", value: terlambat, icon: "clock", color: "warning" },
-      { label: "BELUM ABSEN", value: belumAbsen, icon: "user", color: "neutral" },
-      { label: "CUTI HARI INI", value: cutiHariIni, icon: "umbrella", color: "info" },
-      { label: "PENDAFTARAN PENDING", value: Store.getUsers().filter((u) => u.status === "pending").length, icon: "plusCircle", color: "warning" },
-      { label: "LEMBUR BULAN INI", value: lemburBulanIni, icon: "chart", color: "info" },
-      { label: "TIDAK HADIR", value: Math.max(0, active.length - hadir - terlambat - cutiHariIni - belumAbsen), icon: "slash", color: "danger" }
+      { label: "TOTAL KARYAWAN", value: active.length, hint: `${totalTerdaftar} akun terdaftar`, icon: "users", color: "info" },
+      { label: "HADIR HARI INI", value: hadir + terlambat, hint: active.length ? `${Math.round(((hadir + terlambat) / active.length) * 100)}% dari karyawan aktif` : "-", icon: "checkCircle", color: "success" },
+      { label: "TERLAMBAT", value: terlambat, hint: "dari yang absen hari ini", icon: "clock", color: "warning" },
+      { label: "BELUM ABSEN", value: belumAbsen, hint: "karyawan aktif hari ini", icon: "user", color: "neutral" },
+      { label: "CUTI HARI INI", value: cutiHariIni, hint: "pengajuan disetujui", icon: "umbrella", color: "info" },
+      { label: "PENDAFTARAN PENDING", value: Store.getUsers().filter((u) => u.status === "pending").length, hint: "menunggu persetujuan", icon: "plusCircle", color: "warning" },
+      { label: "LEMBUR BULAN INI", value: lemburBulanIni, hint: "pengajuan disetujui", icon: "chart", color: "info" },
+      { label: "TIDAK HADIR", value: Math.max(0, active.length - hadir - terlambat - cutiHariIni - belumAbsen), hint: "tanpa keterangan", icon: "slash", color: "danger" }
     ];
     el.statCards.innerHTML = cards.map((c) => `
       <div class="stat-card stat-card--${c.color}">
@@ -191,6 +222,7 @@
         </div>
         <div class="stat-card__value">${c.value}</div>
         <div class="stat-card__label">${c.label}</div>
+        ${c.hint ? `<div class="stat-card__hint">${c.hint}</div>` : ""}
       </div>`).join("");
 
     const pendingCount = Store.getUsers().filter((u) => u.status === "pending").length;
@@ -398,6 +430,8 @@
           <div><label for="edit-position">Jabatan</label><input id="edit-position" value="${escapeHtml(u.position)}" /></div>
           <div><label for="edit-department">Departemen</label><input id="edit-department" value="${escapeHtml(u.department)}" /></div>
         </div>
+        <label for="edit-shift">Shift Kerja</label>
+        <select id="edit-shift">${shiftOptionsHtml(u.shiftId)}</select>
         <button type="submit" class="btn btn--ghost btn--block mt-1">Simpan Perubahan</button>
       </form>
     `;
@@ -425,7 +459,8 @@
       e.preventDefault();
       Store.updateUser(u.id, {
         position: document.getElementById("edit-position").value.trim(),
-        department: document.getElementById("edit-department").value.trim()
+        department: document.getElementById("edit-department").value.trim(),
+        shiftId: document.getElementById("edit-shift").value
       });
       showToast("Data karyawan diperbarui.", "success");
       Modal.hide("employee-modal");
@@ -447,25 +482,73 @@
     else if (range === "month") { list = list.filter((a) => { const d = new Date(a.date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }); }
     list = list.sort((a, b) => b.date.localeCompare(a.date));
 
-    if (!list.length) { el.absensiTbody.innerHTML = `<tr><td colspan="6">${emptyStateBlock("Tidak ada data absensi pada rentang ini.")}</td></tr>`; return; }
+    if (!list.length) { el.absensiTbody.innerHTML = `<tr><td colspan="7">${emptyStateBlock("Tidak ada data absensi pada rentang ini.")}</td></tr>`; return; }
     el.absensiTbody.innerHTML = list.map((a) => {
       const u = Store.findUserById(a.userId);
       const exceptionNote = (a.checkInViaException || a.checkOutViaException)
         ? ' <span class="text-sm text-muted" title="Absen di luar radius, disetujui admin">📍izin</span>' : "";
+      const editedNote = a.editedByAdmin ? ` <span class="text-sm text-muted" title="Dikoreksi oleh ${escapeHtml(a.editedByAdmin.by)}${a.editedByAdmin.note ? ': ' + escapeHtml(a.editedByAdmin.note) : ''}">✏️ dikoreksi</span>` : "";
       return `<tr>
         <td>${escapeHtml(u ? u.name : a.userId)}</td>
         <td>${formatDateID(a.date)}</td>
         <td class="mono">${a.checkIn || "—"}</td>
         <td class="mono">${a.checkOut || "—"}</td>
         <td class="mono">${a.checkInDistance != null ? a.checkInDistance.toFixed(1) + " m" : "—"}${exceptionNote}</td>
-        <td>${statusBadge(a.status)}</td>
+        <td>${statusBadge(a.status)}${editedNote}</td>
+        <td><button type="button" class="btn btn--ghost btn--sm" data-edit-attendance="${a.userId}" data-edit-date="${a.date}">Edit</button></td>
       </tr>`;
     }).join("");
+    el.absensiTbody.querySelectorAll("[data-edit-attendance]").forEach((btn) => {
+      btn.addEventListener("click", () => openEditAttendanceModal(btn.dataset.editAttendance, btn.dataset.editDate));
+    });
   }
   function statusBadge(status) {
-    const map = { hadir: ["badge--success","Hadir"], terlambat: ["badge--warning","Terlambat"], "tidak-hadir": ["badge--danger","Tidak Hadir"] };
+    const map = {
+      hadir: ["badge--success", "Hadir"], terlambat: ["badge--warning", "Terlambat"],
+      izin: ["badge--info", "Izin"], alpa: ["badge--danger", "Alpa"],
+      "tidak-hadir": ["badge--danger", "Tidak Hadir"]
+    };
     const [cls, label] = map[status] || ["badge--neutral", status];
     return `<span class="badge ${cls}">${label}</span>`;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* EDIT / TAMBAH JAM ABSENSI (koreksi admin)                          */
+  /* ------------------------------------------------------------------ */
+  function populateEaUserSelect(selectedUserId) {
+    const employees = Store.getUsers().filter((u) => u.role === "employee").sort((a, b) => a.name.localeCompare(b.name));
+    el.eaUser.innerHTML = employees.map((u) => `<option value="${escapeHtml(u.id)}" ${u.id === selectedUserId ? "selected" : ""}>${escapeHtml(u.name)} (${escapeHtml(u.id)})</option>`).join("");
+  }
+
+  function openEditAttendanceModal(userId, dateKey) {
+    populateEaUserSelect(userId || "");
+    const today = Store.localDateKey();
+    el.eaDate.value = dateKey || today;
+    el.eaDate.max = today;
+    const record = userId ? Store.getAttendance().find((a) => a.userId === userId && a.date === (dateKey || today)) : null;
+    el.eaCheckin.value = record ? (record.checkIn || "") : "";
+    el.eaCheckout.value = record ? (record.checkOut || "") : "";
+    el.eaStatus.value = record ? (record.status || "hadir") : "hadir";
+    el.eaNote.value = "";
+    Modal.show("edit-attendance-modal");
+  }
+
+  function onSubmitEditAttendance(e) {
+    e.preventDefault();
+    const userId = el.eaUser.value;
+    const dateKey = el.eaDate.value;
+    const note = el.eaNote.value.trim();
+    if (!userId || !dateKey) { showToast("Pilih karyawan dan tanggal terlebih dahulu.", "danger"); return; }
+    if (!note) { showToast("Catatan koreksi wajib diisi.", "danger"); return; }
+    Store.adminUpdateAttendance(userId, dateKey, {
+      checkIn: el.eaCheckin.value || null,
+      checkOut: el.eaCheckout.value || null,
+      status: el.eaStatus.value
+    }, admin.name, note);
+    showToast("Jam absensi berhasil disimpan.", "success");
+    Modal.hide("edit-attendance-modal");
+    renderAbsensi(document.querySelector('[data-arange].is-active')?.dataset.arange || "today");
+    renderDashboard();
   }
 
   function exportAttendanceCsv() {
@@ -478,8 +561,108 @@
   }
 
   /* ------------------------------------------------------------------ */
+  /* SHIFT KERJA                                                         */
+  /* ------------------------------------------------------------------ */
+  const SHIFT_COLOR_VARS = { brand: "var(--brand-600)", success: "var(--success-600)", warning: "var(--warning-solid)", info: "var(--info-600)", danger: "var(--danger-600)" };
+  let editingShiftId = null;
+
+  function renderShift() {
+    const shifts = Store.getShifts();
+    el.shiftGrid.innerHTML = shifts.length ? shifts.map((s) => {
+      const count = Store.usersCountByShift(s.id);
+      const accent = SHIFT_COLOR_VARS[s.color] || SHIFT_COLOR_VARS.brand;
+      return `
+      <div class="card shift-card" style="--accent-color:${accent}">
+        <div class="stat-card__top">
+          <div>
+            <h3 style="font-family:var(--font-display);font-size:1.02rem;margin-bottom:.15em">${escapeHtml(s.name)}</h3>
+            <p class="fine-print" style="margin:0">${shiftDaysLabel(s.days)} · ${count} karyawan</p>
+          </div>
+          <div class="stat-card__icon"><span class="inline-icon" data-icon="clock" data-icon-size="18"></span></div>
+        </div>
+        <p style="font-family:var(--font-mono);font-size:1.3rem;font-weight:700;letter-spacing:-.01em;margin:.3em 0">${s.start} – ${s.end}</p>
+        ${s.note ? `<p class="fine-print" style="margin-bottom:.8em">${escapeHtml(s.note)}</p>` : ""}
+        <div class="chip-group">
+          <button type="button" class="btn btn--ghost btn--sm" data-shift-edit="${s.id}">Edit</button>
+        </div>
+      </div>`;
+    }).join("") : emptyStateBlock("Belum ada shift. Tambahkan shift pertama Anda.");
+    hydrateIcons(el.shiftGrid);
+    el.shiftGrid.querySelectorAll("[data-shift-edit]").forEach((b) => b.addEventListener("click", () => openShiftModal(b.dataset.shiftEdit)));
+
+    const employees = Store.getUsers().filter((u) => u.role === "employee").sort((a, b) => a.name.localeCompare(b.name));
+    el.shiftUsersTbody.innerHTML = employees.length ? employees.map((u) => {
+      const shift = u.shiftId ? Store.findShiftById(u.shiftId) : null;
+      return `<tr>
+        <td>${escapeHtml(u.name)}</td>
+        <td>${escapeHtml(u.department)}</td>
+        <td>${shift ? escapeHtml(shift.name) + ` <span class="fine-print">(${shift.start}–${shift.end})</span>` : '<span class="fine-print">Belum diatur</span>'}</td>
+        <td><select data-assign-shift="${escapeHtml(u.id)}" class="mono" style="padding:.4em .6em;font-size:.8rem">${shiftOptionsHtml(u.shiftId)}</select></td>
+      </tr>`;
+    }).join("") : `<tr><td colspan="4">${emptyStateBlock("Belum ada karyawan.")}</td></tr>`;
+    el.shiftUsersTbody.querySelectorAll("[data-assign-shift]").forEach((sel) => {
+      sel.addEventListener("change", () => {
+        Store.assignUserShift(sel.dataset.assignShift, sel.value);
+        showToast("Shift karyawan diperbarui.", "success");
+        renderShift();
+      });
+    });
+  }
+
+  function openShiftModal(shiftId) {
+    editingShiftId = shiftId || null;
+    const shift = shiftId ? Store.findShiftById(shiftId) : null;
+    document.getElementById("shift-modal-title").textContent = shift ? "Edit Shift" : "Tambah Shift";
+    el.shiftId.value = shift ? shift.id : "";
+    el.shiftName.value = shift ? shift.name : "";
+    el.shiftStart.value = shift ? shift.start : "08:00";
+    el.shiftEnd.value = shift ? shift.end : "17:00";
+    el.shiftNote.value = shift ? (shift.note || "") : "";
+    const activeDays = shift ? shift.days : [1, 2, 3, 4, 5];
+    el.shiftDaysPicker.querySelectorAll("[data-day]").forEach((chip) => {
+      chip.classList.toggle("is-active", activeDays.includes(Number(chip.dataset.day)));
+    });
+    document.getElementById("shift-delete-btn").style.display = shift ? "" : "none";
+    Modal.show("shift-modal");
+  }
+
+  function onSubmitShift(e) {
+    e.preventDefault();
+    const name = el.shiftName.value.trim();
+    const start = el.shiftStart.value;
+    const end = el.shiftEnd.value;
+    const days = Array.from(el.shiftDaysPicker.querySelectorAll("[data-day].is-active")).map((c) => Number(c.dataset.day));
+    if (!name || !start || !end) { showToast("Lengkapi nama shift, jam masuk, dan jam pulang.", "danger"); return; }
+    if (!days.length) { showToast("Pilih minimal satu hari kerja.", "danger"); return; }
+    const data = { name, start, end, days, note: el.shiftNote.value.trim() };
+    if (editingShiftId) {
+      Store.updateShift(editingShiftId, data);
+      showToast("Shift diperbarui.", "success");
+    } else {
+      Store.addShift(data);
+      showToast("Shift baru ditambahkan.", "success");
+    }
+    Modal.hide("shift-modal");
+    renderShift();
+  }
+
+  function onDeleteShift() {
+    if (!editingShiftId) return;
+    const shifts = Store.getShifts();
+    const fallback = shifts.find((s) => s.id !== editingShiftId);
+    const count = Store.usersCountByShift(editingShiftId);
+    askConfirm("Hapus Shift", `Hapus shift ini? ${count > 0 ? `${count} karyawan akan dipindahkan ke shift lain secara otomatis.` : "Tidak ada karyawan yang memakai shift ini."}`, () => {
+      Store.deleteShift(editingShiftId, fallback ? fallback.id : null);
+      showToast("Shift dihapus.", "success");
+      Modal.hide("shift-modal");
+      renderShift();
+    });
+  }
+
+  /* ------------------------------------------------------------------ */
   /* MONITORING LOKASI (karyawan yang sedang bekerja hari ini)           */
   /* ------------------------------------------------------------------ */
+
   function renderMonitoring() {
     const todayKey = Store.localDateKey();
     const workingToday = Store.getAttendance().filter((a) => a.date === todayKey && a.checkIn);
@@ -626,6 +809,80 @@
     el.settingAccuracy.textContent = CONFIG.MAX_ACCEPTABLE_ACCURACY + " meter";
     el.settingOutside.textContent = CONFIG.OUTSIDE_AREA_MINUTES + " menit";
     el.settingLate.textContent = CONFIG.LATE_AFTER;
+    const saved = Store.getOfficeSettings();
+    el.settingUpdatedNote.style.display = "";
+    if (saved && saved.updatedAt) {
+      const d = new Date(saved.updatedAt);
+      const timeStr = d.toTimeString().slice(0, 5);
+      el.settingUpdatedNote.textContent = `Terakhir diubah oleh ${saved.updatedBy || "Admin"} pada ${formatDateID(Store.localDateKey(d))} pukul ${timeStr}.`;
+    } else {
+      el.settingUpdatedNote.textContent = "Masih memakai koordinat bawaan dari js/config.js (belum pernah diubah lewat menu ini).";
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* UBAH LOKASI KANTOR                                                  */
+  /* ------------------------------------------------------------------ */
+  function openOfficeLocationModal() {
+    el.officeLat.value = CONFIG.OFFICE_LOCATION.latitude.toFixed(7);
+    el.officeLon.value = CONFIG.OFFICE_LOCATION.longitude.toFixed(7);
+    el.officeRadius.value = CONFIG.ATTENDANCE_RADIUS;
+    el.officeOutsideRadius.value = CONFIG.OUTSIDE_AREA_RADIUS;
+    const saved = Store.getOfficeSettings();
+    el.officeMapsUrl.value = (saved && saved.mapsUrl) ? saved.mapsUrl : "";
+    el.officeGeoStatus.textContent = "";
+    el.officeLocationError.style.display = "none";
+    el.officeLocationError.textContent = "";
+    Modal.show("office-location-modal");
+  }
+
+  function onUseMyLocation() {
+    if (typeof getCurrentPositionOnce !== "function") {
+      el.officeGeoStatus.textContent = "Fitur lokasi tidak tersedia di perangkat ini.";
+      return;
+    }
+    el.officeUseMyLocationBtn.disabled = true;
+    el.officeGeoStatus.textContent = "📡 Mencari lokasi Anda...";
+    getCurrentPositionOnce().then((pos) => {
+      el.officeLat.value = pos.coords.latitude.toFixed(7);
+      el.officeLon.value = pos.coords.longitude.toFixed(7);
+      const acc = Math.round(pos.coords.accuracy);
+      el.officeGeoStatus.textContent = `✅ Lokasi ditemukan (akurasi ±${acc} m). Pastikan Anda sedang berdiri persis di titik kantor sebelum menyimpan.`;
+    }).catch((err) => {
+      el.officeGeoStatus.textContent = "❌ " + (err && err.message ? err.message : "Gagal mengambil lokasi.");
+    }).finally(() => {
+      el.officeUseMyLocationBtn.disabled = false;
+    });
+  }
+
+  function onSubmitOfficeLocation(e) {
+    e.preventDefault();
+    const result = Store.saveOfficeSettings({
+      latitude: el.officeLat.value,
+      longitude: el.officeLon.value,
+      attendanceRadius: el.officeRadius.value,
+      outsideAreaRadius: el.officeOutsideRadius.value,
+      mapsUrl: el.officeMapsUrl.value
+    }, admin.name);
+    if (!result.ok) {
+      el.officeLocationError.textContent = result.error;
+      el.officeLocationError.style.display = "";
+      return;
+    }
+    el.officeLocationError.style.display = "none";
+    showToast("Lokasi kantor berhasil diperbarui. Semua karyawan aktif telah diberi tahu.", "success");
+    Modal.hide("office-location-modal");
+    renderPengaturan();
+  }
+
+  function onResetOfficeLocation() {
+    askConfirm("Kembalikan ke Default", "Kembalikan koordinat & radius kantor ke pengaturan bawaan (js/config.js)? Perubahan kustom akan dihapus.", () => {
+      const result = Store.resetOfficeSettings(admin.name);
+      if (!result.ok) { showToast(result.error, "danger"); return; }
+      showToast("Lokasi kantor dikembalikan ke pengaturan bawaan.", "success");
+      Modal.hide("office-location-modal");
+      renderPengaturan();
+    });
   }
 
   /* ------------------------------------------------------------------ */
