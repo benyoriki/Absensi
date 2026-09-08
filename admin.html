@@ -58,7 +58,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="css/style.css?v=18" />
+<link rel="stylesheet" href="css/style.css?v=21" />
 </head>
 <body>
 <div id="app-loading-screen" class="loading-screen" aria-hidden="true">
@@ -115,6 +115,7 @@
       <button class="sidebar__link" data-nav="karyawan"><span class="inline-icon" data-icon="users" data-icon-size="18"></span> Data Karyawan</button>
       <p class="sidebar__group-label">Absensi</p>
       <button class="sidebar__link" data-nav="absensi"><span class="inline-icon" data-icon="clipboard" data-icon-size="18"></span> Rekap Absensi</button>
+      <button class="sidebar__link" data-nav="shift"><span class="inline-icon" data-icon="clock" data-icon-size="18"></span> Shift Kerja</button>
       <button class="sidebar__link" data-nav="monitoring"><span class="inline-icon" data-icon="satellite" data-icon-size="18"></span> Monitoring Lokasi</button>
       <button class="sidebar__link" data-nav="riwayat-lokasi"><span class="inline-icon" data-icon="chart" data-icon-size="18"></span> Riwayat Lokasi</button>
       <button class="sidebar__link" data-nav="izin-lokasi"><span class="inline-icon" data-icon="shield" data-icon-size="18"></span> Izin Luar Lokasi <span id="sidebar-outside-badge" class="pill pill--danger" style="margin-left:auto" hidden>0</span></button>
@@ -133,7 +134,7 @@
 
       <!-- ===================== DASHBOARD ===================== -->
       <section data-page="dashboard">
-        <div class="page-title"><h2>Dashboard Admin</h2><p>Ringkasan kehadiran & aktivitas hari ini.</p><p class="fine-print" style="opacity:.55;margin-top:.4em">Build kode: v18 (2026-09-08)</p></div>
+        <div class="page-title"><h2>Dashboard Admin</h2><p>Ringkasan kehadiran & aktivitas hari ini.</p><span class="build-badge"><span class="build-badge__dot"></span>Build v21 · 2026-09-08</span></div>
 
         <div class="grid-stats" id="stat-cards"></div>
 
@@ -192,8 +193,11 @@
       <!-- ===================== REKAP ABSENSI ===================== -->
       <section data-page="absensi" hidden>
         <div class="page-title flex-between">
-          <div><h2>Rekap Absensi</h2><p>Pantau kehadiran seluruh karyawan.</p></div>
-          <button class="btn btn--ghost btn--sm" id="export-attendance-btn">⬇️ Export CSV</button>
+          <div><h2>Rekap Absensi</h2><p>Pantau kehadiran seluruh karyawan. Koreksi jam masuk/pulang lewat tombol Edit bila ada kesalahan.</p></div>
+          <div style="display:flex;gap:.6em;flex-wrap:wrap">
+            <button class="btn btn--ghost btn--sm" id="add-manual-attendance-btn">✏️ Edit / Tambah Jam Masuk</button>
+            <button class="btn btn--ghost btn--sm" id="export-attendance-btn">⬇️ Export CSV</button>
+          </div>
         </div>
         <section class="card">
           <div class="chip-group" style="margin-bottom:1em">
@@ -204,8 +208,26 @@
           </div>
           <div class="table-wrap">
             <table class="data-table">
-              <thead><tr><th>Nama</th><th>Tanggal</th><th>Masuk</th><th>Pulang</th><th>Jarak Masuk</th><th>Status</th></tr></thead>
+              <thead><tr><th>Nama</th><th>Tanggal</th><th>Masuk</th><th>Pulang</th><th>Jarak Masuk</th><th>Status</th><th>Aksi</th></tr></thead>
               <tbody id="absensi-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <!-- ===================== SHIFT KERJA ===================== -->
+      <section data-page="shift" hidden>
+        <div class="page-title flex-between">
+          <div><h2>Shift Kerja</h2><p>Atur jadwal jam kerja & hari kerja, lalu tautkan ke karyawan.</p></div>
+          <button class="btn btn--primary btn--sm" id="add-shift-btn">+ Tambah Shift</button>
+        </div>
+        <div class="grid-stats" id="shift-grid" style="grid-template-columns:1fr"></div>
+        <section class="card mt-1">
+          <div class="card__head"><h3>Semua Karyawan &amp; Shift-nya</h3></div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Nama</th><th>Departemen</th><th>Shift Saat Ini</th><th>Aksi</th></tr></thead>
+              <tbody id="shift-users-tbody"></tbody>
             </table>
           </div>
         </section>
@@ -331,8 +353,11 @@
             <div class="stat-list__item"><dt>Batas Peringatan Keluar Area</dt><dd class="mono" id="setting-outside">-</dd></div>
             <div class="stat-list__item"><dt>Batas Jam Terlambat</dt><dd class="mono" id="setting-late">-</dd></div>
           </dl>
-          <button id="setting-open-maps-btn" type="button" class="btn btn--ghost btn--block mt-1">Buka Lokasi Kantor di Google Maps</button>
-          <p class="fine-print mt-1">Untuk mengubah nilai di atas, edit <code>CONFIG</code> pada berkas <code>js/config.js</code> (tahap prototipe ini belum memiliki panel pengaturan yang tersambung ke database sungguhan).</p>
+          <p class="fine-print mt-1" id="setting-updated-note" style="display:none"></p>
+          <div style="display:flex;gap:.6em;flex-wrap:wrap;margin-top:1em">
+            <button id="edit-office-location-btn" type="button" class="btn btn--primary" style="flex:1;min-width:180px">📍 Ubah Lokasi Kantor</button>
+            <button id="setting-open-maps-btn" type="button" class="btn btn--ghost" style="flex:1;min-width:180px">Buka di Google Maps</button>
+          </div>
         </section>
         <section class="card mt-1">
           <div class="card__head"><h3>Media Sosial Resmi</h3></div>
@@ -376,6 +401,7 @@
   <div class="modal" style="max-width:340px">
     <div class="modal__head"><h2>Menu Lainnya</h2><button class="icon-btn" id="more-close-btn" aria-label="Tutup">✕</button></div>
     <div class="stack">
+      <button class="sidebar__link" data-nav="shift"><span class="inline-icon" data-icon="clock" data-icon-size="18"></span> Shift Kerja</button>
       <button class="sidebar__link" data-nav="monitoring"><span class="inline-icon" data-icon="satellite" data-icon-size="18"></span> Monitoring Lokasi</button>
       <button class="sidebar__link" data-nav="riwayat-lokasi"><span class="inline-icon" data-icon="chart" data-icon-size="18"></span> Riwayat Lokasi</button>
       <button class="sidebar__link" data-nav="izin-lokasi"><span class="inline-icon" data-icon="shield" data-icon-size="18"></span> Izin Luar Lokasi</button>
@@ -393,6 +419,94 @@
 <!-- ============ EMPLOYEE DETAIL MODAL ============ -->
 <div id="employee-modal" class="modal-overlay" hidden role="dialog" aria-modal="true">
   <div class="modal modal--wide" id="employee-modal-content"></div>
+</div>
+
+<!-- ============ SHIFT KERJA MODAL (tambah/edit) ============ -->
+<div id="shift-modal" class="modal-overlay" hidden role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal__head"><h2 id="shift-modal-title">Tambah Shift</h2><button class="icon-btn" id="shift-modal-close" aria-label="Tutup">✕</button></div>
+    <form id="shift-form" novalidate>
+      <input type="hidden" id="shift-id" value="" />
+      <label for="shift-name">Nama Shift</label>
+      <input id="shift-name" placeholder="Contoh: Shift Pagi" required />
+      <div class="field-row">
+        <div><label for="shift-start">Jam Masuk</label><input id="shift-start" type="time" required /></div>
+        <div><label for="shift-end">Jam Pulang</label><input id="shift-end" type="time" required /></div>
+      </div>
+      <label>Hari Kerja</label>
+      <div class="chip-group" id="shift-days-picker">
+        <button type="button" class="chip" data-day="1">Sen</button>
+        <button type="button" class="chip" data-day="2">Sel</button>
+        <button type="button" class="chip" data-day="3">Rab</button>
+        <button type="button" class="chip" data-day="4">Kam</button>
+        <button type="button" class="chip" data-day="5">Jum</button>
+        <button type="button" class="chip" data-day="6">Sab</button>
+        <button type="button" class="chip" data-day="7">Min</button>
+      </div>
+      <label for="shift-note" class="mt-1">Catatan (opsional)</label>
+      <textarea id="shift-note" placeholder="Contoh: Untuk tim operasional kandang"></textarea>
+      <div class="camera-actions__row" style="display:flex;gap:.8em;margin-top:1.2em">
+        <button type="button" class="btn btn--danger-ghost btn--sm" id="shift-delete-btn" style="display:none">Hapus Shift</button>
+        <button type="submit" class="btn btn--primary" style="flex:1">Simpan Shift</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ EDIT / TAMBAH JAM ABSENSI MODAL ============ -->
+<div id="edit-attendance-modal" class="modal-overlay" hidden role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal__head"><h2>Edit Jam Absensi</h2><button class="icon-btn" id="edit-attendance-close" aria-label="Tutup">✕</button></div>
+    <form id="edit-attendance-form" novalidate>
+      <label for="ea-user">Karyawan</label>
+      <select id="ea-user" required></select>
+      <label for="ea-date">Tanggal</label>
+      <input id="ea-date" type="date" required />
+      <div class="field-row">
+        <div><label for="ea-checkin">Jam Masuk</label><input id="ea-checkin" type="time" /></div>
+        <div><label for="ea-checkout">Jam Pulang</label><input id="ea-checkout" type="time" /></div>
+      </div>
+      <label for="ea-status">Status</label>
+      <select id="ea-status">
+        <option value="hadir">Hadir</option>
+        <option value="terlambat">Terlambat</option>
+        <option value="izin">Izin</option>
+        <option value="alpa">Alpa</option>
+      </select>
+      <label for="ea-note">Catatan Koreksi (wajib diisi)</label>
+      <textarea id="ea-note" placeholder="Contoh: Karyawan lupa absen masuk, dikonfirmasi lewat WhatsApp." required></textarea>
+      <p class="fine-print mt-1">Perubahan ini akan tercatat sebagai koreksi admin dan karyawan akan menerima notifikasi otomatis.</p>
+      <button type="submit" class="btn btn--primary btn--block mt-1">Simpan Koreksi</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============ EDIT LOKASI KANTOR MODAL ============ -->
+<div id="office-location-modal" class="modal-overlay" hidden role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal__head"><h2>Ubah Lokasi Kantor</h2><button class="icon-btn" id="office-location-close" aria-label="Tutup">✕</button></div>
+    <form id="office-location-form" novalidate>
+      <p class="fine-print">Koordinat ini menentukan titik pusat radius absensi. Semua karyawan akan mengikuti titik baru setelah disimpan.</p>
+      <button type="button" class="btn btn--ghost btn--block" id="office-use-my-location-btn">📡 Gunakan Lokasi Saya Sekarang</button>
+      <p class="fine-print text-sm" id="office-geo-status" style="min-height:1.2em"></p>
+      <div class="field-row mt-1">
+        <div><label for="office-lat">Latitude</label><input id="office-lat" type="text" inputmode="decimal" placeholder="-6.4569020" required /></div>
+        <div><label for="office-lon">Longitude</label><input id="office-lon" type="text" inputmode="decimal" placeholder="106.7299540" required /></div>
+      </div>
+      <div class="field-row">
+        <div><label for="office-radius">Radius Absensi (m)</label><input id="office-radius" type="number" min="1" max="1000" step="1" required /></div>
+        <div><label for="office-outside-radius">Radius Area Kerja (m)</label><input id="office-outside-radius" type="number" min="1" max="2000" step="1" required /></div>
+      </div>
+      <label for="office-maps-url">Link Google Maps (opsional)</label>
+      <input id="office-maps-url" type="url" placeholder="https://maps.app.goo.gl/..." />
+      <p class="fine-print">Kosongkan untuk membuat link otomatis dari koordinat di atas.</p>
+      <p class="fine-print" id="office-location-error" style="display:none;color:var(--danger-600);font-weight:600"></p>
+      <div style="display:flex;gap:.8em;margin-top:1em">
+        <button type="button" class="btn btn--danger-ghost btn--sm" id="office-reset-default-btn">Kembalikan ke Default</button>
+        <button type="submit" class="btn btn--primary" style="flex:1">Simpan Lokasi</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <!-- ============ REJECT REASON MODAL (generic) ============ -->
@@ -421,11 +535,11 @@
 
 <div id="toast-region" class="toast-region" aria-live="polite"></div>
 
-<script src="js/config.js?v=18"></script>
-<script src="js/store.js?v=18"></script>
-<script src="js/ui-common.js?v=18"></script>
-<script src="js/modal.js?v=18"></script>
-<script src="js/geo.js?v=18"></script>
-<script src="js/admin.js?v=18"></script>
+<script src="js/config.js?v=21"></script>
+<script src="js/store.js?v=21"></script>
+<script src="js/ui-common.js?v=21"></script>
+<script src="js/modal.js?v=21"></script>
+<script src="js/geo.js?v=21"></script>
+<script src="js/admin.js?v=21"></script>
 </body>
 </html>
