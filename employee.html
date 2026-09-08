@@ -58,7 +58,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="css/style.css?v=15" />
+<link rel="stylesheet" href="css/style.css?v=18" />
 </head>
 <body>
 <div id="app-loading-screen" class="loading-screen" aria-hidden="true">
@@ -133,7 +133,7 @@
         <div class="page-title">
           <h2 id="greeting">Halo 👋</h2>
           <p id="today-date-label">-</p>
-          <p class="fine-print" style="opacity:.55;margin-top:.4em">Build kode: v15 (2026-09-07)</p>
+          <p class="fine-print" style="opacity:.55;margin-top:.4em">Build kode: v18 (2026-09-08)</p>
         </div>
 
         <div class="stack">
@@ -308,11 +308,23 @@
       <section data-page="profil" hidden>
         <div class="page-title"><h2>Profil Saya</h2><p>Data akun dan kepegawaian Anda.</p></div>
         <section class="card">
-          <div class="profile-head">
-            <div class="avatar-lg" id="profile-avatar">?</div>
-            <div>
-              <h3 id="profile-name">-</h3>
-              <p id="profile-position">-</p>
+          <div class="id-card">
+            <div class="id-card__clip" aria-hidden="true"></div>
+            <div class="id-card__photo-wrap">
+              <div class="id-card__photo" id="profile-avatar">?</div>
+              <div class="id-card__holo" aria-hidden="true"></div>
+              <div class="id-card__scrim">
+                <strong id="profile-name">-</strong>
+                <span id="profile-position">-</span>
+              </div>
+              <button type="button" class="id-card__edit-btn" id="profile-photo-btn" aria-label="Ubah foto profil">
+                <span class="inline-icon" data-icon="camera" data-icon-size="15"></span>
+              </button>
+              <input type="file" id="profile-photo-input" accept="image/*" hidden />
+            </div>
+            <div class="id-card__meta-row">
+              <span class="id-card__id-chip mono" id="profile-id-badge">-</span>
+              <span class="id-card__barcode" aria-hidden="true"></span>
             </div>
           </div>
           <dl class="stat-list">
@@ -323,12 +335,14 @@
             <div class="stat-list__item"><dt>Status Akun</dt><dd id="profile-status">-</dd></div>
             <div class="stat-list__item"><dt>Tanggal Bergabung</dt><dd id="profile-join">-</dd></div>
           </dl>
-          <p class="fine-print">Untuk mengubah data jabatan, departemen, atau status akun, silakan hubungi admin HR. Anda dapat memperbarui nomor HP dan email sendiri.</p>
+          <p class="fine-print">Untuk mengubah data jabatan, departemen, atau status akun, silakan hubungi admin HR. Anda dapat memperbarui nomor HP, email, dan gelar akademik sendiri.</p>
           <form id="profile-form" class="mt-1" novalidate>
             <div class="field-row">
               <div><label for="profile-phone-input">Nomor HP</label><input id="profile-phone-input" type="tel" /></div>
               <div><label for="profile-email-input">Email</label><input id="profile-email-input" type="email" /></div>
             </div>
+            <label for="profile-degree-input">Gelar Akademik (opsional)</label>
+            <input id="profile-degree-input" type="text" placeholder="Contoh: S.Kom, S.T., M.M." maxlength="20" />
             <button type="submit" class="btn btn--ghost btn--block mt-1">Simpan Perubahan</button>
           </form>
         </section>
@@ -364,7 +378,7 @@
   <!-- ============ BOTTOM NAV (mobile) ============ -->
   <nav class="bottom-nav" aria-label="Navigasi bawah">
     <button class="bottom-nav__item" data-nav="dashboard"><span class="inline-icon" data-icon="home" data-icon-size="20"></span><span>Home</span></button>
-    <button class="bottom-nav__item" data-nav="dashboard"><span class="inline-icon" data-icon="pin" data-icon-size="20"></span><span>Absen</span></button>
+    <button class="bottom-nav__item" data-nav="absensi"><span class="inline-icon" data-icon="pin" data-icon-size="20"></span><span>Absen</span></button>
     <button class="bottom-nav__item" data-nav="cuti"><span class="inline-icon" data-icon="umbrella" data-icon-size="20"></span><span>Cuti</span></button>
     <button class="bottom-nav__item" data-nav="profil"><span class="inline-icon" data-icon="user" data-icon-size="20"></span><span>Profil</span></button>
     <button class="bottom-nav__item" id="more-btn"><span class="inline-icon" data-icon="more" data-icon-size="20"></span><span>Lainnya</span></button>
@@ -430,11 +444,11 @@
 
 <div id="toast-region" class="toast-region" aria-live="polite"></div>
 
-<script src="js/config.js?v=15"></script>
-<script src="js/store.js?v=15"></script>
-<script src="js/ui-common.js?v=15"></script>
-<script src="js/modal.js?v=15"></script>
-<script src="js/geo.js?v=15"></script>
-<script src="js/employee.js?v=15"></script>
+<script src="js/config.js?v=18"></script>
+<script src="js/store.js?v=18"></script>
+<script src="js/ui-common.js?v=18"></script>
+<script src="js/modal.js?v=18"></script>
+<script src="js/geo.js?v=18"></script>
+<script src="js/employee.js?v=18"></script>
 </body>
 </html>
