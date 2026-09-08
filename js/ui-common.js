@@ -246,6 +246,23 @@ function initials(name) {
   return ((parts[0] || "")[0] || "") .toUpperCase() + ((parts[1] || "")[0] || "").toUpperCase();
 }
 
+/** Nama lengkap + gelar akademik (kalau diisi), format umum Indonesia:
+ *  "Riki Hermawan, S.Kom". Dipakai di tampilan formal (kartu ID, detail
+ *  karyawan) — bukan di sapaan santai seperti "Selamat datang, Riki". */
+function displayName(user) {
+  if (!user || !user.name) return "-";
+  return user.degree ? `${user.name}, ${user.degree}` : user.name;
+}
+
+/** Markup avatar terpadu dipakai di header, sidebar/profil, dan modal detail
+ *  karyawan: kalau user sudah punya foto profil (base64 dari upload),
+ *  tampilkan foto itu (object-fit:cover mengikuti bentuk wadahnya lewat
+ *  CSS); kalau belum, fallback ke inisial nama seperti sebelumnya. */
+function avatarMarkup(user) {
+  if (user && user.photo) return `<img src="${user.photo}" alt="" />`;
+  return escapeHtml(initials(user ? user.name : ""));
+}
+
 function formatRupiah(n) {
   return "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 }
@@ -298,6 +315,7 @@ const Icons = {
   slash: '<path d="M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M12 3.5A8.5 8.5 0 1 0 20.5 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
   instagram: '<rect x="3.5" y="3.5" width="17" height="17" rx="5" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.7"/><circle cx="17.1" cy="6.9" r="1.1" fill="currentColor"/>',
   shield: '<path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
+  camera: '<path d="M4 8.5a1.5 1.5 0 0 1 1.5-1.5h1.6l.9-1.4a1.5 1.5 0 0 1 1.26-.6h5.48c.5 0 .97.23 1.26.6l.9 1.4h1.6A1.5 1.5 0 0 1 20 8.5v9A1.5 1.5 0 0 1 18.5 19h-13A1.5 1.5 0 0 1 4 17.5v-9Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.4" stroke="currentColor" stroke-width="1.6"/>',
   none: '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6" opacity=".4"/>'
 };
 

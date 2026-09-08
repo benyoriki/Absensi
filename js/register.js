@@ -41,6 +41,7 @@
 
       const fields = {
         name: val("reg-name"), id: val("reg-id"), phone: val("reg-phone"),
+        degree: val("reg-degree"),
         email: val("reg-email"), position: val("reg-position"),
         department: val("reg-department"), password: val("reg-password"),
         password2: val("reg-password2")
@@ -61,6 +62,7 @@
 
       const result = Store.registerEmployee({
         name: fields.name, username: fields.id, phone: fields.phone, email: fields.email,
+        degree: fields.degree || null,
         position: fields.position, department: fields.department, password: fields.password,
         photo: photoDataUrl
       });

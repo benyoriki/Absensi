@@ -185,7 +185,8 @@
       "cuti-remaining","cuti-quota","cuti-used","leave-form","leave-type","leave-start","leave-end","leave-reason","leave-form-error","leave-history-list",
       "overtime-form","ot-date","ot-start","ot-end","ot-task","ot-reason","ot-form-error","overtime-history-list",
       "profile-avatar","profile-name","profile-position","profile-id","profile-department","profile-email","profile-phone","profile-status","profile-join",
-      "profile-form","profile-phone-input","profile-email-input","logout-btn",
+      "profile-photo-btn","profile-photo-input","profile-id-badge",
+      "profile-form","profile-phone-input","profile-email-input","profile-degree-input","logout-btn",
       "notif-list","mark-all-read-btn","notif-btn","notif-dot","avatar-btn",
       "attendance-modal","attendance-modal-body","attendance-modal-close",
       "success-modal","success-name","success-time","success-distance","success-close-btn",
@@ -207,26 +208,31 @@
     function closeMore() { Modal.hide("more-modal"); }
   }
 
-  // Bug fix: menu sidebar "Absensi" memakai data-nav="absensi", tapi tidak
-  // ada section data-page="absensi" tersendiri (absen dilakukan dari halaman
-  // Dashboard). Sebelumnya ini membuat sistem diam-diam melempar ke
-  // Dashboard tanpa menyorot menu yang benar-benar diklik pengguna. Sekarang
-  // "absensi" dipetakan eksplisit sebagai alias dari "dashboard".
+  // "Absensi" (sidebar) dan "Absen" (bottom-nav) sama-sama menuju halaman
+  // dashboard — tidak ada section data-page="absensi" tersendiri, karena
+  // absen memang dilakukan dari kartu di Dashboard. "dashboard" tetap jadi
+  // nama section yang sesungguhnya ditampilkan.
   const PAGE_ALIASES = { absensi: "dashboard" };
   function route(page) {
     const valid = ["dashboard","riwayat","jadwal","cuti","lembur","profil","notifikasi"];
-    let requestedPage = page;
-    if (PAGE_ALIASES[page]) page = PAGE_ALIASES[page];
-    if (!valid.includes(page)) { page = "dashboard"; requestedPage = "dashboard"; }
-    document.querySelectorAll("[data-page]").forEach((sec) => { sec.hidden = sec.dataset.page !== page; });
+    let requestedPage = page; // kunci literal seperti yang diklik ("absensi" atau "dashboard")
+    let resolvedPage = PAGE_ALIASES[page] || page; // section konten yang benar-benar ditampilkan
+    if (!valid.includes(resolvedPage)) { resolvedPage = "dashboard"; requestedPage = "dashboard"; }
+    document.querySelectorAll("[data-page]").forEach((sec) => { sec.hidden = sec.dataset.page !== resolvedPage; });
     document.querySelectorAll("[data-nav]").forEach((btn) => {
-      const btnPage = PAGE_ALIASES[btn.dataset.nav] || btn.dataset.nav;
-      btn.classList.toggle("is-active", btnPage === page);
+      // Bug fix: dulu status "aktif" dicocokkan lewat halaman HASIL alias,
+      // jadi begitu alias "absensi" -> "dashboard" diterapkan, SEMUA tombol
+      // yang menuju dashboard (baik "Home" maupun "Absen") ikut menyala
+      // bersamaan meski yang diklik cuma salah satunya. Sekarang dicocokkan
+      // ke kunci literal yang benar-benar diklik/dituju, supaya "Home" dan
+      // "Absen" — walau dua-duanya membuka konten dashboard yang sama —
+      // tetap saling eksklusif secara visual sesuai yang diklik pengguna.
+      btn.classList.toggle("is-active", btn.dataset.nav === requestedPage);
     });
-    if (page === "notifikasi") { Store.markAllRead(user.id); renderNotifications(); updateNotifBadge(); }
-    if (page === "riwayat") renderRiwayat("week");
-    if (page === "cuti") renderCutiPage();
-    if (page === "lembur") renderLemburPage();
+    if (resolvedPage === "notifikasi") { Store.markAllRead(user.id); renderNotifications(); updateNotifBadge(); }
+    if (resolvedPage === "riwayat") renderRiwayat("week");
+    if (resolvedPage === "cuti") renderCutiPage();
+    if (resolvedPage === "lembur") renderLemburPage();
     location.hash = requestedPage;
   }
   window.addEventListener("hashchange", () => route(location.hash.replace("#", "")));
@@ -256,6 +262,8 @@
     el.leaveForm.addEventListener("submit", onSubmitLeave);
     el.overtimeForm.addEventListener("submit", onSubmitOvertime);
     el.profileForm.addEventListener("submit", onSubmitProfile);
+    if (el.profilePhotoBtn) el.profilePhotoBtn.addEventListener("click", () => el.profilePhotoInput.click());
+    if (el.profilePhotoInput) el.profilePhotoInput.addEventListener("change", onPickProfilePhoto);
     el.markAllReadBtn.addEventListener("click", () => { Store.markAllRead(user.id); renderNotifications(); updateNotifBadge(); });
 
     // Modal alasan keluar zona kerja (lihat openZoneReasonPrompt/submitZoneReason).
@@ -291,7 +299,7 @@
   /* ------------------------------------------------------------------ */
   function renderStaticInfo() {
     el.greeting.textContent = `Selamat datang, ${user.name.split(" ")[0]} 👋`;
-    el.avatarBtn.textContent = initials(user.name);
+    el.avatarBtn.innerHTML = avatarMarkup(user);
     // Bug fix: label radius sebelumnya di-hardcode di HTML ("15m" / "15
     // meter"), jadi kalau CONFIG.ATTENDANCE_RADIUS diubah, teksnya jadi
     // salah/basi. Sekarang selalu diisi dari CONFIG saat halaman dimuat.
@@ -555,7 +563,7 @@
     updateAttendanceStatusUI(record);
     renderRiwayat("week");
 
-    el.successName.textContent = user.name || "—";
+    el.successName.textContent = displayName(user);
     el.successTime.textContent = (type === "check-in" ? record.checkIn : record.checkOut) || "—";
     el.successDistance.textContent = meta.distance.toFixed(1) + " m" + (meta.viaException ? " (izin admin)" : "");
     document.getElementById("success-title").textContent = type === "check-in" ? "Absen Masuk Berhasil" : "Absen Pulang Berhasil";
@@ -697,10 +705,11 @@
   /* ------------------------------------------------------------------ */
   function renderProfil() {
     const fresh = Store.findUserById(user.id);
-    el.profileAvatar.textContent = initials(fresh.name);
-    el.profileName.textContent = fresh.name;
+    el.profileAvatar.innerHTML = avatarMarkup(fresh);
+    el.profileName.textContent = displayName(fresh);
     el.profilePosition.textContent = fresh.position;
     el.profileId.textContent = fresh.id;
+    if (el.profileIdBadge) el.profileIdBadge.textContent = fresh.id;
     el.profileDepartment.textContent = fresh.department;
     el.profileEmail.textContent = fresh.email;
     el.profilePhone.textContent = fresh.phone;
@@ -708,13 +717,44 @@
     el.profileJoin.textContent = fresh.joinDate ? formatDateID(fresh.joinDate) : "-";
     el.profilePhoneInput.value = fresh.phone;
     el.profileEmailInput.value = fresh.email;
+    if (el.profileDegreeInput) el.profileDegreeInput.value = fresh.degree || "";
   }
 
   function onSubmitProfile(e) {
     e.preventDefault();
-    Store.updateUser(user.id, { phone: el.profilePhoneInput.value.trim(), email: el.profileEmailInput.value.trim() });
+    Store.updateUser(user.id, {
+      phone: el.profilePhoneInput.value.trim(),
+      email: el.profileEmailInput.value.trim(),
+      degree: el.profileDegreeInput.value.trim() || null
+    });
     showToast("Data profil diperbarui.", "success");
     renderProfil();
+  }
+
+  function onPickProfilePhoto() {
+    const file = el.profilePhotoInput.files[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      showToast("File harus berupa gambar.", "error");
+      el.profilePhotoInput.value = "";
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      showToast("Ukuran foto maksimal 2MB.", "error");
+      el.profilePhotoInput.value = "";
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      Store.updateUser(user.id, { photo: reader.result });
+      renderProfil();
+      // Foto profil juga tampil di avatar header, jadi ikut disegarkan.
+      el.avatarBtn.innerHTML = avatarMarkup(Store.findUserById(user.id));
+      showToast("Foto profil diperbarui.", "success");
+      el.profilePhotoInput.value = "";
+    };
+    reader.onerror = () => showToast("Gagal membaca file foto.", "error");
+    reader.readAsDataURL(file);
   }
 
   /* ------------------------------------------------------------------ */

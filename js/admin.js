@@ -24,7 +24,7 @@
       cacheDom();
       bindNav();
       bindGlobalEvents();
-      el.avatarBtn.textContent = initials(admin.name);
+      el.avatarBtn.innerHTML = avatarMarkup(admin);
       initClock();
       renderAll();
     } catch (err) {
@@ -362,8 +362,8 @@
     el.employeeModalContent.innerHTML = `
       <div class="modal__head"><h2>Detail Karyawan</h2><button class="icon-btn" id="employee-modal-close" aria-label="Tutup">✕</button></div>
       <div class="profile-head">
-        <div class="avatar-lg">${initials(u.name)}</div>
-        <div><h3>${escapeHtml(u.name)}</h3><p>${escapeHtml(u.position)} · ${escapeHtml(u.department)}</p></div>
+        <div class="avatar-lg">${avatarMarkup(u)}</div>
+        <div><h3>${escapeHtml(displayName(u))}</h3><p>${escapeHtml(u.position)} · ${escapeHtml(u.department)}</p></div>
       </div>
       <dl class="stat-list">
         <div class="stat-list__item"><dt>ID Karyawan</dt><dd class="mono">${escapeHtml(u.id)}</dd></div>
