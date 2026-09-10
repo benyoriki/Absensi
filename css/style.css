@@ -899,50 +899,151 @@ h3 .inline-icon{ margin-right:.15em; color:var(--brand-600); }
 /* ==========================================================================
    LOADING SCREEN
    ==========================================================================
-   Konsep: "mengunci sinyal GPS" — konsisten dengan tema radar geofencing
-   di seluruh aplikasi (bukan sekadar spinner generik). Ping cincin
-   menyebar dari lambang Nusa Beef, seperti radar mencari sinyal lokasi.
+   Latar putih bersih dengan logo lockup PT Rakabu Sapi Kita di tengah.
    Disembunyikan otomatis oleh js/ui-common.js begitu halaman (dan semua
-   asetnya) selesai dimuat — lihat initLoadingScreen().
+   asetnya) selesai dimuat, dengan durasi tampil minimum 3 detik supaya
+   tidak "berkedip" di perangkat cepat — lihat initLoadingScreen().
    ========================================================================== */
+@property --loading-angle{ syntax:'<angle>'; inherits:true; initial-value:0deg; }
+
 .loading-screen{
   position:fixed; inset:0; z-index:9999;
   display:flex; align-items:center; justify-content:center;
-  background:radial-gradient(120% 120% at 50% 28%, var(--brand-700) 0%, var(--ink-950) 68%);
+  overflow:hidden;
+  background:var(--bg);
   transition:opacity .45s ease, visibility .45s ease;
 }
 .loading-screen.is-hidden{ opacity:0; visibility:hidden; pointer-events:none; }
-.loading-screen__inner{ display:flex; flex-direction:column; align-items:center; gap:1.1em; }
-.loading-screen__badge{ position:relative; width:88px; height:88px; display:flex; align-items:center; justify-content:center; }
-.loading-screen__badge img{
-  width:100%; height:100%; border-radius:50%; position:relative; z-index:2;
-  box-shadow:0 10px 30px rgba(0,0,0,.45);
+
+/* Soft animated aurora blobs — pure CSS, GPU-only transforms, no images */
+.loading-screen::before,
+.loading-screen::after{
+  content:""; position:absolute; z-index:0;
+  width:min(70vmax,760px); height:min(70vmax,760px);
+  border-radius:50%; filter:blur(70px); will-change:transform;
+  animation:loading-blob-float 14s ease-in-out infinite;
 }
-.loading-screen__ping{
-  position:absolute; inset:0; border-radius:50%; border:1.5px solid var(--cyan-500);
-  animation:loading-ping 1.8s cubic-bezier(0,0,.2,1) infinite;
+.loading-screen::before{
+  top:-22%; left:-18%;
+  background:radial-gradient(circle, color-mix(in srgb, var(--brand-500) 32%, transparent), transparent 70%);
 }
-.loading-screen__ping:nth-child(2){ animation-delay:.6s; }
-@keyframes loading-ping{
-  0%{ transform:scale(1); opacity:.7; }
-  100%{ transform:scale(1.9); opacity:0; }
+.loading-screen::after{
+  bottom:-24%; right:-16%;
+  background:radial-gradient(circle, color-mix(in srgb, var(--gold-400) 30%, transparent), transparent 70%);
+  animation-delay:-7s;
 }
-.loading-screen__text{ text-align:center; color:#fff; }
+@keyframes loading-blob-float{
+  0%,100%{ transform:translate(0,0) scale(1); }
+  50%{ transform:translate(4%,5%) scale(1.1); }
+}
+
+/* Subtle dot-grid texture for a "technical/modern" feel */
+.loading-screen__grid{
+  position:absolute; inset:0; z-index:0; pointer-events:none;
+  background-image:radial-gradient(color-mix(in srgb, var(--text-500) 28%, transparent) 1px, transparent 1px);
+  background-size:26px 26px;
+  -webkit-mask-image:radial-gradient(60% 60% at 50% 45%, #000 0%, transparent 75%);
+          mask-image:radial-gradient(60% 60% at 50% 45%, #000 0%, transparent 75%);
+  opacity:.5;
+}
+
+.loading-screen__inner{
+  position:relative; z-index:1;
+  display:flex; flex-direction:column; align-items:center; gap:1.05em;
+  width:min(340px,86vw);
+  padding:2.5em 2.1em 2.1em;
+  border-radius:28px;
+  background:color-mix(in srgb, var(--surface) 86%, transparent);
+  border:1px solid color-mix(in srgb, var(--border-strong) 55%, transparent);
+  box-shadow:var(--shadow-lg);
+  backdrop-filter:blur(22px) saturate(160%);
+  -webkit-backdrop-filter:blur(22px) saturate(160%);
+  animation:loading-card-in .65s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes loading-card-in{
+  from{ opacity:0; transform:translateY(12px) scale(.96); }
+  to{ opacity:1; transform:translateY(0) scale(1); }
+}
+
+.loading-screen__logo{
+  position:relative;
+  padding:.9em 1.3em;
+  border-radius:20px;
+  animation:loading-logo-in .6s cubic-bezier(.2,.8,.2,1);
+}
+.loading-screen__logo::before{
+  content:""; position:absolute; inset:0; border-radius:inherit; padding:1.5px;
+  background:conic-gradient(from var(--loading-angle),
+    transparent 0deg, color-mix(in srgb, var(--gold-400) 90%, transparent) 70deg,
+    color-mix(in srgb, var(--brand-600) 90%, transparent) 160deg, transparent 260deg, transparent 360deg);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor; mask-composite:exclude;
+  animation:loading-ring-spin 3.2s linear infinite;
+  opacity:.85;
+}
+.loading-screen__logo img{
+  position:relative; display:block; width:210px; height:auto; max-width:58vw;
+  filter:drop-shadow(0 10px 22px rgba(108,23,16,.18));
+  animation:loading-logo-float 3s ease-in-out infinite;
+}
+@keyframes loading-ring-spin{ to{ --loading-angle:360deg; } }
+@keyframes loading-logo-in{
+  from{ opacity:0; transform:translateY(6px) scale(.96); }
+  to{ opacity:1; transform:translateY(0) scale(1); }
+}
+@keyframes loading-logo-float{
+  0%,100%{ transform:translateY(0); }
+  50%{ transform:translateY(-4px); }
+}
+
+.loading-screen__text{ text-align:center; color:var(--text-900); width:100%; }
 .loading-screen__text strong{ display:block; font-family:var(--font-display); font-size:1.05rem; font-weight:800; letter-spacing:-0.01em; }
-.loading-screen__text span{ display:block; font-size:.76rem; color:rgba(255,255,255,.62); margin-top:.25em; font-family:var(--font-mono); }
+.loading-screen__text span{
+  display:block; font-size:.78rem; color:var(--text-500); margin-top:.2em;
+  font-family:var(--font-mono); letter-spacing:.01em;
+  animation:loading-text-pulse 2.4s ease-in-out infinite;
+}
+@keyframes loading-text-pulse{ 0%,100%{ opacity:.7; } 50%{ opacity:1; } }
+
 .loading-screen__progress{
-  width:180px; height:5px; border-radius:var(--radius-pill); margin:1.1em auto 0;
-  background:rgba(255,255,255,.16); overflow:hidden;
+  width:100%; max-width:190px; height:6px; border-radius:var(--radius-pill); margin:1.15em auto 0;
+  background:color-mix(in srgb, var(--brand-600) 12%, var(--surface-sunken));
+  overflow:hidden; position:relative;
 }
 .loading-screen__progress-bar{
-  width:0%; height:100%; border-radius:var(--radius-pill);
-  background:linear-gradient(90deg, var(--gold-500), var(--gold-400));
-  box-shadow:0 0 10px rgba(217,168,77,.6);
+  width:0%; height:100%; border-radius:var(--radius-pill); position:relative; overflow:hidden;
+  background:linear-gradient(90deg, var(--brand-700), var(--gold-500));
+  box-shadow:0 0 10px color-mix(in srgb, var(--brand-600) 45%, transparent);
   transition:width .2s linear;
 }
+.loading-screen__progress-bar::after{
+  content:""; position:absolute; inset:0;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.6), transparent);
+  transform:translateX(-100%);
+  animation:loading-shimmer 1.5s ease-in-out infinite;
+}
+@keyframes loading-shimmer{ to{ transform:translateX(220%); } }
+
 .loading-screen__percent{
   display:block; margin-top:.5em !important; font-size:.68rem !important;
-  color:rgba(255,255,255,.5) !important; font-family:var(--font-mono); letter-spacing:.03em;
+  color:var(--text-400) !important; font-family:var(--font-mono); letter-spacing:.05em;
+  font-variant-numeric:tabular-nums;
 }
-.loading-screen__credit{ margin-top:1.6em !important; font-size:.68rem !important; color:rgba(255,255,255,.38) !important; letter-spacing:.02em; }
-@media (prefers-reduced-motion:reduce){ .loading-screen__ping{ animation:none; opacity:0; } .loading-screen__progress-bar{ transition:none; } }
+.loading-screen__credit{
+  margin-top:1.5em !important; padding-top:1em !important;
+  border-top:1px solid color-mix(in srgb, var(--border-strong) 60%, transparent);
+  width:100%; text-align:center;
+  font-size:.66rem !important; color:var(--text-400) !important; letter-spacing:.02em;
+}
+@media (max-width:420px){
+  .loading-screen__inner{ padding:2.1em 1.5em 1.8em; border-radius:24px; }
+  .loading-screen__logo img{ width:180px; }
+}
+@media (prefers-reduced-motion:reduce){
+  .loading-screen::before, .loading-screen::after,
+  .loading-screen__logo, .loading-screen__logo::before, .loading-screen__logo img,
+  .loading-screen__inner, .loading-screen__text span, .loading-screen__progress-bar::after{
+    animation:none !important;
+  }
+  .loading-screen__progress-bar{ transition:none; }
+}
