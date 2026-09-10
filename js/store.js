@@ -257,7 +257,7 @@ const Store = (function () {
       },
       {
         id: uid("ntf"), audience: "LKN001", type: "info",
-        title: "Selamat datang di Rakabu Attendance",
+        title: "Selamat datang di Rakabu Sapi Kita",
         message: "Akun Anda telah aktif. Selamat bekerja!",
         read: true, createdAt: now - 300 * day
       }

@@ -10,7 +10,7 @@
    visual, bukan menunda fungsi apa pun).
    ========================================================================== */
 (function initLoadingScreen() {
-  const MIN_VISIBLE_MS = 6000;
+  const MIN_VISIBLE_MS = 3000;
   const shownAt = Date.now();
   const bar = document.getElementById("loading-progress-bar");
   const percentEl = document.getElementById("loading-progress-percent");
@@ -56,7 +56,7 @@
   // tertembak (mis. ada request pihak ketiga yang menggantung), jangan
   // sampai loading screen menutupi halaman selamanya. Diberi jeda lebih
   // lama dari MIN_VISIBLE_MS supaya tidak memotong durasi tampil normal.
-  setTimeout(hide, 9000);
+  setTimeout(hide, 6000);
 })();
 
 /* ==========================================================================
