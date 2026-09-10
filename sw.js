@@ -18,16 +18,16 @@
    otomatis membuang cache versi sebelumnya saat diaktifkan kembali.
    ========================================================================== */
 
-const CACHE_VERSION = "rakabu-shell-v17";
+const CACHE_VERSION = "rakabu-shell-v19";
 const APP_SHELL = [
   "index.html",
   "register.html",
   "employee.html",
   "admin.html",
-  "css/style.css?v=21",
+  "css/style.css?v=22",
   "js/config.js?v=21",
   "js/store.js?v=21",
-  "js/ui-common.js?v=21",
+  "js/ui-common.js?v=22",
   "js/modal.js?v=21",
   "js/geo.js?v=21",
   "js/auth.js?v=21",
@@ -39,7 +39,8 @@ const APP_SHELL = [
   "assets/logo-512.png",
   "assets/logo-maskable-512.png",
   "assets/logo-32.png",
-  "assets/logo-48.png"
+  "assets/logo-48.png",
+  "assets/logo-lockup.png"
 ];
 
 self.addEventListener("install", (event) => {

@@ -1,12 +1,12 @@
 {
-  "name": "Rakabu Attendance — Nusa Beef",
-  "short_name": "Rakabu Attendance",
+  "name": "Rakabu Sapi Kita — Nusa Beef",
+  "short_name": "Rakabu",
   "description": "Sistem absensi & HR PT Rakabu Sapi Kita (Nusa Beef)",
   "start_url": "index.html",
   "scope": ".",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#140907",
+  "background_color": "#FFFFFF",
   "theme_color": "#6C1710",
   "icons": [
     { "src": "assets/logo-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
