@@ -1047,3 +1047,159 @@ h3 .inline-icon{ margin-right:.15em; color:var(--brand-600); }
   }
   .loading-screen__progress-bar{ transition:none; }
 }
+
+/* ==========================================================================
+   GROUP CHAT — "Grup Karyawan" (gaya WhatsApp, ringan & responsif)
+   ========================================================================== */
+.chat-shell{
+  position:relative; display:flex; flex-direction:column;
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-sm); overflow:hidden;
+  height:calc(100vh - var(--header-h) - var(--bottomnav-h) - 2.6em);
+  min-height:420px;
+}
+@media (min-width:900px){
+  .chat-shell{ height:calc(100vh - var(--header-h) - 3.2em); }
+}
+
+.chat-shell__head{
+  display:flex; align-items:center; justify-content:space-between; gap:.8em;
+  padding:.85em 1.1em; border-bottom:1px solid var(--border);
+  background:linear-gradient(155deg, var(--brand-700), var(--brand-900));
+  color:#fff; flex-shrink:0;
+}
+.chat-shell__group{ display:flex; align-items:center; gap:.75em; min-width:0; }
+.chat-shell__group strong{ display:block; font-family:var(--font-display); font-size:1rem; font-weight:800; }
+.chat-shell__sub{ font-size:.76rem; opacity:.82; }
+.chat-shell__head .icon-btn{ background:rgba(255,255,255,.14); border-color:rgba(255,255,255,.28); color:#fff; }
+.chat-shell__head .icon-btn:hover{ background:rgba(255,255,255,.24); }
+
+.chat-avatar{
+  display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;
+  width:38px; height:38px; border-radius:50%; overflow:hidden;
+  background:var(--brand-100); color:var(--brand-700); font-weight:700; font-size:.78rem;
+}
+.chat-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
+.chat-avatar--sm{ width:30px; height:30px; font-size:.68rem; }
+.chat-avatar--spacer{ background:transparent; }
+.chat-avatar--lg{ width:60px; height:60px; }
+.chat-avatar--group{ position:relative; background:var(--surface); }
+.chat-avatar--group::before{
+  content:""; position:absolute; inset:0; border-radius:50%;
+  background:url('../assets/logo-192.png') center/cover no-repeat;
+}
+
+.chat-shell__body{
+  flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;
+  padding:1em 1em .3em; display:flex; flex-direction:column; background:var(--surface-sunken);
+}
+
+.chat-empty{ margin:auto; text-align:center; color:var(--text-500); display:flex; flex-direction:column; align-items:center; gap:.6em; padding:2em 1em; }
+.chat-empty h3{ color:var(--text-700); }
+.chat-empty p{ font-size:.86rem; max-width:280px; }
+
+.chat-date-sep{ display:flex; justify-content:center; margin:.9em 0 .5em; }
+.chat-date-sep span{
+  background:var(--surface); color:var(--text-500); font-size:.72rem; font-weight:700;
+  padding:.35em .9em; border-radius:var(--radius-pill); box-shadow:var(--shadow-sm);
+}
+
+.chat-row{ display:flex; align-items:flex-end; gap:.5em; margin-top:.55em; max-width:100%; }
+.chat-row--grouped{ margin-top:.14em; }
+.chat-row--mine{ flex-direction:row-reverse; }
+
+.chat-bubble{
+  position:relative; max-width:min(76%, 480px); padding:.55em .7em .35em;
+  border-radius:var(--radius-md); background:var(--surface); box-shadow:var(--shadow-sm);
+  font-size:.9rem;
+}
+.chat-bubble--theirs{ border-bottom-left-radius:4px; }
+.chat-bubble--mine{
+  border-bottom-right-radius:4px;
+  background:linear-gradient(155deg, var(--brand-100), color-mix(in srgb, var(--brand-100) 55%, var(--surface)));
+}
+[data-theme="dark"] .chat-bubble--mine{ background:linear-gradient(155deg, var(--brand-900), var(--brand-700)); color:#fff; }
+.chat-bubble__name{ display:block; font-size:.76rem; font-weight:800; color:var(--brand-600); margin-bottom:.15em; }
+[data-theme="dark"] .chat-bubble__name{ color:var(--gold-400); }
+.chat-admin-tag{
+  display:inline-block; background:var(--gold-500); color:#fff; font-size:.58rem; font-weight:800;
+  padding:.08em .45em; border-radius:var(--radius-pill); vertical-align:middle; letter-spacing:.02em; text-transform:uppercase;
+}
+.chat-bubble__text{ white-space:pre-wrap; word-break:break-word; line-height:1.42; margin:0; }
+.chat-bubble__image{ display:block; width:100%; max-width:280px; border-radius:10px; margin-bottom:.35em; }
+.chat-bubble__meta{ display:flex; align-items:center; justify-content:flex-end; gap:.3em; margin-top:.15em; }
+.chat-bubble__time{ font-size:.63rem; color:var(--text-500); font-family:var(--font-mono); }
+.chat-bubble__ticks{ display:inline-flex; color:var(--text-500); }
+.chat-bubble__ticks.is-read{ color:var(--info-600); }
+.chat-bubble__delete{
+  position:absolute; top:-8px; right:-8px; width:24px; height:24px; border-radius:50%;
+  border:1px solid var(--border); background:var(--surface); color:var(--danger-600);
+  display:flex; align-items:center; justify-content:center; cursor:pointer; opacity:0;
+  transition:opacity .15s ease, transform .15s ease; box-shadow:var(--shadow-sm);
+}
+.chat-row--mine .chat-bubble__delete{ right:auto; left:-8px; }
+@media (hover:hover){ .chat-bubble:hover .chat-bubble__delete{ opacity:1; } }
+.chat-bubble__delete:active{ transform:scale(.9); }
+
+.chat-typing-row{ padding:.2em 1.2em .45em; font-size:.78rem; color:var(--text-500); font-style:italic; flex-shrink:0; }
+
+.chat-scroll-bottom-btn{
+  position:absolute; right:1.1em; bottom:5.4em; z-index:5;
+  width:38px; height:38px; border-radius:50%; border:1px solid var(--border); background:var(--surface);
+  box-shadow:var(--shadow-md); display:flex; align-items:center; justify-content:center; color:var(--brand-600); cursor:pointer;
+}
+
+.chat-image-preview{
+  display:flex; align-items:center; gap:.6em; padding:.6em .9em; border-top:1px solid var(--border);
+  background:var(--surface-sunken); flex-shrink:0;
+}
+.chat-image-preview img{ width:44px; height:44px; object-fit:cover; border-radius:8px; }
+.chat-image-preview span{ font-size:.78rem; color:var(--text-500); flex:1; }
+.chat-image-preview button{ background:none; border:none; color:var(--danger-600); font-weight:700; cursor:pointer; font-size:.8rem; }
+
+.chat-shell__composer{
+  display:flex; align-items:center; gap:.5em; padding:.65em .8em; border-top:1px solid var(--border);
+  background:var(--surface); flex-shrink:0; padding-bottom:calc(.65em + env(safe-area-inset-bottom));
+}
+.chat-shell__composer input[type="text"]{
+  flex:1; border-radius:var(--radius-pill); padding:.68em 1.1em; background:var(--surface-sunken); border-color:transparent;
+}
+.chat-shell__composer input[type="text"]:focus{ background:var(--surface); box-shadow:none; border-color:var(--border-strong); }
+.chat-shell__composer .icon-btn{ flex-shrink:0; }
+.chat-shell__composer .icon-btn--send{
+  background:linear-gradient(155deg, var(--brand-600), var(--brand-700)); color:#fff; border-color:transparent;
+}
+.chat-shell__composer .icon-btn--send:hover{ box-shadow:var(--glow-brand); }
+.chat-shell__composer .icon-btn--send:disabled{ opacity:.45; cursor:not-allowed; box-shadow:none; }
+
+/* Info grup (daftar anggota) */
+.chat-info-row{ display:flex; align-items:center; gap:.75em; padding:.55em 0; border-bottom:1px solid var(--border); }
+.chat-info-row:last-child{ border-bottom:none; }
+.chat-info-row__text{ display:flex; flex-direction:column; gap:.1em; font-size:.86rem; }
+.chat-info-row__text span{ color:var(--text-500); font-size:.76rem; }
+
+/* Badge jumlah pesan belum dibaca pada menu navigasi */
+.nav-chat-badge{
+  display:inline-flex; align-items:center; justify-content:center; min-width:17px; height:17px; padding:0 .3em;
+  border-radius:var(--radius-pill); background:var(--danger-600); color:#fff; font-size:.64rem; font-weight:800; margin-left:auto;
+}
+.bottom-nav__item .nav-chat-badge{ position:absolute; top:2px; right:28%; margin:0; box-shadow:0 0 0 2px var(--surface); }
+
+@media (prefers-reduced-motion:reduce){ .chat-bubble__delete{ transition:none; } }
+
+/* ==========================================================================
+   MENU EKSPOR (dropdown CSV / Excel / PDF) — dipakai di Rekap Absensi & Laporan
+   ========================================================================== */
+.export-menu{ position:relative; display:inline-block; }
+.export-menu__list{
+  position:absolute; top:calc(100% + .4em); right:0; z-index:20; min-width:190px;
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md);
+  box-shadow:var(--shadow-md); padding:.4em; display:flex; flex-direction:column; gap:.15em;
+}
+.export-menu__list button{
+  display:flex; align-items:center; gap:.6em; width:100%; text-align:left;
+  padding:.55em .7em; border-radius:10px; border:none; background:none; cursor:pointer;
+  font-size:.86rem; font-weight:600; color:var(--text-700); font-family:var(--font-body);
+}
+.export-menu__list button:hover{ background:var(--surface-sunken); color:var(--brand-700); }
+.export-menu__list .inline-icon{ color:var(--brand-600); flex-shrink:0; }
