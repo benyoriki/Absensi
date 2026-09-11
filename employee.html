@@ -57,8 +57,8 @@
 <meta name="mobile-web-app-capable" content="yes" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="css/style.css?v=23" />
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css?v=25" />
 </head>
 <body>
 <div id="app-loading-screen" class="loading-screen" aria-hidden="true">
@@ -117,6 +117,8 @@
       <p class="sidebar__group-label">Pengajuan</p>
       <button class="sidebar__link" data-nav="cuti"><span class="inline-icon" data-icon="umbrella" data-icon-size="18"></span> Cuti</button>
       <button class="sidebar__link" data-nav="lembur"><span class="inline-icon" data-icon="clock" data-icon-size="18"></span> Lembur</button>
+      <p class="sidebar__group-label">Komunikasi</p>
+      <button class="sidebar__link" data-nav="chat"><span class="inline-icon" data-icon="chatGroup" data-icon-size="18"></span> Chat Grup <span class="nav-chat-badge" data-chat-badge hidden>0</span></button>
       <p class="sidebar__group-label">Akun</p>
       <button class="sidebar__link" data-nav="profil"><span class="inline-icon" data-icon="user" data-icon-size="18"></span> Data Saya</button>
       <button class="sidebar__link" data-nav="notifikasi"><span class="inline-icon" data-icon="bell" data-icon-size="18"></span> Notifikasi</button>
@@ -302,6 +304,44 @@
         </div>
       </section>
 
+      <!-- ===================== CHAT GRUP ===================== -->
+      <section data-page="chat" hidden class="chat-page">
+        <div class="chat-shell">
+          <header class="chat-shell__head">
+            <div class="chat-shell__group">
+              <span class="chat-avatar chat-avatar--group" aria-hidden="true"></span>
+              <div>
+                <strong>Grup Karyawan</strong>
+                <span class="chat-shell__sub" id="chat-member-count">— anggota</span>
+              </div>
+            </div>
+            <button type="button" class="icon-btn" id="chat-info-btn" aria-label="Info grup">
+              <span class="inline-icon" data-icon="users" data-icon-size="18"></span>
+            </button>
+          </header>
+          <div class="chat-shell__body" id="chat-messages"></div>
+          <div class="chat-typing-row" id="chat-typing-row" hidden><span id="chat-typing-text"></span></div>
+          <button type="button" class="chat-scroll-bottom-btn" id="chat-scroll-bottom-btn" hidden aria-label="Ke pesan terbaru">
+            <span class="inline-icon" data-icon="arrowRight" data-icon-size="16" style="transform:rotate(90deg)"></span>
+          </button>
+          <div class="chat-image-preview" id="chat-image-preview" hidden>
+            <img id="chat-image-preview-thumb" alt="Pratinjau foto" />
+            <span>Foto siap dikirim</span>
+            <button type="button" id="chat-image-preview-cancel">Batal</button>
+          </div>
+          <form class="chat-shell__composer" id="chat-form">
+            <button type="button" class="icon-btn" id="chat-attach-btn" aria-label="Lampirkan foto">
+              <span class="inline-icon" data-icon="paperclip" data-icon-size="18"></span>
+            </button>
+            <input type="file" id="chat-image-input" accept="image/*" hidden />
+            <input type="text" id="chat-input" placeholder="Tulis pesan…" autocomplete="off" maxlength="1000" />
+            <button type="submit" class="icon-btn icon-btn--send" id="chat-send-btn" aria-label="Kirim pesan">
+              <span class="inline-icon" data-icon="send" data-icon-size="17"></span>
+            </button>
+          </form>
+        </div>
+      </section>
+
       <!-- ===================== PROFIL ===================== -->
       <section data-page="profil" hidden>
         <div class="page-title"><h2>Profil Saya</h2><p>Data akun dan kepegawaian Anda.</p></div>
@@ -377,7 +417,7 @@
   <nav class="bottom-nav" aria-label="Navigasi bawah">
     <button class="bottom-nav__item" data-nav="dashboard"><span class="inline-icon" data-icon="home" data-icon-size="20"></span><span>Home</span></button>
     <button class="bottom-nav__item" data-nav="absensi"><span class="inline-icon" data-icon="pin" data-icon-size="20"></span><span>Absen</span></button>
-    <button class="bottom-nav__item" data-nav="cuti"><span class="inline-icon" data-icon="umbrella" data-icon-size="20"></span><span>Cuti</span></button>
+    <button class="bottom-nav__item" data-nav="chat"><span class="inline-icon" data-icon="chatGroup" data-icon-size="20"></span><span>Chat</span><span class="nav-chat-badge" data-chat-badge hidden>0</span></button>
     <button class="bottom-nav__item" data-nav="profil"><span class="inline-icon" data-icon="user" data-icon-size="20"></span><span>Profil</span></button>
     <button class="bottom-nav__item" id="more-btn"><span class="inline-icon" data-icon="more" data-icon-size="20"></span><span>Lainnya</span></button>
   </nav>
@@ -390,6 +430,7 @@
     <div class="stack">
       <button class="sidebar__link" data-nav="riwayat"><span class="inline-icon" data-icon="chart" data-icon-size="18"></span> Riwayat Absensi</button>
       <button class="sidebar__link" data-nav="jadwal"><span class="inline-icon" data-icon="calendar" data-icon-size="18"></span> Jadwal Kerja</button>
+      <button class="sidebar__link" data-nav="cuti"><span class="inline-icon" data-icon="umbrella" data-icon-size="18"></span> Cuti</button>
       <button class="sidebar__link" data-nav="lembur"><span class="inline-icon" data-icon="clock" data-icon-size="18"></span> Lembur</button>
       <button class="sidebar__link" data-nav="notifikasi"><span class="inline-icon" data-icon="bell" data-icon-size="18"></span> Notifikasi</button>
       <button class="sidebar__link" id="more-logout-btn"><span class="inline-icon" data-icon="logout" data-icon-size="18"></span> Keluar</button>
@@ -440,13 +481,23 @@
   </div>
 </div>
 
+<!-- ============ INFO GRUP (member chat) ============ -->
+<div id="chat-info-modal" class="modal-overlay" hidden role="dialog" aria-modal="true">
+  <div class="modal" style="max-width:380px">
+    <div class="modal__head"><h2>Info Grup</h2><button class="icon-btn" id="chat-info-modal-close" aria-label="Tutup">✕</button></div>
+    <p class="text-sm text-muted" style="margin-bottom:.6em">Anggota grup ini otomatis mengikuti seluruh karyawan aktif dan admin yang terdaftar.</p>
+    <ul id="chat-info-list" class="stack" style="gap:0"></ul>
+  </div>
+</div>
+
 <div id="toast-region" class="toast-region" aria-live="polite"></div>
 
 <script src="js/config.js?v=21"></script>
-<script src="js/store.js?v=21"></script>
-<script src="js/ui-common.js?v=22"></script>
+<script src="js/store.js?v=22"></script>
+<script src="js/ui-common.js?v=24"></script>
 <script src="js/modal.js?v=21"></script>
 <script src="js/geo.js?v=21"></script>
-<script src="js/employee.js?v=21"></script>
+<script src="js/chat.js?v=1"></script>
+<script src="js/employee.js?v=22"></script>
 </body>
 </html>

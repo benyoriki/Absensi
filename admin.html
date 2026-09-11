@@ -57,8 +57,8 @@
 <meta name="mobile-web-app-capable" content="yes" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="css/style.css?v=23" />
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css?v=25" />
 </head>
 <body>
 <div id="app-loading-screen" class="loading-screen" aria-hidden="true">
@@ -111,6 +111,8 @@
       <button class="sidebar__link" data-nav="dashboard"><span class="inline-icon" data-icon="home" data-icon-size="18"></span> Dashboard</button>
       <button class="sidebar__link" data-nav="pendaftaran"><span class="inline-icon" data-icon="plusCircle" data-icon-size="18"></span> Pendaftaran Baru <span id="sidebar-pending-badge" class="pill pill--danger" style="margin-left:auto" hidden>0</span></button>
       <button class="sidebar__link" data-nav="karyawan"><span class="inline-icon" data-icon="users" data-icon-size="18"></span> Data Karyawan</button>
+      <p class="sidebar__group-label">Komunikasi</p>
+      <button class="sidebar__link" data-nav="chat"><span class="inline-icon" data-icon="chatGroup" data-icon-size="18"></span> Chat Grup <span class="nav-chat-badge" data-chat-badge hidden>0</span></button>
       <p class="sidebar__group-label">Absensi</p>
       <button class="sidebar__link" data-nav="absensi"><span class="inline-icon" data-icon="clipboard" data-icon-size="18"></span> Rekap Absensi</button>
       <button class="sidebar__link" data-nav="shift"><span class="inline-icon" data-icon="clock" data-icon-size="18"></span> Shift Kerja</button>
@@ -119,8 +121,7 @@
       <button class="sidebar__link" data-nav="izin-lokasi"><span class="inline-icon" data-icon="shield" data-icon-size="18"></span> Izin Luar Lokasi <span id="sidebar-outside-badge" class="pill pill--danger" style="margin-left:auto" hidden>0</span></button>
       <button class="sidebar__link" data-nav="cuti"><span class="inline-icon" data-icon="umbrella" data-icon-size="18"></span> Pengajuan Cuti</button>
       <button class="sidebar__link" data-nav="lembur"><span class="inline-icon" data-icon="clock" data-icon-size="18"></span> Pengajuan Lembur</button>
-      <p class="sidebar__group-label">Keuangan &amp; Laporan</p>
-      <button class="sidebar__link" data-nav="gaji"><span class="inline-icon" data-icon="dollar" data-icon-size="18"></span> Gaji Karyawan</button>
+      <p class="sidebar__group-label">Laporan</p>
       <button class="sidebar__link" data-nav="laporan"><span class="inline-icon" data-icon="fileText" data-icon-size="18"></span> Laporan</button>
       <p class="sidebar__group-label">Lainnya</p>
       <button class="sidebar__link" data-nav="pengaturan"><span class="inline-icon" data-icon="pin" data-icon-size="18"></span> Pengaturan</button>
@@ -194,7 +195,14 @@
           <div><h2>Rekap Absensi</h2><p>Pantau kehadiran seluruh karyawan. Koreksi jam masuk/pulang lewat tombol Edit bila ada kesalahan.</p></div>
           <div style="display:flex;gap:.6em;flex-wrap:wrap">
             <button class="btn btn--ghost btn--sm" id="add-manual-attendance-btn">✏️ Edit / Tambah Jam Masuk</button>
-            <button class="btn btn--ghost btn--sm" id="export-attendance-btn">⬇️ Export CSV</button>
+            <div class="export-menu" data-export-menu>
+              <button type="button" class="btn btn--ghost btn--sm" data-export-toggle="attendance">⬇️ Export</button>
+              <div class="export-menu__list" data-export-list hidden>
+                <button type="button" data-export-format="csv"><span class="inline-icon" data-icon="fileText" data-icon-size="16"></span> CSV</button>
+                <button type="button" data-export-format="xlsx"><span class="inline-icon" data-icon="table" data-icon-size="16"></span> Excel (.xlsx)</button>
+                <button type="button" data-export-format="pdf"><span class="inline-icon" data-icon="fileText" data-icon-size="16"></span> PDF</button>
+              </div>
+            </div>
           </div>
         </div>
         <section class="card">
@@ -306,26 +314,19 @@
         </section>
       </section>
 
-      <!-- ===================== GAJI KARYAWAN ===================== -->
-      <section data-page="gaji" hidden>
-        <div class="page-title flex-between">
-          <div><h2>Gaji Karyawan</h2><p id="gaji-period-label">Periode -</p></div>
-          <button class="btn btn--ghost btn--sm" id="export-gaji-btn">⬇️ Export CSV</button>
-        </div>
-        <p class="fine-print" style="margin-bottom:1em">Data gaji di bawah ini adalah <strong>data uji coba (dummy)</strong>, bukan data gaji sesungguhnya.</p>
-        <section class="card">
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead><tr><th>Nama</th><th>Gaji Pokok</th><th>Tunjangan</th><th>Lembur</th><th>Potongan</th><th>Bonus</th><th>Total</th><th>Status</th></tr></thead>
-              <tbody id="gaji-tbody"></tbody>
-            </table>
-          </div>
-        </section>
-      </section>
-
       <!-- ===================== LAPORAN ===================== -->
       <section data-page="laporan" hidden>
-        <div class="page-title"><h2>Laporan</h2><p>Rekap lengkap seluruh aktivitas untuk periode terpilih.</p></div>
+        <div class="page-title flex-between">
+          <div><h2>Laporan</h2><p>Rekap lengkap seluruh aktivitas untuk periode terpilih.</p></div>
+          <div class="export-menu" data-export-menu>
+            <button type="button" class="btn btn--ghost btn--sm" data-export-toggle="laporan">⬇️ Export</button>
+            <div class="export-menu__list" data-export-list hidden>
+              <button type="button" data-export-format="csv"><span class="inline-icon" data-icon="fileText" data-icon-size="16"></span> CSV</button>
+              <button type="button" data-export-format="xlsx"><span class="inline-icon" data-icon="table" data-icon-size="16"></span> Excel (.xlsx)</button>
+              <button type="button" data-export-format="pdf"><span class="inline-icon" data-icon="fileText" data-icon-size="16"></span> PDF</button>
+            </div>
+          </div>
+        </div>
         <div class="grid-stats" id="laporan-summary"></div>
         <section class="card mt-1">
           <div class="card__head"><h3>Ringkasan per Karyawan</h3></div>
@@ -374,6 +375,44 @@
         </section>
       </section>
 
+      <!-- ===================== CHAT GRUP ===================== -->
+      <section data-page="chat" hidden class="chat-page">
+        <div class="chat-shell">
+          <header class="chat-shell__head">
+            <div class="chat-shell__group">
+              <span class="chat-avatar chat-avatar--group" aria-hidden="true"></span>
+              <div>
+                <strong>Grup Karyawan</strong>
+                <span class="chat-shell__sub" id="chat-member-count">— anggota</span>
+              </div>
+            </div>
+            <button type="button" class="icon-btn" id="chat-info-btn" aria-label="Info grup">
+              <span class="inline-icon" data-icon="users" data-icon-size="18"></span>
+            </button>
+          </header>
+          <div class="chat-shell__body" id="chat-messages"></div>
+          <div class="chat-typing-row" id="chat-typing-row" hidden><span id="chat-typing-text"></span></div>
+          <button type="button" class="chat-scroll-bottom-btn" id="chat-scroll-bottom-btn" hidden aria-label="Ke pesan terbaru">
+            <span class="inline-icon" data-icon="arrowRight" data-icon-size="16" style="transform:rotate(90deg)"></span>
+          </button>
+          <div class="chat-image-preview" id="chat-image-preview" hidden>
+            <img id="chat-image-preview-thumb" alt="Pratinjau foto" />
+            <span>Foto siap dikirim</span>
+            <button type="button" id="chat-image-preview-cancel">Batal</button>
+          </div>
+          <form class="chat-shell__composer" id="chat-form">
+            <button type="button" class="icon-btn" id="chat-attach-btn" aria-label="Lampirkan foto">
+              <span class="inline-icon" data-icon="paperclip" data-icon-size="18"></span>
+            </button>
+            <input type="file" id="chat-image-input" accept="image/*" hidden />
+            <input type="text" id="chat-input" placeholder="Tulis pesan sebagai Admin…" autocomplete="off" maxlength="1000" />
+            <button type="submit" class="icon-btn icon-btn--send" id="chat-send-btn" aria-label="Kirim pesan">
+              <span class="inline-icon" data-icon="send" data-icon-size="17"></span>
+            </button>
+          </form>
+        </div>
+      </section>
+
       <!-- ===================== NOTIFIKASI ===================== -->
       <section data-page="notifikasi" hidden>
         <div class="page-title flex-between">
@@ -389,7 +428,7 @@
   <nav class="bottom-nav" aria-label="Navigasi bawah admin">
     <button class="bottom-nav__item" data-nav="dashboard"><span class="inline-icon" data-icon="home" data-icon-size="20"></span><span>Home</span></button>
     <button class="bottom-nav__item" data-nav="pendaftaran"><span class="inline-icon" data-icon="plusCircle" data-icon-size="20"></span><span>Daftar</span></button>
-    <button class="bottom-nav__item" data-nav="karyawan"><span class="inline-icon" data-icon="users" data-icon-size="20"></span><span>Pegawai</span></button>
+    <button class="bottom-nav__item" data-nav="chat"><span class="inline-icon" data-icon="chatGroup" data-icon-size="20"></span><span>Chat</span><span class="nav-chat-badge" data-chat-badge hidden>0</span></button>
     <button class="bottom-nav__item" data-nav="absensi"><span class="inline-icon" data-icon="clipboard" data-icon-size="20"></span><span>Absensi</span></button>
     <button class="bottom-nav__item" id="more-btn"><span class="inline-icon" data-icon="more" data-icon-size="20"></span><span>Lainnya</span></button>
   </nav>
@@ -399,13 +438,13 @@
   <div class="modal" style="max-width:340px">
     <div class="modal__head"><h2>Menu Lainnya</h2><button class="icon-btn" id="more-close-btn" aria-label="Tutup">✕</button></div>
     <div class="stack">
+      <button class="sidebar__link" data-nav="karyawan"><span class="inline-icon" data-icon="users" data-icon-size="18"></span> Data Karyawan</button>
       <button class="sidebar__link" data-nav="shift"><span class="inline-icon" data-icon="clock" data-icon-size="18"></span> Shift Kerja</button>
       <button class="sidebar__link" data-nav="monitoring"><span class="inline-icon" data-icon="satellite" data-icon-size="18"></span> Monitoring Lokasi</button>
       <button class="sidebar__link" data-nav="riwayat-lokasi"><span class="inline-icon" data-icon="chart" data-icon-size="18"></span> Riwayat Lokasi</button>
       <button class="sidebar__link" data-nav="izin-lokasi"><span class="inline-icon" data-icon="shield" data-icon-size="18"></span> Izin Luar Lokasi</button>
       <button class="sidebar__link" data-nav="cuti"><span class="inline-icon" data-icon="umbrella" data-icon-size="18"></span> Pengajuan Cuti</button>
       <button class="sidebar__link" data-nav="lembur"><span class="inline-icon" data-icon="clock" data-icon-size="18"></span> Pengajuan Lembur</button>
-      <button class="sidebar__link" data-nav="gaji"><span class="inline-icon" data-icon="dollar" data-icon-size="18"></span> Gaji Karyawan</button>
       <button class="sidebar__link" data-nav="laporan"><span class="inline-icon" data-icon="fileText" data-icon-size="18"></span> Laporan</button>
       <button class="sidebar__link" data-nav="pengaturan"><span class="inline-icon" data-icon="pin" data-icon-size="18"></span> Pengaturan</button>
       <button class="sidebar__link" data-nav="notifikasi"><span class="inline-icon" data-icon="bell" data-icon-size="18"></span> Notifikasi</button>
@@ -531,13 +570,24 @@
   </div>
 </div>
 
+<!-- ============ INFO GRUP (member chat) ============ -->
+<div id="chat-info-modal" class="modal-overlay" hidden role="dialog" aria-modal="true">
+  <div class="modal" style="max-width:380px">
+    <div class="modal__head"><h2>Info Grup</h2><button class="icon-btn" id="chat-info-modal-close" aria-label="Tutup">✕</button></div>
+    <p class="text-sm text-muted" style="margin-bottom:.6em">Anggota grup ini otomatis mengikuti seluruh karyawan aktif dan admin yang terdaftar.</p>
+    <ul id="chat-info-list" class="stack" style="gap:0"></ul>
+  </div>
+</div>
+
 <div id="toast-region" class="toast-region" aria-live="polite"></div>
 
 <script src="js/config.js?v=21"></script>
-<script src="js/store.js?v=21"></script>
-<script src="js/ui-common.js?v=22"></script>
+<script src="js/store.js?v=22"></script>
+<script src="js/ui-common.js?v=24"></script>
 <script src="js/modal.js?v=21"></script>
 <script src="js/geo.js?v=21"></script>
-<script src="js/admin.js?v=21"></script>
+<script src="js/chat.js?v=1"></script>
+<script src="js/report-export.js?v=1"></script>
+<script src="js/admin.js?v=23"></script>
 </body>
 </html>

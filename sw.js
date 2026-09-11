@@ -18,21 +18,23 @@
    otomatis membuang cache versi sebelumnya saat diaktifkan kembali.
    ========================================================================== */
 
-const CACHE_VERSION = "rakabu-shell-v19";
+const CACHE_VERSION = "rakabu-shell-v21";
 const APP_SHELL = [
   "index.html",
   "register.html",
   "employee.html",
   "admin.html",
-  "css/style.css?v=22",
+  "css/style.css?v=25",
   "js/config.js?v=21",
-  "js/store.js?v=21",
-  "js/ui-common.js?v=22",
+  "js/store.js?v=22",
+  "js/ui-common.js?v=24",
   "js/modal.js?v=21",
   "js/geo.js?v=21",
   "js/auth.js?v=21",
-  "js/employee.js?v=21",
-  "js/admin.js?v=21",
+  "js/chat.js?v=1",
+  "js/report-export.js?v=1",
+  "js/employee.js?v=22",
+  "js/admin.js?v=23",
   "js/register.js?v=21",
   "manifest.webmanifest",
   "assets/logo-192.png",
