@@ -7,7 +7,7 @@
   if (window.__rakabuAdminInitialized) return;
   window.__rakabuAdminInitialized = true;
 
-  if (!assertDependenciesLoaded(["Store", "CONFIG", "Modal"])) return;
+  if (!assertDependenciesLoaded(["Store", "CONFIG", "Modal", "ChatUI", "ReportExport"])) return;
 
   const admin = Store.currentUser();
   if (!admin || admin.role !== "admin") {
@@ -27,6 +27,7 @@
       el.avatarBtn.innerHTML = avatarMarkup(admin);
       initClock();
       renderAll();
+      ChatUI.init(admin);
     } catch (err) {
       // Lihat catatan yang sama di js/employee.js: tampilkan error yang
       // jelas alih-alih membiarkan dashboard admin "mati total" diam-diam.
@@ -38,7 +39,7 @@
     [
       "stat-cards","attendance-donut","attendance-legend","weekly-bar-chart","recent-activity-list",
       "pendaftaran-tbody","pendaftaran-empty","karyawan-search","karyawan-tbody",
-      "absensi-tbody","export-attendance-btn","add-manual-attendance-btn",
+      "absensi-tbody","add-manual-attendance-btn",
       "edit-attendance-modal","edit-attendance-close","edit-attendance-form",
       "ea-user","ea-date","ea-checkin","ea-checkout","ea-status","ea-note",
       "shift-grid","shift-users-tbody","add-shift-btn",
@@ -50,7 +51,6 @@
       "izin-lokasi-tbody","sidebar-outside-badge",
       "setting-lat","setting-lon","setting-radius","setting-outside-radius","setting-accuracy","setting-outside","setting-late","setting-open-maps-btn",
       "cuti-tbody","lembur-tbody",
-      "gaji-tbody","gaji-period-label","export-gaji-btn",
       "laporan-summary","laporan-tbody",
       "notif-list","mark-all-read-btn","notif-dot",
       "more-btn","more-modal","more-close-btn","more-logout-btn","sidebar-logout","sidebar-pending-badge",
@@ -71,7 +71,6 @@
     renderIzinLokasi();
     renderCuti();
     renderLembur();
-    renderGaji();
     renderLaporan();
     renderNotifications();
     updateNotifBadge();
@@ -90,7 +89,7 @@
     window.addEventListener("hashchange", () => route(location.hash.replace("#", "")));
   }
   function route(page) {
-    const valid = ["dashboard","pendaftaran","karyawan","absensi","shift","monitoring","riwayat-lokasi","izin-lokasi","cuti","lembur","gaji","laporan","pengaturan","notifikasi"];
+    const valid = ["dashboard","pendaftaran","karyawan","absensi","shift","monitoring","riwayat-lokasi","izin-lokasi","cuti","lembur","laporan","pengaturan","notifikasi","chat"];
     if (!valid.includes(page)) page = "dashboard";
     document.querySelectorAll("[data-page]").forEach((sec) => { sec.hidden = sec.dataset.page !== page; });
     document.querySelectorAll("[data-nav]").forEach((btn) => btn.classList.toggle("is-active", btn.dataset.nav === page));
@@ -99,6 +98,7 @@
     if (page === "monitoring") renderMonitoring();
     if (page === "riwayat-lokasi") renderRiwayatLokasi("today");
     if (page === "pengaturan") renderPengaturan();
+    if (page === "chat") ChatUI.onOpen();
     location.hash = page;
   }
 
@@ -123,8 +123,7 @@
     });
     el.riwayatLokasiSearch.addEventListener("input", () => renderRiwayatLokasi());
     el.settingOpenMapsBtn.addEventListener("click", () => window.open(CONFIG.OFFICE_MAPS_URL, "_blank"));
-    el.exportAttendanceBtn.addEventListener("click", exportAttendanceCsv);
-    el.exportGajiBtn.addEventListener("click", exportGajiCsv);
+    bindExportMenus();
 
     // Edit / Tambah Jam Absensi
     el.addManualAttendanceBtn.addEventListener("click", () => openEditAttendanceModal(null, null));
@@ -471,16 +470,16 @@
   /* ------------------------------------------------------------------ */
   /* REKAP ABSENSI                                                       */
   /* ------------------------------------------------------------------ */
-  function renderAbsensi(range) {
+  function filterAttendanceByRange(range) {
     let list = Store.getAttendance();
     const now = new Date();
     if (range === "today") { const key = Store.localDateKey(); list = list.filter((a) => a.date === key); }
     else if (range === "week") { const weekAgo = new Date(now); weekAgo.setDate(now.getDate() - 7); list = list.filter((a) => new Date(a.date) >= weekAgo); }
-    // Bug fix: filter "bulan ini" sebelumnya hanya mencocokkan angka bulan
-    // (getMonth()) tanpa memeriksa tahun, sehingga data bulan yang sama dari
-    // tahun-tahun sebelumnya ikut tampil sebagai "bulan ini".
     else if (range === "month") { list = list.filter((a) => { const d = new Date(a.date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }); }
-    list = list.sort((a, b) => b.date.localeCompare(a.date));
+    return list.sort((a, b) => b.date.localeCompare(a.date));
+  }
+  function renderAbsensi(range) {
+    const list = filterAttendanceByRange(range);
 
     if (!list.length) { el.absensiTbody.innerHTML = `<tr><td colspan="7">${emptyStateBlock("Tidak ada data absensi pada rentang ini.")}</td></tr>`; return; }
     el.absensiTbody.innerHTML = list.map((a) => {
@@ -502,14 +501,17 @@
       btn.addEventListener("click", () => openEditAttendanceModal(btn.dataset.editAttendance, btn.dataset.editDate));
     });
   }
+  const ATTENDANCE_STATUS_MAP = {
+    hadir: ["badge--success", "Hadir"], terlambat: ["badge--warning", "Terlambat"],
+    izin: ["badge--info", "Izin"], alpa: ["badge--danger", "Alpa"],
+    "tidak-hadir": ["badge--danger", "Tidak Hadir"]
+  };
   function statusBadge(status) {
-    const map = {
-      hadir: ["badge--success", "Hadir"], terlambat: ["badge--warning", "Terlambat"],
-      izin: ["badge--info", "Izin"], alpa: ["badge--danger", "Alpa"],
-      "tidak-hadir": ["badge--danger", "Tidak Hadir"]
-    };
-    const [cls, label] = map[status] || ["badge--neutral", status];
+    const [cls, label] = ATTENDANCE_STATUS_MAP[status] || ["badge--neutral", status];
     return `<span class="badge ${cls}">${label}</span>`;
+  }
+  function statusLabel(status) {
+    return (ATTENDANCE_STATUS_MAP[status] || [, status])[1];
   }
 
   /* ------------------------------------------------------------------ */
@@ -551,13 +553,88 @@
     renderDashboard();
   }
 
-  function exportAttendanceCsv() {
-    const rows = [["Nama","ID","Tanggal","Masuk","Pulang","Jarak Masuk (m)","Status"]];
-    Store.getAttendance().forEach((a) => {
+  const ATTENDANCE_RANGE_LABEL = { today: "Hari ini", week: "Minggu ini", month: "Bulan ini", all: "Semua" };
+
+  async function exportAttendance(format) {
+    const range = document.querySelector('[data-arange].is-active')?.dataset.arange || "today";
+    const rangeLabel = ATTENDANCE_RANGE_LABEL[range] || "Semua";
+    const header = ["Nama", "ID", "Tanggal", "Masuk", "Pulang", "Jarak Masuk (m)", "Status"];
+    const body = filterAttendanceByRange(range).map((a) => {
       const u = Store.findUserById(a.userId);
-      rows.push([u ? u.name : a.userId, a.userId, a.date, a.checkIn || "", a.checkOut || "", a.checkInDistance != null ? a.checkInDistance.toFixed(1) : "", a.status]);
+      return [
+        u ? u.name : a.userId, a.userId, formatDateID(a.date), a.checkIn || "—", a.checkOut || "—",
+        a.checkInDistance != null ? a.checkInDistance.toFixed(1) : "—",
+        statusLabel(a.status)
+      ];
     });
-    downloadCsv(rows, "rekap-absensi.csv");
+    const filename = "rekap-absensi-" + range;
+    await runReportExport(format, {
+      csvXlsxRows: [header, ...body],
+      sheetName: "Rekap Absensi",
+      baseFilename: filename,
+      pdf: {
+        title: "Rekap Absensi — " + rangeLabel,
+        subtitle: "PT. Rakabu Sapi Kita — pantauan kehadiran karyawan",
+        meta: [["Rentang", rangeLabel], ["Total Data", String(body.length)]],
+        table: { head: header, body }
+      }
+    });
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* MENU EKSPOR (dropdown CSV / Excel / PDF)                            */
+  /* ------------------------------------------------------------------ */
+  function bindExportMenus() {
+    document.querySelectorAll("[data-export-menu]").forEach((menu) => {
+      const toggle = menu.querySelector("[data-export-toggle]");
+      const list = menu.querySelector("[data-export-list]");
+      if (!toggle || !list) return;
+      toggle.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const willOpen = list.hidden;
+        closeAllExportMenus();
+        list.hidden = !willOpen;
+      });
+      list.addEventListener("click", (e) => e.stopPropagation());
+      list.querySelectorAll("[data-export-format]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          list.hidden = true;
+          const kind = toggle.dataset.exportToggle;
+          const format = btn.dataset.exportFormat;
+          try {
+            if (kind === "attendance") await exportAttendance(format);
+            else if (kind === "laporan") await exportLaporan(format);
+          } catch (err) {
+            showToast(err && err.message ? err.message : "Gagal membuat file ekspor.", "danger");
+          }
+        });
+      });
+    });
+    document.addEventListener("click", closeAllExportMenus);
+  }
+  function closeAllExportMenus() {
+    document.querySelectorAll("[data-export-list]").forEach((l) => { l.hidden = true; });
+  }
+
+  /** Alur bersama untuk ketiga format supaya pesan toast & lazy-load pustaka
+   *  konsisten di semua menu ekspor (Rekap Absensi maupun Laporan). */
+  async function runReportExport(format, cfg) {
+    if (format === "csv") {
+      ReportExport.toCsv(cfg.csvXlsxRows, cfg.baseFilename + ".csv");
+      showToast("File CSV berhasil diunduh.", "success");
+      return;
+    }
+    if (format === "xlsx") {
+      showToast("Menyiapkan file Excel…", "info");
+      await ReportExport.toExcel(cfg.baseFilename + ".xlsx", [{ name: cfg.sheetName, rows: cfg.csvXlsxRows }]);
+      showToast("File Excel berhasil diunduh.", "success");
+      return;
+    }
+    if (format === "pdf") {
+      showToast("Menyiapkan file PDF…", "info");
+      await ReportExport.toPdf(Object.assign({ filename: cfg.baseFilename + ".pdf" }, cfg.pdf));
+      showToast("File PDF berhasil diunduh.", "success");
+    }
   }
 
   /* ------------------------------------------------------------------ */
@@ -959,38 +1036,6 @@
   }
 
   /* ------------------------------------------------------------------ */
-  /* GAJI (dummy)                                                        */
-  /* ------------------------------------------------------------------ */
-  function renderGaji() {
-    el.gajiPeriodLabel.textContent = "Periode " + Store.currentPeriod() + " (data uji coba)";
-    const list = Store.getSalary();
-    if (!list.length) { el.gajiTbody.innerHTML = `<tr><td colspan="8">${emptyStateBlock("Belum ada data gaji.")}</td></tr>`; return; }
-    el.gajiTbody.innerHTML = list.map((s) => {
-      const u = Store.findUserById(s.userId);
-      const total = s.basicSalary + s.allowance + s.overtimePay + s.bonus - s.deduction;
-      return `<tr>
-        <td>${escapeHtml(u ? u.name : s.userId)}</td>
-        <td class="mono">${formatRupiah(s.basicSalary)}</td>
-        <td class="mono">${formatRupiah(s.allowance)}</td>
-        <td class="mono">${formatRupiah(s.overtimePay)}</td>
-        <td class="mono">${formatRupiah(s.deduction)}</td>
-        <td class="mono">${formatRupiah(s.bonus)}</td>
-        <td class="mono" style="font-weight:700">${formatRupiah(total)}</td>
-        <td>${s.status === "paid" ? '<span class="pill pill--success">Terbayar</span>' : '<span class="pill pill--warning">Belum Bayar</span>'}</td>
-      </tr>`;
-    }).join("");
-  }
-  function exportGajiCsv() {
-    const rows = [["Nama","Gaji Pokok","Tunjangan","Lembur","Potongan","Bonus","Total","Status"]];
-    Store.getSalary().forEach((s) => {
-      const u = Store.findUserById(s.userId);
-      const total = s.basicSalary + s.allowance + s.overtimePay + s.bonus - s.deduction;
-      rows.push([u ? u.name : s.userId, s.basicSalary, s.allowance, s.overtimePay, s.deduction, s.bonus, total, s.status]);
-    });
-    downloadCsv(rows, "gaji-karyawan.csv");
-  }
-
-  /* ------------------------------------------------------------------ */
   /* LAPORAN                                                             */
   /* ------------------------------------------------------------------ */
   function renderLaporan() {
@@ -1026,6 +1071,35 @@
     }).join("") : `<tr><td colspan="6">${emptyStateBlock("Belum ada data karyawan aktif.")}</td></tr>`;
   }
 
+  async function exportLaporan(format) {
+    const users = Store.getUsers().filter((u) => u.role === "employee" && u.status === "active");
+    const att = Store.getAttendance();
+    const leave = Store.getLeave();
+    const overtime = Store.getOvertime();
+    const header = ["Nama", "Departemen", "Hadir", "Terlambat", "Cuti Disetujui", "Lembur Disetujui"];
+    const body = users.map((u) => {
+      const uAtt = att.filter((a) => a.userId === u.id);
+      return [
+        u.name, u.department,
+        uAtt.filter((a) => a.status === "hadir").length,
+        uAtt.filter((a) => a.status === "terlambat").length,
+        leave.filter((l) => l.userId === u.id && l.status === "approved").length,
+        overtime.filter((o) => o.userId === u.id && o.status === "approved").length
+      ];
+    });
+    await runReportExport(format, {
+      csvXlsxRows: [header, ...body],
+      sheetName: "Laporan",
+      baseFilename: "laporan-" + Store.currentPeriod().replace(" ", "-").toLowerCase(),
+      pdf: {
+        title: "Laporan Ringkasan Karyawan",
+        subtitle: "PT. Rakabu Sapi Kita — periode " + Store.currentPeriod(),
+        meta: [["Total Karyawan Aktif", String(users.length)]],
+        table: { head: header, body }
+      }
+    });
+  }
+
   /* ------------------------------------------------------------------ */
   /* NOTIFIKASI                                                          */
   /* ------------------------------------------------------------------ */
@@ -1052,13 +1126,4 @@
   /* ------------------------------------------------------------------ */
   function emptyStateHtml(msg) { return `<li class="history-empty" style="display:block;width:100%">${escapeHtml(msg)}</li>`; }
   function emptyStateBlock(msg) { return `<div class="empty-state">${escapeHtml(msg)}</div>`; }
-  function downloadCsv(rows, filename) {
-    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = filename;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
 })();

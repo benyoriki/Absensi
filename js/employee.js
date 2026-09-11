@@ -19,7 +19,7 @@
   // benar berhasil dimuat SEBELUM kode di bawah memakainya. Kalau tidak,
   // tampilkan pesan yang jelas di layar (lihat js/ui-common.js) alih-alih
   // membiarkan seluruh dashboard "mati total" tanpa penjelasan.
-  if (!assertDependenciesLoaded(["Store", "CONFIG", "Modal", "createGeoMonitor", "createZoneMonitor", "distanceToOffice"])) return;
+  if (!assertDependenciesLoaded(["Store", "CONFIG", "Modal", "createGeoMonitor", "createZoneMonitor", "distanceToOffice", "ChatUI"])) return;
 
   const user = Store.currentUser();
   if (!user || user.role !== "employee") {
@@ -148,6 +148,7 @@
     initClock();
     requestNotificationPermission();
     monitor.start();
+    ChatUI.init(user);
 
     // Bug fix (refresh setelah absen masuk): jika karyawan me-refresh
     // halaman setelah absen masuk tapi belum absen pulang, monitoring
@@ -214,7 +215,7 @@
   // nama section yang sesungguhnya ditampilkan.
   const PAGE_ALIASES = { absensi: "dashboard" };
   function route(page) {
-    const valid = ["dashboard","riwayat","jadwal","cuti","lembur","profil","notifikasi"];
+    const valid = ["dashboard","riwayat","jadwal","cuti","lembur","chat","profil","notifikasi"];
     let requestedPage = page; // kunci literal seperti yang diklik ("absensi" atau "dashboard")
     let resolvedPage = PAGE_ALIASES[page] || page; // section konten yang benar-benar ditampilkan
     if (!valid.includes(resolvedPage)) { resolvedPage = "dashboard"; requestedPage = "dashboard"; }
@@ -233,6 +234,7 @@
     if (resolvedPage === "riwayat") renderRiwayat("week");
     if (resolvedPage === "cuti") renderCutiPage();
     if (resolvedPage === "lembur") renderLemburPage();
+    if (resolvedPage === "chat") ChatUI.onOpen();
     location.hash = requestedPage;
   }
   window.addEventListener("hashchange", () => route(location.hash.replace("#", "")));

@@ -25,7 +25,6 @@ const Store = (function () {
     leave: "rakabu_leave",
     overtime: "rakabu_overtime",
     notifications: "rakabu_notifications",
-    salary: "rakabu_salary",
     shifts: "rakabu_shifts",
     officeSettings: "rakabu_office_settings",
     zoneEvents: "rakabu_zone_events",
@@ -33,8 +32,23 @@ const Store = (function () {
     outsideRequests: "rakabu_outside_requests",
     session: "rakabu_session",
     theme: "rakabu_theme",
+    chatMessages: "rakabu_chat_messages",
+    chatReads: "rakabu_chat_reads",
+    chatTyping: "rakabu_chat_typing",
     seeded: "rakabu_seeded_v1"
   };
+
+  // Grup chat menyimpan paling banyak sekian pesan terbaru saja — supaya
+  // localStorage (kuota terbatas, biasanya 5–10MB per origin) tidak
+  // membengkak oleh riwayat obrolan yang terus bertambah, dan supaya
+  // render daftar pesan di layar tetap ringan/cepat walau dipakai
+  // bertahun-tahun. Pesan yang lebih lama dari batas ini otomatis "digulung"
+  // (dibuang dari penyimpanan) setiap kali ada pesan baru masuk.
+  const CHAT_MESSAGE_LIMIT = 300;
+  // Lampiran foto di chat DIKOMPRES di sisi klien (lihat js/chat.js) sebelum
+  // disimpan, tapi tetap diberi batas keras di sini sebagai jaring pengaman
+  // kedua supaya satu foto yang lolos kompres tidak menghabiskan kuota.
+  const CHAT_IMAGE_MAX_BYTES = 350 * 1024;
 
   function read(key, fallback) {
     try {
@@ -263,25 +277,11 @@ const Store = (function () {
       }
     ];
 
-    const salary = [
-      {
-        id: uid("sal"), userId: "LKN001", period: currentPeriod(),
-        basicSalary: 5500000, allowance: 750000, overtimePay: 300000,
-        deduction: 150000, bonus: 0, status: "unpaid"
-      },
-      {
-        id: uid("sal"), userId: "LKN002", period: currentPeriod(),
-        basicSalary: 4800000, allowance: 600000, overtimePay: 0,
-        deduction: 100000, bonus: 200000, status: "paid"
-      }
-    ];
-
     write(KEYS.users, users);
     write(KEYS.attendance, attendance);
     write(KEYS.leave, leave);
     write(KEYS.overtime, overtime);
     write(KEYS.notifications, notifications);
-    write(KEYS.salary, salary);
     write(KEYS.shifts, shifts);
     write(KEYS.zoneEvents, []);
     write(KEYS.seeded, true);
@@ -957,12 +957,6 @@ const Store = (function () {
   }
 
   /* ------------------------------------------------------------------ */
-  /* SALARY (dummy)                                                     */
-  /* ------------------------------------------------------------------ */
-  function getSalary() { return read(KEYS.salary, []); }
-  function salaryByUser(userId) { return getSalary().filter(s => s.userId === userId); }
-
-  /* ------------------------------------------------------------------ */
   /* NOTIFICATIONS                                                      */
   /* ------------------------------------------------------------------ */
   function getNotifications() { return read(KEYS.notifications, []); }
@@ -987,6 +981,98 @@ const Store = (function () {
     const n = list.find(x => x.id === id);
     if (n) { n.read = true; write(KEYS.notifications, list); }
   }
+
+  /* ------------------------------------------------------------------ */
+  /* CHAT GRUP (Grup Karyawan)                                          */
+  /* ------------------------------------------------------------------ */
+  /*
+     DEMO ONLY — sama seperti seluruh Store lain di file ini: obrolan
+     disimpan di localStorage PERANGKAT/BROWSER INI SAJA. Antar-tab di
+     browser yang sama akan tersinkron langsung (lewat event "storage" +
+     BroadcastChannel, lihat js/chat.js), tapi dua karyawan yang login dari
+     HP masing-masing TIDAK akan saling melihat pesan satu sama lain sampai
+     ini dihubungkan ke backend sungguhan (mis. Firebase Realtime Database/
+     Firestore, atau WebSocket server sendiri) — cukup ganti isi fungsi di
+     bawah ini dengan panggilan API/SDK, bentuk data (shape) dibuat sama
+     persis supaya js/chat.js tidak perlu diubah sama sekali.
+  */
+  function getChatMessages() { return read(KEYS.chatMessages, []); }
+
+  function saveChatMessages(list) { return write(KEYS.chatMessages, list); }
+
+  /** Anggota grup = seluruh admin + karyawan berstatus aktif. Dipakai untuk
+   *  panel info grup dan untuk menghitung centang biru ("dibaca semua"). */
+  function chatMembers() {
+    return getUsers().filter((u) => u.role === "admin" || u.status === "active");
+  }
+
+  function sendChatMessage(data) {
+    const list = getChatMessages();
+    const record = Object.assign({
+      id: uid("msg"),
+      text: "",
+      image: null,
+      createdAt: Date.now(),
+      readBy: [data.senderId]
+    }, data);
+    list.push(record);
+    // Gulung riwayat lama begitu melewati batas, ambil N terbaru saja.
+    const trimmed = list.length > CHAT_MESSAGE_LIMIT ? list.slice(list.length - CHAT_MESSAGE_LIMIT) : list;
+    saveChatMessages(trimmed);
+    return record;
+  }
+
+  function deleteChatMessage(id, requesterId, requesterIsAdmin) {
+    const list = getChatMessages();
+    const idx = list.findIndex((m) => m.id === id);
+    if (idx === -1) return false;
+    if (list[idx].senderId !== requesterId && !requesterIsAdmin) return false;
+    list.splice(idx, 1);
+    saveChatMessages(list);
+    return true;
+  }
+
+  /** Menandai seluruh pesan sampai saat ini sebagai "dibaca" oleh userId —
+   *  dipakai untuk badge notifikasi belum-dibaca DAN untuk status centang
+   *  (satu abu = terkirim, dua abu = ada yang membaca, dua biru = seluruh
+   *  anggota grup aktif sudah membaca). */
+  function markChatRead(userId) {
+    const list = getChatMessages();
+    let changed = false;
+    list.forEach((m) => {
+      if (!Array.isArray(m.readBy)) m.readBy = [];
+      if (!m.readBy.includes(userId)) { m.readBy.push(userId); changed = true; }
+    });
+    if (changed) saveChatMessages(list);
+    const reads = read(KEYS.chatReads, {});
+    reads[userId] = Date.now();
+    write(KEYS.chatReads, reads);
+  }
+
+  function chatLastReadAt(userId) {
+    const reads = read(KEYS.chatReads, {});
+    return reads[userId] || 0;
+  }
+
+  function unreadChatCount(userId) {
+    const lastRead = chatLastReadAt(userId);
+    return getChatMessages().filter((m) => m.senderId !== userId && m.createdAt > lastRead).length;
+  }
+
+  /** Status "sedang mengetik" — entri kedaluwarsa sendiri (dianggap basi)
+   *  setelah beberapa detik oleh pembaca (lihat js/chat.js), jadi di sini
+   *  cukup dicatat apa adanya tanpa perlu dibersihkan aktif. */
+  function setChatTyping(userId, name) {
+    const map = read(KEYS.chatTyping, {});
+    map[userId] = { name, at: Date.now() };
+    write(KEYS.chatTyping, map);
+  }
+  function clearChatTyping(userId) {
+    const map = read(KEYS.chatTyping, {});
+    delete map[userId];
+    write(KEYS.chatTyping, map);
+  }
+  function getChatTyping() { return read(KEYS.chatTyping, {}); }
 
   /* ------------------------------------------------------------------ */
   /* THEME                                                              */
@@ -1038,8 +1124,12 @@ const Store = (function () {
     submitOutsideRequest, decideOutsideRequest, consumeOutsideRequest, pendingOutsideRequestsCount,
     getLeave, leaveByUser, submitLeave, decideLeave,
     getOvertime, overtimeByUser, submitOvertime, decideOvertime,
-    getSalary, salaryByUser, currentPeriod,
+    currentPeriod,
     getNotifications, addNotification, notificationsFor, unreadCount, markAllRead, markRead,
-    getTheme, setTheme
+    getTheme, setTheme,
+    getChatMessages, chatMembers, sendChatMessage, deleteChatMessage,
+    markChatRead, chatLastReadAt, unreadChatCount,
+    setChatTyping, clearChatTyping, getChatTyping,
+    CHAT_IMAGE_MAX_BYTES
   };
 })();

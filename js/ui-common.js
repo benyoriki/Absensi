@@ -10,6 +10,9 @@
    visual, bukan menunda fungsi apa pun).
    ========================================================================== */
 (function initLoadingScreen() {
+  // Durasi tampil minimum dikembalikan ke 3 detik sesuai permintaan —
+  // memberi waktu logo & animasi loading terlihat penuh sebelum masuk ke
+  // dashboard.
   const MIN_VISIBLE_MS = 3000;
   const shownAt = Date.now();
   const bar = document.getElementById("loading-progress-bar");
@@ -341,6 +344,14 @@ const Icons = {
   instagram: '<rect x="3.5" y="3.5" width="17" height="17" rx="5" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.7"/><circle cx="17.1" cy="6.9" r="1.1" fill="currentColor"/>',
   shield: '<path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
   camera: '<path d="M4 8.5a1.5 1.5 0 0 1 1.5-1.5h1.6l.9-1.4a1.5 1.5 0 0 1 1.26-.6h5.48c.5 0 .97.23 1.26.6l.9 1.4h1.6A1.5 1.5 0 0 1 20 8.5v9A1.5 1.5 0 0 1 18.5 19h-13A1.5 1.5 0 0 1 4 17.5v-9Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.4" stroke="currentColor" stroke-width="1.6"/>',
+  chat: '<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9A1.5 1.5 0 0 1 18.5 16H9l-4 4v-4H5.5A1.5 1.5 0 0 1 4 14.5v-9Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="8.3" cy="10" r="1" fill="currentColor"/><circle cx="12" cy="10" r="1" fill="currentColor"/><circle cx="15.7" cy="10" r="1" fill="currentColor"/>',
+  chatGroup: '<path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h11A1.5 1.5 0 0 1 17 6.5v6A1.5 1.5 0 0 1 15.5 14H9l-3.4 3v-3H4.5A1.5 1.5 0 0 1 3 12.5v-6Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M19.5 8.2c.9.24 1.5 1.05 1.5 2v4.3a1.5 1.5 0 0 1-1.5 1.5h-.6v2.6l-2.7-2.6" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>',
+  send: '<path d="M4 12 20.5 4 14 20l-2.7-6.3L4 12Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><path d="M11.3 13.7 20.5 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+  paperclip: '<path d="M16.5 6.5 8.8 14.2a3 3 0 0 0 4.24 4.24l7.4-7.4a5 5 0 0 0-7.07-7.07l-7.4 7.4a7 7 0 0 0 9.9 9.9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+  checkSingle: '<path d="M5 12.5 9.5 17 19 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+  checkDouble: '<path d="M1.5 12.5 6 17 11 11.3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 12.5 12.5 17 22 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+  trash: '<path d="M5 7h14M9.5 7V5a1.5 1.5 0 0 1 1.5-1.5h2A1.5 1.5 0 0 1 14.5 5v2M7 7l.7 12a2 2 0 0 0 2 1.9h4.6a2 2 0 0 0 2-1.9L17 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+  table: '<rect x="3.5" y="4.5" width="17" height="15" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 9.5h17M9 9.5V19.5M15 9.5V19.5" stroke="currentColor" stroke-width="1.6"/>',
   none: '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6" opacity=".4"/>'
 };
 
