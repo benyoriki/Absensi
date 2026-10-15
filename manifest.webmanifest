@@ -1,16 +1,16 @@
 {
-  "name": "Rakabu Sapi Kita — Nusa Beef",
-  "short_name": "Rakabu",
-  "description": "Sistem absensi & HR PT Rakabu Sapi Kita (Nusa Beef)",
+  "name": "PT. Depo PRG",
+  "short_name": "Depo PRG",
+  "description": "Sistem absensi & HR PT. Depo PRG",
   "start_url": "index.html",
   "scope": ".",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#FFFFFF",
-  "theme_color": "#6C1710",
+  "theme_color": "#13235A",
   "icons": [
-    { "src": "assets/logo-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "assets/logo-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "assets/logo-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "logo-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "logo-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "logo-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

@@ -3,7 +3,7 @@
 <head>
   <script>
   /* Bootstrap darurat: dipasang PALING AWAL, sebelum berkas eksternal apa
-     pun diminta, supaya kalau css/style.css atau salah satu js/*.js gagal
+     pun diminta, supaya kalau style.css atau salah satu *.js gagal
      dimuat (404, cache basi, dsb.), pengguna tetap melihat pesan yang
      jelas alih-alih halaman yang terlihat "mati total" tanpa penjelasan. */
   (function () {
@@ -33,7 +33,7 @@
       // Bug fix (v8): jangan anggap fatal kalau yang gagal dimuat adalah
       // resource kosmetik pihak ketiga (mis. font Google) — itu tidak
       // memengaruhi fungsi tombol/absensi sama sekali, hanya tampilan
-      // huruf. Hanya file aplikasi sendiri (js/*.js, css/style.css) yang
+      // huruf. Hanya file aplikasi sendiri (*.js, style.css) yang
       // kegagalannya benar-benar fatal.
       if (!isSameOriginResource(src)) {
         if (window.console && console.warn) console.warn("Resource pihak ketiga gagal dimuat (diabaikan, tidak fatal):", src || "(tidak diketahui)");
@@ -45,27 +45,25 @@
   </script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>Daftar Akun Karyawan — Rakabu Sapi Kita</title>
-<link rel="icon" type="image/png" sizes="192x192" href="assets/logo-192.png" />
-<link rel="icon" type="image/png" sizes="32x32" href="assets/logo-32.png" />
-<link rel="apple-touch-icon" href="assets/logo-192.png" />
+<title>Daftar Akun Karyawan — PT. Depo PRG</title>
+<link rel="icon" type="image/png" sizes="192x192" href="logo-192.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="logo-32.png" />
+<link rel="apple-touch-icon" href="logo-192.png" />
 <link rel="manifest" href="manifest.webmanifest" />
-<meta name="theme-color" content="#6C1710" />
+<meta name="theme-color" content="#13235A" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="Rakabu Sapi Kita" />
+<meta name="apple-mobile-web-app-title" content="PT. Depo PRG" />
 <meta name="mobile-web-app-capable" content="yes" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="css/style.css?v=25" />
+<link rel="stylesheet" href="style.css?v=32" />
 </head>
 <body>
 <div id="app-loading-screen" class="loading-screen" aria-hidden="true">
   <div class="loading-screen__grid" aria-hidden="true"></div>
   <div class="loading-screen__inner">
     <div class="loading-screen__logo">
-      <img src="assets/logo-lockup.png" alt="Rakabu Sapi Kita" width="240" height="76" />
+      <img src="logo-192.png" alt="" width="64" height="64" />
+      <span class="loading-screen__brand">PT. Depo PRG</span>
     </div>
     <div class="loading-screen__text">
       <span>Memuat halaman…</span>
@@ -78,7 +76,17 @@
 <a class="skip-link" href="#main">Langsung ke konten utama</a>
 
 <div class="auth-shell">
-  <main id="main" class="auth-card auth-card--wide" role="main">
+  <aside class="auth-hero" aria-hidden="true">
+    <img class="auth-hero__logo" src="logo-192.png" alt="" width="84" height="84" />
+    <p class="auth-hero__title">PT. Depo PRG</p>
+    <p class="auth-hero__lead">Sistem absensi digital berbasis foto dan lokasi GPS.</p>
+    <ul class="auth-hero__list">
+      <li><b>Absen foto</b> dengan stempel jam, tanggal &amp; koordinat</li>
+      <li><b>Radius 10 meter</b> dari titik absen</li>
+      <li><b>Laporan</b> kehadiran siap ekspor</li>
+    </ul>
+  </aside>
+    <main id="main" class="auth-card auth-card--wide" role="main">
     <button id="theme-toggle" class="icon-btn theme-toggle-float" type="button" aria-label="Ganti tampilan terang/gelap">
       <svg id="theme-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
@@ -89,11 +97,11 @@
     <div id="view-form">
       <div class="auth-brand">
         <span class="auth-brand__mark" aria-hidden="true">
-          <img src="assets/logo-192.png" alt="" class="auth-brand__mark-img" />
+          <img src="logo-192.png" alt="" class="auth-brand__mark-img" />
         </span>
         <div class="auth-brand__text">
           <h1>Daftar Akun Karyawan</h1>
-          <p>PT Rakabu Sapi Kita</p>
+          <p>PT. Depo PRG</p>
           <p class="brand-credit">website developer <a href="https://benyoriki.com/" target="_blank" rel="noopener">benyoriki.com</a></p>
         </div>
       </div>
@@ -204,10 +212,10 @@
 
 <div id="toast-region" class="toast-region" aria-live="polite"></div>
 
-<script src="js/config.js?v=21"></script>
-<script src="js/store.js?v=22"></script>
-<script src="js/ui-common.js?v=24"></script>
-<script src="js/modal.js?v=21"></script>
-<script src="js/register.js?v=21"></script>
+<script src="config.js?v=32"></script>
+<script src="store.js?v=32"></script>
+<script src="ui-common.js?v=32"></script>
+<script src="modal.js?v=32"></script>
+<script src="register.js?v=32"></script>
 </body>
 </html>

@@ -1,4 +1,16 @@
-# Rakabu Attendance — PT Rakabu Sapi Kita (Build v12)
+# PT. Depo PRG — Absensi Digital
+
+**Perubahan terbaru**
+- Semua file di root (tanpa folder) — upload langsung ke root repo GitHub.
+- Nama aplikasi: **PT. Depo PRG**. Ikon baru, bingkai 5%.
+- **Absen foto**: Absen Masuk/Pulang membuka kamera; foto distempel jam, tanggal, hari, alamat, koordinat, kompas, nama, jarak, dan kode verifikasi (`photo.js`). Foto disimpan di IndexedDB perangkat.
+- Titik absen: link Maps `https://maps.app.goo.gl/Uptwi83tp6D83noA9?g_st=ac`, toleransi **10 meter** (`config.js`). Cek koordinat di `config.js` / menu Admin > Lokasi Kantor.
+
+- **Tampilan baru (Navy & Orange)**: ringan untuk Windows 7 (Chrome/Edge 109) — tanpa blur, tanpa `color-mix()`, tanpa font Google. Instagram: @benyoriki.
+
+---
+
+# PT. Depo PRG — Absensi — PT. Depo PRG (Build v12)
 
 Sistem absensi karyawan berbasis browser (HTML/CSS/JavaScript murni, tanpa
 framework, tanpa build step, siap dijalankan di GitHub Pages).
@@ -9,7 +21,7 @@ framework, tanpa build step, siap dijalankan di GitHub Pages).
 
 1. **Logo resmi Nusa Beef** dipasang menggantikan semua placeholder ikon
    lama (header karyawan & admin, halaman login/daftar/login-admin,
-   favicon, ikon PWA). Sumber: `assets/logo-master.png` diproses otomatis
+   favicon, ikon PWA). Sumber: `logo-master.png` diproses otomatis
    (deteksi lingkaran, crop presisi, latar transparan) menjadi
    `logo-192/512/maskable-512/48/32.png`.
 2. **PWA benar-benar bisa di-install** ke Home Screen HP: manifest
@@ -37,7 +49,7 @@ framework, tanpa build step, siap dijalankan di GitHub Pages).
    display:none }` — akibatnya modal bisa "nyangkut" tampil terus,
    menutupi seluruh layar dan memblokir semua tombol di baliknya. Diperbaiki
    dengan satu aturan global `[hidden]{ display:none !important; }` di
-   `css/style.css`.
+   `style.css`.
 2. **Banner error palsu diperbaiki**: sebelumnya kegagalan memuat resource
    pihak ketiga (font Google) ikut memicu banner "kesalahan teknis fatal".
    Sekarang hanya file milik aplikasi sendiri (satu-origin) yang dianggap
@@ -50,7 +62,7 @@ framework, tanpa build step, siap dijalankan di GitHub Pages).
    - `CONFIG.OUTSIDE_AREA_RADIUS = 15` meter — radius area kerja; keluar
      dari radius ini selama `OUTSIDE_AREA_MINUTES` (10 menit) penuh memicu
      alarm.
-5. **Alarm suara + getar** ditambahkan (`playZoneAlarm()` di `js/geo.js`,
+5. **Alarm suara + getar** ditambahkan (`playZoneAlarm()` di `geo.js`,
    beep via Web Audio API + `navigator.vibrate`) — sebelumnya peringatan
    keluar-area hanya berupa toast/notifikasi teks yang bisa terlewat.
 6. **Modal alasan keluar area** — begitu alarm berbunyi, karyawan diminta
@@ -94,11 +106,11 @@ framework, tanpa build step, siap dijalankan di GitHub Pages).
 
 | Area | Perubahan |
 |---|---|
-| Konfigurasi | Semua angka penting (radius, durasi, koordinat) dipindah ke satu file baru `js/config.js` — tidak ada lagi angka yang di-hardcode di beberapa tempat berbeda. |
+| Konfigurasi | Semua angka penting (radius, durasi, koordinat) dipindah ke satu file baru `config.js` — tidak ada lagi angka yang di-hardcode di beberapa tempat berbeda. |
 | Radius | Disatukan jadi **15 meter**, berlaku sama untuk absen masuk & pulang. |
 | Koordinat kantor | Diperbarui ke **-6.4568847, 106.7299525** (hasil verifikasi tautan Maps terbaru). |
-| Monitoring 10 menit | Dibangun ulang di `js/geo.js` (`createZoneMonitor`) — aktif hanya antara absen masuk & absen pulang, akurat terhadap waktu asli (bukan `setInterval` yang bisa meleset), dan hanya memicu **satu** notifikasi per kejadian keluar-area. |
-| Modal | Disatukan ke satu manajer baru, `js/modal.js` (objek global `Modal`) — dipakai oleh `employee.js` dan `admin.js`. Termasuk `Modal.runOnce()` untuk mencegah tombol di-klik dua kali. |
+| Monitoring 10 menit | Dibangun ulang di `geo.js` (`createZoneMonitor`) — aktif hanya antara absen masuk & absen pulang, akurat terhadap waktu asli (bukan `setInterval` yang bisa meleset), dan hanya memicu **satu** notifikasi per kejadian keluar-area. |
+| Modal | Disatukan ke satu manajer baru, `modal.js` (objek global `Modal`) — dipakai oleh `employee.js` dan `admin.js`. Termasuk `Modal.runOnce()` untuk mencegah tombol di-klik dua kali. |
 | Admin | Ditambah 3 halaman baru: **Monitoring Lokasi**, **Riwayat Lokasi**, **Pengaturan** (menampilkan koordinat/radius/durasi yang aktif). |
 | Akses admin | Diganti dari "tap logo 5x" menjadi tautan **"Masuk sebagai Admin"** yang terlihat jelas di halaman login. |
 | Registrasi | Menolak pendaftaran dengan ID `admin` atau ID yang bentrok dengan akun admin manapun. |
@@ -215,7 +227,7 @@ sungguhan tidak sepenuhnya bisa disimulasikan otomatis):
 
 ## G. Cara Mengubah Koordinat Kantor
 
-Edit `js/config.js`:
+Edit `config.js`:
 
 ```js
 OFFICE_LOCATION: {
@@ -233,7 +245,7 @@ oleh kebijakan cross-origin). Cara mengambil koordinat baru:
 
 ## H. Cara Mengubah Radius
 
-Ada **dua radius terpisah** di `js/config.js`, jangan disamakan:
+Ada **dua radius terpisah** di `config.js`, jangan disamakan:
 
 - `CONFIG.ATTENDANCE_RADIUS` (meter) — radius untuk tombol **Absen Masuk**
   & **Absen Pulang**. Karyawan di luar radius ini tidak bisa menekan tombol
@@ -249,7 +261,7 @@ kerja" hanya karena bergeser sedikit dari titik absen presisi.
 
 ## I. Cara Mengubah Durasi Peringatan Keluar Area
 
-Edit `CONFIG.OUTSIDE_AREA_MINUTES` di `js/config.js` (satuan menit).
+Edit `CONFIG.OUTSIDE_AREA_MINUTES` di `config.js` (satuan menit).
 
 ## J. Keterbatasan LocalStorage (Wajib Dibaca)
 

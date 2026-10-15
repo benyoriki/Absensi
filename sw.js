@@ -1,5 +1,5 @@
 /* ==========================================================================
-   RAKABU ATTENDANCE — SERVICE WORKER (v11)
+   DEPO PRG ATTENDANCE — SERVICE WORKER (v11)
    ==========================================================================
    Tujuan: (1) memenuhi syarat "installable PWA" di Chrome/Edge/Android
    (Add to Home Screen benar-benar muncul sebagai app, bukan cuma shortcut
@@ -18,31 +18,31 @@
    otomatis membuang cache versi sebelumnya saat diaktifkan kembali.
    ========================================================================== */
 
-const CACHE_VERSION = "rakabu-shell-v21";
+const CACHE_VERSION = "depoprg-shell-v32";
 const APP_SHELL = [
   "index.html",
   "register.html",
   "employee.html",
   "admin.html",
-  "css/style.css?v=25",
-  "js/config.js?v=21",
-  "js/store.js?v=22",
-  "js/ui-common.js?v=24",
-  "js/modal.js?v=21",
-  "js/geo.js?v=21",
-  "js/auth.js?v=21",
-  "js/chat.js?v=1",
-  "js/report-export.js?v=1",
-  "js/employee.js?v=22",
-  "js/admin.js?v=23",
-  "js/register.js?v=21",
+  "style.css?v=32",
+  "config.js?v=32",
+  "store.js?v=32",
+  "ui-common.js?v=32",
+  "modal.js?v=32",
+  "geo.js?v=32",
+  "auth.js?v=32",
+  "chat.js?v=32",
+  "photo.js?v=32",
+  "report-export.js?v=32",
+  "employee.js?v=32",
+  "admin.js?v=32",
+  "register.js?v=32",
   "manifest.webmanifest",
-  "assets/logo-192.png",
-  "assets/logo-512.png",
-  "assets/logo-maskable-512.png",
-  "assets/logo-32.png",
-  "assets/logo-48.png",
-  "assets/logo-lockup.png"
+  "logo-192.png",
+  "logo-512.png",
+  "logo-maskable-512.png",
+  "logo-32.png",
+  "logo-48.png"
 ];
 
 self.addEventListener("install", (event) => {
