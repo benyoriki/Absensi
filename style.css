@@ -66,7 +66,7 @@
 
   --font-display:'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-body:'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-mono:Consolas, 'Roboto Mono', 'SF Mono', Menlo, 'Courier New', monospace;
+  --font-mono:ui-monospace, Consolas, 'Roboto Mono', 'SF Mono', Menlo, monospace;
 
   --header-h:76px;
   --sidebar-w:248px;
@@ -900,7 +900,6 @@ h3 .inline-icon{ margin-right:.15em; color:var(--brand-600); }
    asetnya) selesai dimuat, dengan durasi tampil minimum 3 detik supaya
    tidak "berkedip" di perangkat cepat — lihat initLoadingScreen().
    ========================================================================== */
-@property --loading-angle{ syntax:'<angle>'; inherits:true; initial-value:0deg; }
 
 .loading-screen{
   position:fixed; inset:0; z-index:9999;
@@ -959,36 +958,6 @@ h3 .inline-icon{ margin-right:.15em; color:var(--brand-600); }
   to{ opacity:1; transform:translateY(0) scale(1); }
 }
 
-.loading-screen__logo{
-  position:relative;
-  padding:.9em 1.3em;
-  border-radius:20px;
-  animation:loading-logo-in .6s cubic-bezier(.2,.8,.2,1);
-}
-.loading-screen__logo::before{
-  content:""; position:absolute; inset:0; border-radius:inherit; padding:1.5px;
-  background:conic-gradient(from var(--loading-angle),
-    transparent 0deg, rgba(var(--gold-400-rgb), 0.9) 70deg,
-    rgba(var(--brand-600-rgb), 0.9) 160deg, transparent 260deg, transparent 360deg);
-  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite:xor; mask-composite:exclude;
-  animation:loading-ring-spin 3.2s linear infinite;
-  opacity:.85;
-}
-.loading-screen__logo img{
-  position:relative; display:block; width:210px; height:auto; max-width:58vw;
-  filter:drop-shadow(0 10px 22px rgba(19,35,90,.18));
-  animation:loading-logo-float 3s ease-in-out infinite;
-}
-@keyframes loading-ring-spin{ to{ --loading-angle:360deg; } }
-@keyframes loading-logo-in{
-  from{ opacity:0; transform:translateY(6px) scale(.96); }
-  to{ opacity:1; transform:translateY(0) scale(1); }
-}
-@keyframes loading-logo-float{
-  0%,100%{ transform:translateY(0); }
-  50%{ transform:translateY(-4px); }
-}
 
 .loading-screen__text{ text-align:center; color:var(--text-900); width:100%; }
 .loading-screen__text strong{ display:block; font-family:var(--font-display); font-size:1.05rem; font-weight:800; letter-spacing:-0.01em; }
@@ -1221,13 +1190,13 @@ h3 .inline-icon{ margin-right:.15em; color:var(--brand-600); }
 :root{
   --ink-950:#070D1F; --brand-900:#0B1430; --brand-700:#13235A; --brand-600:#1D3FA8; --brand-500:#2F5BD6; --brand-100:#E4EBFD;
   --gold-600:#B45309; --gold-500:#F28C0F; --gold-400:#FBB040; --gold-100:#FFF1DA;
-  --success-600:#12805C; --success-100:#DDF5EA;
+  --success-600:#0E6E4E; --success-100:#DDF5EA;
   --warning-600:#B45309; --warning-solid:#F59E0B; --warning-100:#FFF1DA;
   --danger-600:#D3392B; --danger-100:#FDE8E6;
   --info-600:#2563EB; --info-100:#E6EEFF;
   --bg:#F2F5FB; --surface:#FFFFFF; --surface-raised:#FFFFFF; --surface-sunken:#EDF1F9;
   --border:#E1E7F2; --border-strong:#C9D2E4;
-  --text-900:#0F172A; --text-700:#334155; --text-500:#5B6B85; --text-400:#64748B;
+  --text-900:#0F172A; --text-700:#334155; --text-500:#516079; --text-400:#516079;
   --overlay:rgba(7,13,31,.6);
   --shadow-sm:0 1px 2px rgba(15,23,42,.06);
   --shadow-md:0 4px 14px rgba(15,23,42,.08);
@@ -1235,8 +1204,8 @@ h3 .inline-icon{ margin-right:.15em; color:var(--brand-600); }
   --radius-sm:10px; --radius-md:14px; --radius-lg:20px;
   --header-h:64px; --sidebar-w:252px;
   --brand-600-rgb:29,63,168; --brand-500-rgb:47,91,214; --brand-100-rgb:228,235,253;
-  --gold-500-rgb:242,140,15; --gold-400-rgb:251,176,64; --success-600-rgb:18,128,92;
-  --surface-rgb:255,255,255; --border-strong-rgb:201,210,228; --text-500-rgb:91,107,133; --text-900-rgb:15,23,42;
+  --gold-500-rgb:242,140,15; --gold-400-rgb:251,176,64; --success-600-rgb:14,110,78;
+  --surface-rgb:255,255,255; --border-strong-rgb:201,210,228; --text-500-rgb:81,96,121; --text-900-rgb:15,23,42;
 }
 [data-theme="dark"]{
   --bg:#0A1022; --surface:#111A33; --surface-raised:#16213F; --surface-sunken:#0D1428;
@@ -1315,11 +1284,20 @@ input:focus,select:focus,textarea:focus{ outline:none; border-color:var(--brand-
 .icon-btn:hover{ background:var(--surface-sunken); }
 .avatar-btn{ background:linear-gradient(135deg,var(--brand-500),var(--brand-700)); color:#fff; border:2px solid var(--surface); box-shadow:0 0 0 1px var(--border-strong); }
 .sidebar{ background:#0B1430; border-right:none; padding:1.4em .9em; }
-.sidebar__group-label{ color:#7E8DB5; font-size:.68rem; letter-spacing:.09em; text-transform:uppercase; margin:1.2em .6em .4em; }
-.sidebar__link{ color:#C3CEEA; border-radius:12px; font-weight:600; }
-.sidebar__link:hover{ background:rgba(255,255,255,.07); color:#fff; }
-.sidebar__link.is-active{ background:rgba(255,255,255,.12); color:#fff; }
+.sidebar__link{ border-radius:12px; font-weight:600; transform:none; }
+.sidebar__link:hover{ transform:none; }
 .sidebar__link.is-active::before{ background:var(--gold-500); }
+/* Warna sidebar gelap HANYA untuk .sidebar (menu "Lainnya" di modal ikut tema) */
+.sidebar .sidebar__group-label{ color:#8E9CC4; font-size:.68rem; letter-spacing:.09em; text-transform:uppercase; margin:1.2em .6em .4em; }
+.sidebar .sidebar__link{ color:#C3CEEA; }
+.sidebar .sidebar__link:hover{ background:rgba(255,255,255,.07); color:#fff; }
+.sidebar .sidebar__link.is-active{ background:rgba(255,255,255,.12); color:#fff; }
+/* Menu "Lainnya" (modal) mengikuti tema terang/gelap */
+.modal .sidebar__link{ color:var(--text-700); }
+.modal .sidebar__link:hover{ background:var(--surface-sunken); color:var(--text-900); }
+.modal .sidebar__link.is-active{ background:var(--brand-100); color:var(--brand-600); }
+.modal .sidebar__link .inline-icon, .modal .sidebar__link svg{ color:var(--text-500); }
+.modal .sidebar__link.is-active .inline-icon, .modal .sidebar__link.is-active svg{ color:var(--brand-600); }
 .bottom-nav{ background:var(--surface); border-top:1px solid var(--border); box-shadow:0 -2px 10px rgba(15,23,42,.06); }
 .bottom-nav__item{ color:var(--text-500); }
 .bottom-nav__item.is-active{ color:var(--brand-600); }
@@ -1380,14 +1358,17 @@ input:focus,select:focus,textarea:focus{ outline:none; border-color:var(--brand-
 }
 
 /* Dashboard karyawan: 2 kolom di layar lebar supaya tidak ada ruang kosong */
-@media (min-width:1000px){
-  .dash-grid{ display:grid; grid-template-columns:1fr 1fr; grid-template-rows:auto auto 1fr; gap:1em; align-items:start; }
+@media (min-width:900px){
+  .dash-grid{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); grid-template-rows:auto auto 1fr; gap:1em; align-items:start; }
   .dash-grid > :nth-child(2){ grid-template-columns:1fr; }
   .dash-grid > :nth-child(1){ grid-column:1 / span 2; }
   .dash-grid > :nth-child(2){ grid-column:1; grid-row:2 / span 2; }
   .dash-grid > :nth-child(3){ grid-column:2; grid-row:2; }
   .dash-grid > :nth-child(4){ grid-column:2; grid-row:3; }
   .dash-grid > :nth-child(4).grid-two{ grid-template-columns:1fr 1fr; }
+}
+@media (min-width:900px) and (max-width:1139px){
+  .dash-grid > :nth-child(4).grid-two{ grid-template-columns:1fr; }
 }
 svg text{ font-family:var(--font-body); }
 
@@ -1399,3 +1380,44 @@ svg text{ font-family:var(--font-body); }
 .install-box[hidden], .install-hint[hidden]{ display:none; }
 .install-hint{ margin:.7em 0 0; padding:.7em .9em; font-size:.8rem; line-height:1.5; color:var(--text-700); background:var(--surface-sunken); border:1px solid var(--border); border-radius:var(--radius-sm); }
 .icon-btn[hidden]{ display:none; }
+
+
+/* ==========================================================================
+   LOADING SCREEN v2 — logo dengan cincin putar, nama tidak terpotong
+   ========================================================================== */
+.loading-screen{ background:#0B1430; background:radial-gradient(60% 45% at 50% 105%,rgba(242,140,15,.28),transparent 70%),linear-gradient(160deg,#070D1F 0%,#13235A 62%,#1D3FA8 100%); }
+.loading-screen__inner{ width:min(340px,88vw); padding:2.4em 1.6em 1.5em; gap:0; text-align:center; border-radius:24px; box-shadow:0 20px 60px rgba(0,0,0,.45); }
+.loading-screen__logo{ position:relative; display:flex; flex-direction:column; align-items:center; gap:0; margin:0 0 1.1em; padding:18px 0 18px; }
+.loading-screen__logo img{ width:88px; height:88px; border-radius:22px; box-shadow:0 0 0 1px var(--border), 0 6px 16px rgba(15,23,42,.14); background:#fff; }
+.loading-screen__logo::before{ display:block; content:""; position:absolute; top:0; left:50%; width:124px; height:124px; margin-left:-62px; border-radius:50%; border:3px solid transparent; border-top-color:var(--gold-500); border-right-color:rgba(242,140,15,.35); animation:ld-spin 1s linear infinite; }
+@keyframes ld-spin{ to{ transform:rotate(360deg); } }
+.loading-screen__brand{ margin-top:1.1em; font-size:1.5rem; line-height:1.2; white-space:nowrap; letter-spacing:-.01em; }
+.loading-screen__text{ width:100%; display:flex; flex-direction:column; align-items:center; gap:.55em; }
+.loading-screen__text span{ font-family:var(--font-body); letter-spacing:0; font-size:.86rem; color:var(--text-500); }
+.loading-screen__progress{ width:100%; height:6px; border-radius:99px; background:var(--surface-sunken); overflow:hidden; }
+.loading-screen__progress-bar{ height:100%; border-radius:99px; }
+.loading-screen__text .loading-screen__percent{ font-weight:800; font-size:1rem; color:var(--text-900); font-variant-numeric:tabular-nums; }
+.loading-screen__text .loading-screen__credit{ margin-top:.9em; padding-top:.9em; border-top:1px solid var(--border); width:100%; font-size:.72rem; color:var(--text-400); }
+@media (prefers-reduced-motion:reduce){ .loading-screen__logo::before{ animation:none; } }
+
+/* ---- Layar potret yang lebar (mis. "Situs desktop" di HP): susun vertikal ---- */
+@media (min-width:900px) and (max-aspect-ratio:1/1){
+  .auth-shell{ flex-direction:column; gap:1.6em; justify-content:center; }
+  .auth-hero{ text-align:center; max-width:560px; }
+  .auth-hero__logo{ margin-left:auto; margin-right:auto; }
+  .auth-hero__list{ display:none; }
+}
+
+/* ---- HP yang membuka "Situs desktop": perbesar UI agar terbaca ---- */
+html.dop{ font-size:125%; }
+html.dop .sidebar{ --sidebar-w:300px; }
+
+
+/* ---- Perbaikan kontras (hasil audit otomatis terang & gelap) ---- */
+[data-theme="dark"] .chip.is-active{ background:#2F55D4; border-color:#2F55D4; color:#fff; }
+[data-theme="dark"] .btn--danger{ background:#C93A2C; color:#fff; }
+[data-theme="dark"] .btn--danger-ghost{ color:var(--danger-600); border-color:var(--danger-600); }
+.btn--action:disabled .btn__label,.btn--action:disabled .btn__sub{ color:var(--text-500); }
+body,.app-shell,.main-content,.card,.app-header,.bottom-nav,.sidebar,.modal,.auth-card{ transition:none !important; }
+.skip-link{ background:var(--brand-700); color:#fff; }
+[data-theme="dark"] .modal .sidebar__link.is-active,[data-theme="dark"] .modal .sidebar__link.is-active .inline-icon,[data-theme="dark"] .modal .sidebar__link.is-active svg{ color:#fff; }

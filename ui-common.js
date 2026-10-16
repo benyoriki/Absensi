@@ -13,7 +13,11 @@
   // Durasi tampil minimum dikembalikan ke 3 detik sesuai permintaan —
   // memberi waktu logo & animasi loading terlihat penuh sebelum masuk ke
   // dashboard.
-  const MIN_VISIBLE_MS = 3000;
+  // Kunjungan pertama dalam satu sesi: 2,4 dtk (logo terlihat penuh). Pindah
+  // halaman berikutnya: 0,9 dtk supaya navigasi terasa cepat & ringan.
+  let seen = false;
+  try { seen = sessionStorage.getItem("depoprg_seen") === "1"; sessionStorage.setItem("depoprg_seen", "1"); } catch (e) { /* abaikan */ }
+  const MIN_VISIBLE_MS = seen ? 900 : 2400;
   const shownAt = Date.now();
   const bar = document.getElementById("loading-progress-bar");
   const percentEl = document.getElementById("loading-progress-percent");
@@ -427,4 +431,31 @@ document.addEventListener("DOMContentLoaded", () => {
     else if (typeof showToast === "function") showToast(hintText(), "info");
   });
   document.addEventListener("DOMContentLoaded", refresh);
+})();
+
+
+/* ==========================================================================
+   DETEKSI "SITUS DESKTOP" DI HP
+   ==========================================================================
+   Jika HP membuka situs dalam mode "Situs desktop", browser memakai lebar
+   layar ~980px sehingga tampilan terlihat kecil. Kita deteksi (layar fisik
+   sempit tapi viewport lebar), perbesar UI otomatis, dan beri tahu pengguna
+   cara mematikannya.
+   ========================================================================== */
+(function () {
+  "use strict";
+  try {
+    var touch = (navigator.maxTouchPoints || 0) > 0;
+    var phoneScreen = Math.min(screen.width, screen.height) <= 600;
+    if (touch && phoneScreen && window.innerWidth >= 800) {
+      document.documentElement.classList.add("dop");
+      document.addEventListener("DOMContentLoaded", function () {
+        if (sessionStorage.getItem("depoprg_dop_tip")) return;
+        sessionStorage.setItem("depoprg_dop_tip", "1");
+        setTimeout(function () {
+          if (typeof showToast === "function") showToast("Mode \u201cSitus desktop\u201d aktif. Untuk tampilan HP yang pas: menu \u22EE \u2192 matikan \u201cSitus desktop\u201d.", "info");
+        }, 3500);
+      });
+    }
+  } catch (e) { /* abaikan */ }
 })();
