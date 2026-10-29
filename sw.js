@@ -1,5 +1,5 @@
 /* ==========================================================================
-   DEPO PRG ATTENDANCE — SERVICE WORKER (v11)
+   DEPO PRG ATTENDANCE — SERVICE WORKER (v35)
    ==========================================================================
    Tujuan: (1) memenuhi syarat "installable PWA" di Chrome/Edge/Android
    (Add to Home Screen benar-benar muncul sebagai app, bukan cuma shortcut
@@ -18,25 +18,25 @@
    otomatis membuang cache versi sebelumnya saat diaktifkan kembali.
    ========================================================================== */
 
-const CACHE_VERSION = "depoprg-shell-v34";
+const CACHE_VERSION = "depoprg-shell-v35";
 const APP_SHELL = [
   "index.html",
   "register.html",
   "employee.html",
   "admin.html",
-  "style.css?v=34",
-  "config.js?v=34",
-  "store.js?v=34",
-  "ui-common.js?v=34",
-  "modal.js?v=34",
-  "geo.js?v=34",
-  "auth.js?v=34",
-  "chat.js?v=34",
-  "photo.js?v=34",
-  "report-export.js?v=34",
-  "employee.js?v=34",
-  "admin.js?v=34",
-  "register.js?v=34",
+  "style.css?v=35",
+  "config.js?v=35",
+  "store.js?v=35",
+  "ui-common.js?v=35",
+  "modal.js?v=35",
+  "geo.js?v=35",
+  "auth.js?v=35",
+  "chat.js?v=35",
+  "photo.js?v=35",
+  "report-export.js?v=35",
+  "employee.js?v=35",
+  "admin.js?v=35",
+  "register.js?v=35",
   "manifest.webmanifest",
   "logo-192.png",
   "logo-512.png",

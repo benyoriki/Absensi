@@ -435,27 +435,38 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 /* ==========================================================================
-   DETEKSI "SITUS DESKTOP" DI HP
+   DETEKSI "SITUS DESKTOP" DI HP  (v35)
    ==========================================================================
-   Jika HP membuka situs dalam mode "Situs desktop", browser memakai lebar
-   layar ~980px sehingga tampilan terlihat kecil. Kita deteksi (layar fisik
-   sempit tapi viewport lebar), perbesar UI otomatis, dan beri tahu pengguna
-   cara mematikannya.
+   Saat HP membuka situs dalam mode "Situs desktop", browser memakai lebar
+   layar ~980px sehingga seluruh tampilan terlihat mengecil. Solusinya:
+   1) tandai <html class="dop"> -> CSS memaksa tata letak versi HP
+      (bottom-nav, tanpa sidebar), dan
+   2) skala ukuran huruf dasar (rem) sebesar rasio viewport/layar, sehingga
+      ukuran semua elemen (yang kini berbasis rem) kembali sama seperti
+      tampilan HP biasa. Tidak perlu lagi mematikan "Situs desktop".
    ========================================================================== */
 (function () {
   "use strict";
-  try {
-    var touch = (navigator.maxTouchPoints || 0) > 0;
-    var phoneScreen = Math.min(screen.width, screen.height) <= 600;
-    if (touch && phoneScreen && window.innerWidth >= 800) {
-      document.documentElement.classList.add("dop");
-      document.addEventListener("DOMContentLoaded", function () {
-        if (sessionStorage.getItem("depoprg_dop_tip")) return;
-        sessionStorage.setItem("depoprg_dop_tip", "1");
-        setTimeout(function () {
-          if (typeof showToast === "function") showToast("Mode \u201cSitus desktop\u201d aktif. Untuk tampilan HP yang pas: menu \u22EE \u2192 matikan \u201cSitus desktop\u201d.", "info");
-        }, 3500);
-      });
-    }
-  } catch (e) { /* abaikan */ }
+  var root = document.documentElement;
+  function apply() {
+    try {
+      var touch = (navigator.maxTouchPoints || 0) > 0;
+      var sw = Math.min(screen.width, screen.height);
+      var vw = window.innerWidth || root.clientWidth || 0;
+      var shown = Math.min(screen.width, screen.height) <= 600 ? (window.matchMedia && window.matchMedia("(orientation:landscape)").matches ? Math.max(screen.width, screen.height) : sw) : 0;
+      if (touch && sw <= 600 && vw >= 800 && shown) {
+        var ratio = Math.max(1, Math.min(3, vw / shown));
+        root.classList.add("dop");
+        root.style.fontSize = (ratio * 100).toFixed(1) + "%";
+        root.style.setProperty("--dopz", ratio.toFixed(2));
+      } else if (root.classList.contains("dop")) {
+        root.classList.remove("dop");
+        root.style.fontSize = "";
+        root.style.removeProperty("--dopz");
+      }
+    } catch (e) { /* abaikan */ }
+  }
+  apply();
+  window.addEventListener("resize", apply);
+  window.addEventListener("orientationchange", function () { setTimeout(apply, 250); });
 })();
