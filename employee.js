@@ -329,6 +329,8 @@
     const clockTime = document.getElementById("clock-time");
     const clockDate = document.getElementById("clock-date");
     if (clockTime) clockTime.textContent = now.toTimeString().slice(0, 8);
+    const heroClock = document.getElementById("hero-clock");
+    if (heroClock) heroClock.textContent = now.toTimeString().slice(0, 8);
     if (clockDate) clockDate.textContent = now.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
     el.todayDateLabel.textContent = now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   }

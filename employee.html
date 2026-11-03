@@ -55,22 +55,26 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="PT. Depo PRG" />
 <meta name="mobile-web-app-capable" content="yes" />
-<link rel="stylesheet" href="style.css?v=35" />
+<script>(function(){try{var t=JSON.parse(localStorage.getItem("rakabu_theme"));if(t!=="light"&&t!=="dark"){t=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.setAttribute("data-theme",t)}catch(e){}})();</script>
+<link rel="stylesheet" href="style.css?v=38" />
 </head>
 <body>
-<div id="app-loading-screen" class="loading-screen" aria-hidden="true">
+<div id="app-loading-screen" class="loading-screen" role="status" aria-live="polite" aria-label="Memuat halaman">
   <div class="loading-screen__grid" aria-hidden="true"></div>
+  <span class="ls-orb ls-orb--a" aria-hidden="true"></span><span class="ls-orb ls-orb--b" aria-hidden="true"></span>
   <div class="loading-screen__inner">
     <div class="loading-screen__logo">
+      <span class="ls-ring ls-ring--1" aria-hidden="true"></span><span class="ls-ring ls-ring--2" aria-hidden="true"></span><span class="ls-spin" aria-hidden="true"></span>
       <img src="logo-192.png" alt="" width="64" height="64" />
-      <span class="loading-screen__brand">PT. Depo PRG</span>
     </div>
+    <span class="loading-screen__brand">PT. Depo PRG</span>
+    <span class="ls-tag">Absensi Digital &middot; Portal Karyawan</span>
     <div class="loading-screen__text">
-      <span>Menyiapkan lokasi Anda…</span>
+      <span class="ls-status">Memuat halaman…</span>
       <div class="loading-screen__progress"><div class="loading-screen__progress-bar" id="loading-progress-bar"></div></div>
       <span class="loading-screen__percent" id="loading-progress-percent">0%</span>
-    <span class="loading-screen__credit">website developer benyoriki.com</span>
     </div>
+    <p class="ls-credit">sistem &amp; website developer <a href="https://benyoriki.com/" target="_blank" rel="noopener">benyoriki.com</a></p>
   </div>
 </div>
 <a class="skip-link" href="#main">Langsung ke konten utama</a>
@@ -138,7 +142,8 @@
         <div class="stack dash-grid">
           <section class="card hero-card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1em">
             <div>
-              <span class="text-sm text-muted">Status Kehadiran</span>
+              <div class="hero-clock mono" id="hero-clock" aria-hidden="true">--:--:--</div>
+            <span class="text-sm text-muted">Status Kehadiran</span>
               <div style="margin-top:.3em"><span id="attendance-status-badge" class="badge badge--neutral">BELUM ABSEN</span></div>
             </div>
             <div class="text-sm text-muted" style="text-align:right">
@@ -380,7 +385,7 @@
             </div>
             <label for="profile-degree-input">Gelar Akademik (opsional)</label>
             <input id="profile-degree-input" type="text" placeholder="Contoh: S.Kom, S.T., M.M." maxlength="20" />
-            <button type="submit" class="btn btn--ghost btn--block mt-1">Simpan Perubahan</button>
+            <button type="submit" class="btn btn--primary btn--block mt-1">Simpan Perubahan</button>
           </form>
         </section>
         <section class="card mt-1">
@@ -491,13 +496,13 @@
 
 <div id="toast-region" class="toast-region" aria-live="polite"></div>
 
-<script src="config.js?v=35"></script>
-<script src="store.js?v=35"></script>
-<script src="ui-common.js?v=35"></script>
-<script src="modal.js?v=35"></script>
-<script src="geo.js?v=35"></script>
-<script src="chat.js?v=35"></script>
-<script src="photo.js?v=35"></script>
-<script src="employee.js?v=35"></script>
+<script src="config.js?v=38"></script>
+<script src="store.js?v=38"></script>
+<script src="ui-common.js?v=38"></script>
+<script src="modal.js?v=38"></script>
+<script src="geo.js?v=38"></script>
+<script src="chat.js?v=38"></script>
+<script src="photo.js?v=38"></script>
+<script src="employee.js?v=38"></script>
 </body>
 </html>
