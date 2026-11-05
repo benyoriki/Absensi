@@ -1,13 +1,13 @@
 {
   "name": "PT. Depo PRG",
   "short_name": "Depo PRG",
-  "description": "Sistem absensi & HR PT. Depo PRG",
+  "description": "PT. Depo PRG Employee Portal & HRIS",
   "start_url": "index.html",
   "scope": ".",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#FFFFFF",
-  "theme_color": "#13235A",
+  "theme_color": "#14264A",
   "icons": [
     { "src": "logo-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "logo-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },

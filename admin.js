@@ -57,7 +57,10 @@
       "employee-modal","employee-modal-content",
       "reject-modal","reject-modal-title","reject-modal-close","reject-form","reject-reason",
       "confirm-modal","confirm-title","confirm-message","confirm-cancel-btn","confirm-ok-btn",
-      "avatar-btn"
+      "avatar-btn",
+      "dash-date","dept-stats","da-search","da-date","da-dept","da-status","da-tbody","da-pager","da-table",
+      "att-detail-modal","att-detail-close","att-detail-body",
+      "admin-global-search","admin-global-search-form","backup-export-btn","backup-schema-note"
     ].forEach((id) => { el[toCamel(id)] = document.getElementById(id); });
   }
   function toCamel(id) { return id.replace(/-([a-z])/g, (_, c) => c.toUpperCase()); }
@@ -103,6 +106,38 @@
   }
 
   function bindGlobalEvents() {
+    // --- v39: dashboard (tren, tabel kehadiran, pencarian global, cadangan) ---
+    document.querySelectorAll("[data-trend]").forEach((chip) => chip.addEventListener("click", () => {
+      document.querySelectorAll("[data-trend]").forEach((c) => c.classList.toggle("is-active", c === chip));
+      trendDays = Number(chip.dataset.trend) || 7;
+      renderTrendChart();
+    }));
+    ["input", "change"].forEach((ev) => {
+      el.daSearch.addEventListener(ev, () => { daState.page = 1; renderDashTable(); });
+      el.daDate.addEventListener(ev, () => { daState.page = 1; renderDashTable(); });
+      el.daDept.addEventListener(ev, () => { daState.page = 1; renderDashTable(); });
+      el.daStatus.addEventListener(ev, () => { daState.page = 1; renderDashTable(); });
+    });
+    document.querySelectorAll("#da-table .th-sort").forEach((b) => b.addEventListener("click", () => {
+      if (daState.sortKey === b.dataset.sort) daState.sortDir *= -1; else { daState.sortKey = b.dataset.sort; daState.sortDir = 1; }
+      renderDashTable();
+    }));
+    el.attDetailClose.addEventListener("click", () => Modal.hide("att-detail-modal"));
+    el.adminGlobalSearchForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      el.karyawanSearch.value = el.adminGlobalSearch.value.trim();
+      route("karyawan");
+      el.karyawanSearch.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    if (el.backupExportBtn) el.backupExportBtn.addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(Store.exportBackup(), null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "depoprg-backup-" + Store.localDateKey() + ".json";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast("Cadangan data diunduh.", "success");
+    });
     document.getElementById("sidebar-logout").addEventListener("click", doLogout);
     document.getElementById("more-logout-btn").addEventListener("click", doLogout);
     el.markAllReadBtn.addEventListener("click", () => { Store.markAllRead("admin"); renderNotifications(); updateNotifBadge(); });
@@ -191,28 +226,29 @@
   /* ------------------------------------------------------------------ */
   /* DASHBOARD: STATS + CHARTS + ACTIVITY                                */
   /* ------------------------------------------------------------------ */
-  function renderDashboard() {
-    const users = Store.getUsers().filter((u) => u.role === "employee");
-    const active = users.filter((u) => u.status === "active");
-    const todayKey = Store.localDateKey();
-    const todayAtt = Store.getAttendance().filter((a) => a.date === todayKey);
-    const hadir = todayAtt.filter((a) => a.status === "hadir").length;
-    const terlambat = todayAtt.filter((a) => a.status === "terlambat").length;
-    const sudahAbsenIds = new Set(todayAtt.map((a) => a.userId));
-    const belumAbsen = active.filter((u) => !sudahAbsenIds.has(u.id)).length;
-    const cutiHariIni = Store.getLeave().filter((l) => l.status === "approved" && todayKey >= l.startDate && todayKey <= l.endDate).length;
-    const lemburBulanIni = Store.getOvertime().filter((o) => o.status === "approved" && o.date.slice(0, 7) === todayKey.slice(0, 7)).length;
+  /* ------------------------------------------------------------------ */
+  /* DASHBOARD (v39) — semua angka dari Store.getDailyStats & kawan-kawan */
+  /* ------------------------------------------------------------------ */
+  let trendDays = 7;
+  const daState = { page: 1, perPage: 8, sortKey: "name", sortDir: 1 };
+  const STATUS_LABEL = { hadir: "Hadir", terlambat: "Terlambat", cuti: "Cuti / Izin", "tidak-hadir": "Tidak hadir", libur: "Libur" };
+  const STATUS_CLASS = { hadir: "badge--success", terlambat: "badge--warning", cuti: "badge--info", "tidak-hadir": "badge--danger", libur: "badge--neutral" };
 
-    const totalTerdaftar = users.length;
+  function renderDashboard() {
+    const todayKey = Store.localDateKey();
+    if (el.dashDate) el.dashDate.textContent = new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    const users = Store.getUsers().filter((u) => u.role === "employee");
+    const st = Store.getDailyStats(todayKey);
+    const pend = Store.getPendingApprovalCount();
+    const pct = st.total ? Math.round((st.present / st.total) * 100) : 0;
+
     const cards = [
-      { label: "TOTAL KARYAWAN", value: active.length, hint: `${totalTerdaftar} akun terdaftar`, icon: "users", color: "info" },
-      { label: "HADIR HARI INI", value: hadir + terlambat, hint: active.length ? `${Math.round(((hadir + terlambat) / active.length) * 100)}% dari karyawan aktif` : "-", icon: "checkCircle", color: "success" },
-      { label: "TERLAMBAT", value: terlambat, hint: "dari yang absen hari ini", icon: "clock", color: "warning" },
-      { label: "BELUM ABSEN", value: belumAbsen, hint: "karyawan aktif hari ini", icon: "user", color: "neutral" },
-      { label: "CUTI HARI INI", value: cutiHariIni, hint: "pengajuan disetujui", icon: "umbrella", color: "info" },
-      { label: "PENDAFTARAN PENDING", value: Store.getUsers().filter((u) => u.status === "pending").length, hint: "menunggu persetujuan", icon: "plusCircle", color: "warning" },
-      { label: "LEMBUR BULAN INI", value: lemburBulanIni, hint: "pengajuan disetujui", icon: "chart", color: "info" },
-      { label: "TIDAK HADIR", value: Math.max(0, active.length - hadir - terlambat - cutiHariIni - belumAbsen), hint: "tanpa keterangan", icon: "slash", color: "danger" }
+      { label: "TOTAL KARYAWAN", value: st.total, hint: `${users.length} akun terdaftar`, icon: "users", color: "info" },
+      { label: "HADIR HARI INI", value: st.present, hint: st.total ? `${pct}% dari karyawan aktif` : "-", icon: "checkCircle", color: "success" },
+      { label: "TERLAMBAT", value: st.terlambat, hint: "dari yang sudah absen", icon: "clock", color: "warning" },
+      { label: "TIDAK HADIR", value: st.tidakHadir, hint: "belum absen / tanpa keterangan", icon: "slash", color: "danger" },
+      { label: "CUTI / IZIN", value: st.cuti, hint: "cuti disetujui & izin", icon: "umbrella", color: "info" },
+      { label: "PENDING APPROVAL", value: pend.total, hint: `${pend.registrations} daftar · ${pend.leave} cuti · ${pend.overtime} lembur · ${pend.outside} luar lokasi`, icon: "plusCircle", color: "warning" }
     ];
     el.statCards.innerHTML = cards.map((c) => `
       <div class="stat-card stat-card--${c.color}">
@@ -221,77 +257,225 @@
         </div>
         <div class="stat-card__value">${c.value}</div>
         <div class="stat-card__label">${c.label}</div>
-        ${c.hint ? `<div class="stat-card__hint">${c.hint}</div>` : ""}
+        ${c.hint ? `<div class="stat-card__hint">${escapeHtml(c.hint)}</div>` : ""}
       </div>`).join("");
 
-    const pendingCount = Store.getUsers().filter((u) => u.status === "pending").length;
-    el.sidebarPendingBadge.hidden = pendingCount === 0;
-    el.sidebarPendingBadge.textContent = pendingCount;
+    el.sidebarPendingBadge.hidden = pend.registrations === 0;
+    el.sidebarPendingBadge.textContent = pend.registrations;
 
-    renderAttendanceDonut(hadir, terlambat, belumAbsen, Math.max(0, active.length - hadir - terlambat - belumAbsen));
-    renderWeeklyBarChart();
+    renderAttendanceDonut(st);
+    renderTrendChart();
+    renderDeptStats();
     renderRecentActivity();
+    populateDashFilters();
+    renderDashTable();
   }
 
-  function renderAttendanceDonut(hadir, terlambat, belumAbsen, lainnya) {
-    const total = hadir + terlambat + belumAbsen + lainnya || 1;
+  function renderAttendanceDonut(st) {
     const segments = [
-      { value: hadir, color: "#16A34A", label: "Hadir" },
-      { value: terlambat, color: "#D97706", label: "Terlambat" },
-      { value: belumAbsen, color: "#9298B8", label: "Belum Absen" },
-      { value: lainnya, color: "#4F46E5", label: "Cuti/Lainnya" }
+      { value: st.hadir, color: "var(--success-600)", label: "Hadir" },
+      { value: st.terlambat, color: "var(--warning-solid)", label: "Terlambat" },
+      { value: st.cuti, color: "var(--info-600)", label: "Cuti/Izin" },
+      { value: st.tidakHadir, color: "var(--danger-600)", label: "Tidak hadir" }
     ];
-    const cx = 70, cy = 70, r = 55, strokeW = 20;
+    const total = segments.reduce((n, s) => n + s.value, 0);
+    const cx = 70, cy = 70, r = 55, strokeW = 18;
     const circumference = 2 * Math.PI * r;
-    let offset = 0;
-    let circles = "";
+    let offset = 0, circles = "";
     segments.forEach((s) => {
-      const frac = s.value / total;
-      const len = frac * circumference;
-      circles += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${s.color}" stroke-width="${strokeW}"
-        stroke-dasharray="${len} ${circumference - len}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"/>`;
+      const len = total ? (s.value / total) * circumference : 0;
+      if (len > 0) circles += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" style="stroke:${s.color}" stroke-width="${strokeW}"
+        stroke-dasharray="${len} ${circumference - len}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"><title>${s.label}: ${s.value}</title></circle>`;
       offset += len;
     });
-    el.attendanceDonut.innerHTML = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border)" stroke-width="${strokeW}"/>${circles}
-      <text x="${cx}" y="${cy - 3}" text-anchor="middle" font-family="Manrope" font-weight="800" font-size="20" fill="var(--text-900)">${total}</text>
-      <text x="${cx}" y="${cy + 14}" text-anchor="middle" font-size="9" fill="var(--text-500)">Karyawan</text>`;
+    const pct = total ? Math.round((st.present / total) * 100) : 0;
+    el.attendanceDonut.innerHTML = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" style="stroke:var(--border)" stroke-width="${strokeW}"/>${circles}
+      <text x="${cx}" y="${cy + 2}" text-anchor="middle" font-weight="800" font-size="22" style="fill:var(--text-900)">${pct}%</text>
+      <text x="${cx}" y="${cy + 18}" text-anchor="middle" font-size="9" style="fill:var(--text-500)">Hadir</text>`;
     el.attendanceLegend.innerHTML = segments.map((s) => `
-      <div class="legend__item"><span class="legend__swatch" style="background:${s.color}"></span>${s.label}: ${s.value}</div>`).join("");
+      <div class="legend__item"><span class="legend__swatch" style="background:${s.color}"></span>${s.label}: <b>${s.value}</b></div>`).join("")
+      + (st.libur ? `<div class="legend__item"><span class="legend__swatch" style="background:var(--border-strong)"></span>Libur: <b>${st.libur}</b></div>` : "");
   }
 
-  function renderWeeklyBarChart() {
-    const days = ["Senin","Selasa","Rabu","Kamis","Jumat"];
-    const now = new Date();
-    const monday = new Date(now);
-    monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
-    const att = Store.getAttendance();
-    const values = days.map((_, i) => {
-      const d = new Date(monday); d.setDate(monday.getDate() + i);
-      const key = Store.localDateKey(d);
-      return att.filter((a) => a.date === key).length;
+  // Grafik tren SVG ringan (tanpa library): Hadir, Terlambat, Tidak hadir.
+  function renderTrendChart() {
+    const rows = Store.getAttendanceTrend(trendDays);
+    const W = 640, H = 230, padL = 34, padR = 12, padT = 14, padB = 30;
+    const iw = W - padL - padR, ih = H - padT - padB;
+    const maxV = Math.max(1, ...rows.map((r) => Math.max(r.present, r.terlambat, r.tidakHadir)));
+    const yMax = Math.max(4, Math.ceil((maxV * 1.1) / 4) * 4); // kelipatan 4 -> label sumbu Y bulat & unik
+    const xAt = (i) => padL + (rows.length === 1 ? iw / 2 : (i / (rows.length - 1)) * iw);
+    const yAt = (v) => padT + ih - (v / yMax) * ih;
+    const series = [
+      { key: "present", label: "Hadir", color: "var(--success-600)", area: true },
+      { key: "terlambat", label: "Terlambat", color: "var(--warning-solid)" },
+      { key: "tidakHadir", label: "Tidak hadir", color: "var(--danger-600)" }
+    ];
+    let grid = "";
+    for (let i = 0; i <= 4; i++) {
+      const v = Math.round((yMax / 4) * i);
+      const y = yAt((yMax / 4) * i);
+      grid += `<line x1="${padL}" x2="${W - padR}" y1="${y}" y2="${y}" style="stroke:var(--border)" stroke-dasharray="3 4"/><text x="${padL - 8}" y="${y + 3}" text-anchor="end" font-size="10" style="fill:var(--text-500)">${v}</text>`;
+    }
+    const every = rows.length > 14 ? 5 : 1;
+    let labels = "";
+    rows.forEach((r, i) => {
+      if (i % every !== 0 && i !== rows.length - 1) return;
+      const d = r.dateKey.slice(8) + "/" + r.dateKey.slice(5, 7);
+      labels += `<text x="${xAt(i)}" y="${H - 9}" text-anchor="middle" font-size="10" style="fill:var(--text-500)">${d}</text>`;
     });
-    const max = Math.max(1, ...values);
-    el.weeklyBarChart.innerHTML = days.map((d, i) => `
-      <div class="bar-chart__col">
-        <div class="bar-chart__bar" style="height:${(values[i] / max) * 100}%"></div>
-        <div class="bar-chart__label">${d.slice(0,3)}</div>
-      </div>`).join("");
+    let paths = "";
+    series.forEach((s) => {
+      const pts = rows.map((r, i) => [xAt(i), yAt(r[s.key])]);
+      const line = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+      if (s.area && pts.length > 1) paths += `<path d="${line} L${pts[pts.length - 1][0].toFixed(1)} ${padT + ih} L${pts[0][0].toFixed(1)} ${padT + ih} Z" style="fill:${s.color}" opacity=".12"/>`;
+      paths += `<path d="${line}" fill="none" style="stroke:${s.color}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>`;
+      if (rows.length <= 14) pts.forEach((p, i) => { paths += `<circle cx="${p[0]}" cy="${p[1]}" r="3.4" style="fill:var(--surface);stroke:${s.color}" stroke-width="2"><title>${s.label} ${rows[i].dateKey}: ${rows[i][s.key]}</title></circle>`; });
+    });
+    el.weeklyBarChart.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Tren kehadiran ${trendDays} hari">${grid}${paths}${labels}</svg>
+      <div class="legend legend--row">${series.map((s) => `<div class="legend__item"><span class="legend__swatch" style="background:${s.color}"></span>${s.label}</div>`).join("")}</div>`;
   }
 
+  function renderDeptStats() {
+    const rows = Store.getDepartmentStats();
+    if (!rows.length) { el.deptStats.innerHTML = emptyStateBlock("Belum ada karyawan aktif."); return; }
+    el.deptStats.innerHTML = rows.map((r) => {
+      const t = Math.max(1, r.total);
+      const seg = (n, c) => n ? `<span style="width:${(n / t) * 100}%;background:${c}"></span>` : "";
+      return `<div class="dept-row">
+        <div class="dept-row__head"><strong>${escapeHtml(r.department)}</strong><span class="text-sm text-muted">${r.present}/${r.total} hadir</span></div>
+        <div class="dept-row__bar" role="img" aria-label="${escapeHtml(r.department)}: ${r.present} hadir dari ${r.total}">${seg(r.hadir, "var(--success-600)")}${seg(r.terlambat, "var(--warning-solid)")}${seg(r.cuti, "var(--info-600)")}${seg(r.tidakHadir, "var(--danger-600)")}</div>
+      </div>`;
+    }).join("");
+  }
+
+  // Aktivitas: absen hari ini (masuk/pulang) + notifikasi untuk admin, terbaru di atas.
   function renderRecentActivity() {
-    const notifs = Store.getNotifications().filter((n) => n.audience === "admin").slice(0, 8);
-    el.recentActivityList.innerHTML = notifs.length ? notifs.map((n) => `
+    const todayKey = Store.localDateKey();
+    const items = [];
+    Store.getAttendance().filter((a) => a.date === todayKey).forEach((a) => {
+      const u = Store.findUserById(a.userId); const nm = u ? u.name : a.userId;
+      const base = new Date(todayKey + "T00:00:00").getTime();
+      const toTs = (hhmm) => { const p = String(hhmm).split(":").map(Number); return base + ((p[0] || 0) * 60 + (p[1] || 0)) * 60000; };
+      if (a.checkIn) items.push({ ts: toTs(a.checkIn), type: "attendance", title: `${nm} absen masuk`, message: `Pukul ${a.checkIn}${a.status === "terlambat" ? " (terlambat)" : ""}` });
+      if (a.checkOut) items.push({ ts: toTs(a.checkOut), type: "attendance", title: `${nm} absen pulang`, message: `Pukul ${a.checkOut}` });
+    });
+    Store.getNotifications().filter((n) => n.audience === "admin").slice(0, 12).forEach((n) => {
+      items.push({ ts: n.createdAt || 0, type: n.type, title: n.title, message: n.message });
+    });
+    items.sort((a, b) => b.ts - a.ts);
+    const top = items.slice(0, 8);
+    el.recentActivityList.innerHTML = top.length ? top.map((n) => `
       <li>
         <div class="history-list__dot" style="background:${iconColorForType(n.type)}"></div>
         <div class="history-list__body">
           <div class="history-list__time">${escapeHtml(n.title)}</div>
           <div class="history-list__meta">${escapeHtml(n.message)}</div>
         </div>
-        <span class="text-sm text-muted">${timeAgoID(n.createdAt)}</span>
+        <span class="text-sm text-muted">${timeAgoID(n.ts)}</span>
       </li>`).join("") : emptyStateHtml("Belum ada aktivitas.");
   }
+
+  /* ---- Tabel kehadiran di dashboard: cari, filter, urut, halaman ---- */
+  function populateDashFilters() {
+    if (!el.daDate.value) el.daDate.value = Store.localDateKey();
+    const cur = el.daDept.value;
+    const depts = Array.from(new Set(Store.getUsers().filter((u) => u.role === "employee" && u.status === "active").map((u) => u.department || "Tanpa Departemen"))).sort();
+    el.daDept.innerHTML = '<option value="">Semua departemen</option>' + depts.map((d) => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join("");
+    el.daDept.value = depts.includes(cur) ? cur : "";
+  }
+
+  function dashRows() {
+    const key = el.daDate.value || Store.localDateKey();
+    const d = new Date(key + "T00:00:00");
+    const iso = d.getDay() === 0 ? 7 : d.getDay();
+    const att = Store.getAttendance().filter((a) => a.date === key);
+    const leave = Store.getLeave();
+    return Store.getUsers().filter((u) => u.role === "employee" && u.status === "active" && !(u.joinDate && u.joinDate > key)).map((u) => {
+      const rec = att.find((a) => a.userId === u.id) || null;
+      let status;
+      if (rec && rec.checkIn && (rec.status === "hadir" || rec.status === "terlambat")) status = rec.status;
+      else if ((rec && rec.status === "izin") || leave.some((l) => l.userId === u.id && l.status === "approved" && key >= l.startDate && key <= l.endDate)) status = "cuti";
+      else if (!Store.getEffectiveSchedule(u, iso).isWorkday) status = "libur";
+      else status = "tidak-hadir";
+      return { user: u, rec, status, dateKey: key };
+    });
+  }
+
+  function renderDashTable() {
+    let rows = dashRows();
+    const q = (el.daSearch.value || "").trim().toLowerCase();
+    const dept = el.daDept.value, stf = el.daStatus.value;
+    rows = rows.filter((r) => (!q || (r.user.name + " " + r.user.id + " " + (r.user.department || "")).toLowerCase().includes(q))
+      && (!dept || (r.user.department || "Tanpa Departemen") === dept) && (!stf || r.status === stf));
+    const keyFn = {
+      name: (r) => r.user.name.toLowerCase(), id: (r) => r.user.id.toLowerCase(), dept: (r) => (r.user.department || "").toLowerCase(),
+      in: (r) => (r.rec && r.rec.checkIn) || "99:99", out: (r) => (r.rec && r.rec.checkOut) || "99:99", status: (r) => r.status
+    }[daState.sortKey] || ((r) => r.user.name);
+    rows.sort((a, b) => (keyFn(a) < keyFn(b) ? -1 : keyFn(a) > keyFn(b) ? 1 : 0) * daState.sortDir);
+
+    document.querySelectorAll("#da-table .th-sort").forEach((b) => {
+      const on = b.dataset.sort === daState.sortKey;
+      b.classList.toggle("is-sorted", on);
+      b.setAttribute("aria-sort", on ? (daState.sortDir === 1 ? "ascending" : "descending") : "none");
+    });
+
+    const pages = Math.max(1, Math.ceil(rows.length / daState.perPage));
+    daState.page = Math.min(daState.page, pages);
+    const slice = rows.slice((daState.page - 1) * daState.perPage, daState.page * daState.perPage);
+
+    if (!slice.length) {
+      el.daTbody.innerHTML = `<tr><td colspan="8">${emptyStateBlock("Tidak ada karyawan yang cocok dengan filter.")}</td></tr>`;
+    } else {
+      el.daTbody.innerHTML = slice.map((r) => {
+        const a = r.rec;
+        const loc = a && a.checkInDistance != null ? a.checkInDistance.toFixed(1) + " m" + (a.checkInViaException ? " · izin" : "") : "—";
+        return `<tr>
+          <td data-label="Nama"><strong>${escapeHtml(r.user.name)}</strong></td>
+          <td data-label="ID" class="mono">${escapeHtml(r.user.id)}</td>
+          <td data-label="Departemen">${escapeHtml(r.user.department || "—")}</td>
+          <td data-label="Masuk" class="mono">${(a && a.checkIn) || "—"}</td>
+          <td data-label="Pulang" class="mono">${(a && a.checkOut) || "—"}</td>
+          <td data-label="Status"><span class="badge ${STATUS_CLASS[r.status]}">${STATUS_LABEL[r.status]}</span></td>
+          <td data-label="Lokasi" class="mono">${loc}</td>
+          <td data-label="Aksi"><button type="button" class="btn btn--ghost btn--sm" data-da-detail="${escapeHtml(r.user.id)}">Detail</button></td>
+        </tr>`;
+      }).join("");
+      el.daTbody.querySelectorAll("[data-da-detail]").forEach((b) => b.addEventListener("click", () => openAttDetail(b.dataset.daDetail)));
+    }
+    el.daPager.innerHTML = rows.length > daState.perPage
+      ? `<span class="text-sm text-muted">${rows.length} karyawan · halaman ${daState.page}/${pages}</span>
+         <div><button type="button" class="btn btn--ghost btn--sm" data-da-page="-1" ${daState.page <= 1 ? "disabled" : ""}>‹ Sebelumnya</button>
+         <button type="button" class="btn btn--ghost btn--sm" data-da-page="1" ${daState.page >= pages ? "disabled" : ""}>Berikutnya ›</button></div>`
+      : `<span class="text-sm text-muted">${rows.length} karyawan</span>`;
+    el.daPager.querySelectorAll("[data-da-page]").forEach((b) => b.addEventListener("click", () => { daState.page += Number(b.dataset.daPage); renderDashTable(); }));
+  }
+
+  function openAttDetail(userId) {
+    const r = dashRows().find((x) => x.user.id === userId);
+    if (!r) return;
+    const a = r.rec;
+    const row = (k, v) => `<div class="stat-list__item"><dt>${k}</dt><dd>${v}</dd></div>`;
+    const coord = a && a.checkInLat != null ? `${Number(a.checkInLat).toFixed(6)}, ${Number(a.checkInLon).toFixed(6)}` : "—";
+    el.attDetailBody.innerHTML = `
+      <div class="detail-head"><div class="avatar-md">${avatarMarkup(r.user)}</div><div><strong>${escapeHtml(r.user.name)}</strong><div class="text-sm text-muted">${escapeHtml(r.user.id)} · ${escapeHtml(r.user.department || "—")}</div></div><span class="badge ${STATUS_CLASS[r.status]}">${STATUS_LABEL[r.status]}</span></div>
+      <dl class="stat-list">
+        ${row("Tanggal", escapeHtml(formatDateID(r.dateKey)))}
+        ${row("Jam masuk", `<span class="mono">${(a && a.checkIn) || "—"}</span>`)}
+        ${row("Jam pulang", `<span class="mono">${(a && a.checkOut) || "—"}</span>`)}
+        ${row("Jarak saat masuk", a && a.checkInDistance != null ? a.checkInDistance.toFixed(1) + " m" : "—")}
+        ${row("Akurasi GPS", a && a.checkInAccuracy != null ? "±" + Math.round(a.checkInAccuracy) + " m" : "—")}
+        ${row("Koordinat", `<span class="mono">${coord}</span>`)}
+        ${row("Alamat", escapeHtml((a && a.checkInAddress) || "—"))}
+        ${row("Kode verifikasi", `<span class="mono">${escapeHtml((a && (a.checkInPhotoCode || "")) || "—")}</span>`)}
+      </dl>
+      ${a ? `<div class="detail-photos">${AttendancePhoto.buttonsHtml(a, r.user.name) || '<span class="text-sm text-muted">Tidak ada foto tersimpan di perangkat ini.</span>'}</div>` : ""}`;
+    AttendancePhoto.bindViewButtons(el.attDetailBody);
+    Modal.show("att-detail-modal");
+  }
+
   function iconColorForType(type) {
-    return { registration: "var(--info-600)", leave: "var(--brand-600)", overtime: "var(--gold-500)", zone: "var(--danger-600)", outside: "var(--warning-600)", info: "var(--text-400)" }[type] || "var(--brand-600)";
+    return { attendance: "var(--success-600)", registration: "var(--info-600)", leave: "var(--brand-600)", overtime: "var(--gold-500)", zone: "var(--danger-600)", outside: "var(--warning-600)", info: "var(--text-400)" }[type] || "var(--brand-600)";
   }
 
   /* ------------------------------------------------------------------ */
@@ -880,6 +1064,7 @@
   /* PENGATURAN KANTOR                                                   */
   /* ------------------------------------------------------------------ */
   function renderPengaturan() {
+    if (el.backupSchemaNote) el.backupSchemaNote.textContent = "Versi schema data: " + Store.SCHEMA_VERSION + " · penyimpanan: " + Store.ADAPTER_NAME + ".";
     el.settingLat.textContent = CONFIG.OFFICE_LOCATION.latitude.toFixed(7);
     el.settingLon.textContent = CONFIG.OFFICE_LOCATION.longitude.toFixed(7);
     el.settingRadius.textContent = CONFIG.ATTENDANCE_RADIUS + " meter";

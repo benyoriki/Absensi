@@ -34,8 +34,24 @@
   // cukup dekat untuk absen). Ini TIDAK memicu notifikasi apa pun.
   const monitor = createGeoMonitor({
     onUpdate: onGeoUpdate,
-    onError: (msg) => { setLocationNote(msg); }
+    onError: (msg) => { setLocationNote(msg); showGpsError(); }
   });
+
+  // GPS gagal/ditolak: JANGAN tampil "valid". Tampilkan status error yang jelas.
+  function showGpsError() {
+    if (el.gpsStateTitle) { el.gpsStateTitle.textContent = "GPS tidak tersedia"; el.gpsStateTitle.setAttribute("data-state", "bad"); }
+    if (el.locationStatusPill && !zoneActive) {
+      el.locationStatusPill.textContent = "GPS tidak tersedia";
+      el.locationStatusPill.className = "pill pill--danger";
+    }
+  }
+  function refreshGps() {
+    monitor.stop();
+    if (el.gpsStateTitle) { el.gpsStateTitle.textContent = "Sedang mendapatkan lokasi…"; el.gpsStateTitle.removeAttribute("data-state"); }
+    if (el.locationStatusPill && !zoneActive) { el.locationStatusPill.textContent = "Memeriksa…"; el.locationStatusPill.className = "pill pill--neutral"; }
+    el.statDistance.textContent = "— m"; el.statAccuracy.textContent = "±— m";
+    monitor.start();
+  }
 
   // ZoneMonitor: fitur "keluar area kerja" — lihat geo.js. HANYA
   // dijalankan setelah absen masuk (lihat finalizeAttendance & resume di
@@ -192,7 +208,9 @@
       "attendance-modal","attendance-modal-body","attendance-modal-close",
       "success-modal","success-name","success-time","success-distance","success-close-btn",
       "zone-reason-modal","zone-reason-input","zone-reason-error","zone-reason-skip-btn","zone-reason-submit-btn",
-      "more-btn","more-modal","more-close-btn","more-logout-btn","sidebar-logout"
+      "more-btn","more-modal","more-close-btn","more-logout-btn","sidebar-logout",
+      "gps-refresh-btn","gps-state-title","office-info","welcome-sub","stat-radius",
+      "sum-hadir","sum-terlambat","sum-tidak-hadir","sum-cuti","summary-month"
     ].forEach((id) => { el[toCamel(id)] = document.getElementById(id); });
   }
   function toCamel(id) { return id.replace(/-([a-z])/g, (_, c) => c.toUpperCase()); }
@@ -243,6 +261,7 @@
   /* EVENTS                                                              */
   /* ------------------------------------------------------------------ */
   function bindEvents() {
+    if (el.gpsRefreshBtn) el.gpsRefreshBtn.addEventListener("click", refreshGps);
     el.openMapsBtn.addEventListener("click", () => window.open(CONFIG.OFFICE_MAPS_URL, "_blank", "noopener"));
     el.checkInBtn.addEventListener("click", () => runAttendanceFlow("check-in"));
     el.checkOutBtn.addEventListener("click", () => runAttendanceFlow("check-out"));
@@ -300,7 +319,13 @@
   /* STATIC INFO / CLOCK                                                 */
   /* ------------------------------------------------------------------ */
   function renderStaticInfo() {
-    el.greeting.textContent = `Selamat datang, ${user.name.split(" ")[0]} 👋`;
+    updateGreeting();
+    if (el.welcomeSub) {
+      const fresh0 = Store.findUserById(user.id) || user;
+      el.welcomeSub.textContent = [fresh0.position, fresh0.department].filter(Boolean).join(" · ") || "Karyawan";
+    }
+    if (el.statRadius) el.statRadius.textContent = CONFIG.ATTENDANCE_RADIUS + " m";
+    if (el.officeInfo) el.officeInfo.textContent = "Titik absen: " + Number(CONFIG.OFFICE_LOCATION.latitude).toFixed(6) + ", " + Number(CONFIG.OFFICE_LOCATION.longitude).toFixed(6) + " (PT. Depo PRG)";
     el.avatarBtn.innerHTML = avatarMarkup(user);
     // Bug fix: label radius sebelumnya di-hardcode di HTML ("15m" / "15
     // meter"), jadi kalau CONFIG.ATTENDANCE_RADIUS diubah, teksnya jadi
@@ -320,6 +345,26 @@
     }
   }
 
+  // Sapaan mengikuti jam lokal perangkat (pagi 04–10, siang 11–14, sore 15–17, malam sisanya).
+  let lastGreeting = "";
+  function updateGreeting() {
+    const h = new Date().getHours();
+    const part = h >= 4 && h < 11 ? "pagi" : h < 15 ? "siang" : h < 18 ? "sore" : "malam";
+    const text = `Selamat ${part}, ${user.name.split(" ")[0]} 👋`;
+    if (text !== lastGreeting && el.greeting) { el.greeting.textContent = text; lastGreeting = text; }
+  }
+
+  // Ringkasan bulan ini — SEMUA angka dari Store.getUserMonthSummary (bukan hardcode).
+  function renderSummary() {
+    if (!el.sumHadir) return;
+    const sm = Store.getUserMonthSummary(user.id);
+    el.sumHadir.textContent = sm.hadir;
+    el.sumTerlambat.textContent = sm.terlambat;
+    el.sumTidakHadir.textContent = sm.tidakHadir;
+    el.sumCuti.textContent = sm.cuti;
+    if (el.summaryMonth) el.summaryMonth.textContent = new Date().toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+  }
+
   function initClock() {
     updateClock();
     setInterval(updateClock, 1000);
@@ -328,6 +373,7 @@
     const now = new Date();
     const clockTime = document.getElementById("clock-time");
     const clockDate = document.getElementById("clock-date");
+    updateGreeting();
     if (clockTime) clockTime.textContent = now.toTimeString().slice(0, 8);
     const heroClock = document.getElementById("hero-clock");
     if (heroClock) heroClock.textContent = now.toTimeString().slice(0, 8);
@@ -345,6 +391,7 @@
     el.leaveRemaining.textContent = (fresh.leaveQuota - fresh.leaveUsed);
     el.leaveUsed.textContent = fresh.leaveUsed;
     el.leaveQuota.textContent = fresh.leaveQuota;
+    renderSummary();
   }
 
   function updateAttendanceStatusUI(record) {
@@ -382,9 +429,23 @@
     // Jika ZoneMonitor sedang aktif (sudah absen masuk), biarkan
     // updateZonePill() yang mengatur teks pill (status area kerja).
     // Sebelum absen masuk, pill menampilkan status radius absensi biasa.
+    const accuracyPoor = data.accuracy > CONFIG.MAX_ACCEPTABLE_ACCURACY;
+    // Teks status HANYA tampilan. Aturan absen tetap divalidasi di
+    // renderAttendanceCheck (radius + akurasi) — tidak diubah.
+    if (el.gpsStateTitle) {
+      el.gpsStateTitle.textContent = accuracyPoor ? "Akurasi GPS kurang baik"
+        : withinAttendance ? "Lokasi valid — Anda dalam radius absensi"
+        : "Di luar radius absensi";
+      el.gpsStateTitle.setAttribute("data-state", accuracyPoor ? "warn" : withinAttendance ? "ok" : "bad");
+    }
     if (!zoneActive) {
-      el.locationStatusPill.textContent = withinAttendance ? "Dalam radius absensi" : "Di luar radius absensi";
-      el.locationStatusPill.className = "pill " + (withinAttendance ? "pill--success" : "pill--warning");
+      if (accuracyPoor) {
+        el.locationStatusPill.textContent = "Akurasi kurang baik";
+        el.locationStatusPill.className = "pill pill--warning";
+      } else {
+        el.locationStatusPill.textContent = withinAttendance ? "Lokasi valid" : "Di luar radius";
+        el.locationStatusPill.className = "pill " + (withinAttendance ? "pill--success" : "pill--warning");
+      }
     }
 
     setLocationNote(data.accuracy > CONFIG.MAX_ACCEPTABLE_ACCURACY
@@ -588,6 +649,7 @@
     Modal.hide("attendance-modal");
     updateAttendanceStatusUI(record);
     renderRiwayat("week");
+    renderSummary();
 
     el.successName.textContent = displayName(user);
     el.successTime.textContent = (type === "check-in" ? record.checkIn : record.checkOut) || "—";

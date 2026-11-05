@@ -1123,6 +1123,165 @@ const Store = (function () {
   // karena store.js selalu dimuat sebelum ketiga file itu di setiap halaman.
   applyOfficeSettingsToConfig(getOfficeSettings());
 
+
+  /* ------------------------------------------------------------------ */
+  /* v39 — PEMBANTU ANALITIK (HANYA-BACA, ADITIF)                        */
+  /* ------------------------------------------------------------------ */
+  // Semua fungsi di bawah ini hanya MEMBACA data lewat getter Store yang
+  // sudah ada. Tidak menulis apa pun ke localStorage, tidak mengubah schema,
+  // dan tidak mengubah fungsi lama. Dashboard (admin.js / employee.js)
+  // memakainya supaya angka statistik SELALU berasal dari Store — bukan
+  // dari angka tetap di HTML.
+  //
+  // SCHEMA_VERSION = 1 -> bentuk data v38 dan v39 IDENTIK (tidak ada migrasi).
+  // Naikkan angka ini hanya jika suatu hari bentuk data benar-benar berubah,
+  // lalu tulis migrasinya (lihat FIREBASE_MIGRATION.md bagian "Migrasi data").
+  const SCHEMA_VERSION = 1;
+  const ADAPTER_NAME = "localStorage";
+
+  function dateFromKey(key) {
+    const p = String(key).split("-").map(Number);
+    return new Date(p[0], (p[1] || 1) - 1, p[2] || 1);
+  }
+  function isoDayOf(dateObj) { const d = dateObj.getDay(); return d === 0 ? 7 : d; }
+  function isScheduledOn(user, dateObj) {
+    const sched = getEffectiveSchedule(user, isoDayOf(dateObj));
+    return !!sched.isWorkday;
+  }
+  function onApprovedLeave(leaveList, userId, key) {
+    return leaveList.some((l) => l.userId === userId && l.status === "approved" && key >= l.startDate && key <= l.endDate);
+  }
+  function activeEmployees() {
+    return getUsers().filter((u) => u.role === "employee" && u.status === "active");
+  }
+
+  /**
+   * Statistik satu hari untuk seluruh karyawan aktif.
+   * - hadir/terlambat: punya absen masuk (status hadir / terlambat)
+   * - cuti: cuti disetujui ATAU status absensi "izin" pada hari itu
+   * - tidakHadir: hari kerja menurut shift, tanpa absen, tanpa cuti/izin
+   *   (untuk HARI INI artinya "belum absen / tanpa keterangan")
+   */
+  function getDailyStats(dateKey, _ctx) {
+    const key = dateKey || localDateKey();
+    const dateObj = dateFromKey(key);
+    const emps = (_ctx && _ctx.emps) || activeEmployees();
+    const att = (_ctx && _ctx.att) || getAttendance();
+    const leave = (_ctx && _ctx.leave) || getLeave();
+    const byUser = {};
+    att.forEach((a) => { if (a.date === key) byUser[a.userId] = a; });
+    const out = { dateKey: key, total: 0, hadir: 0, terlambat: 0, present: 0, cuti: 0, tidakHadir: 0, libur: 0 };
+    emps.forEach((u) => {
+      if (u.joinDate && u.joinDate > key) return; // belum bergabung
+      out.total++;
+      const a = byUser[u.id];
+      const isPresent = a && (a.status === "hadir" || a.status === "terlambat") && a.checkIn;
+      if (isPresent) {
+        out.present++;
+        if (a.status === "terlambat") out.terlambat++; else out.hadir++;
+      } else if ((a && a.status === "izin") || onApprovedLeave(leave, u.id, key)) {
+        out.cuti++;
+      } else if (!isScheduledOn(u, dateObj)) {
+        out.libur++;
+      } else {
+        out.tidakHadir++;
+      }
+    });
+    return out;
+  }
+
+  /** Tren N hari terakhir (termasuk hari ini), urut dari terlama ke terbaru. */
+  function getAttendanceTrend(days, endKey) {
+    const n = Math.max(1, days || 7);
+    const end = dateFromKey(endKey || localDateKey());
+    const ctx = { emps: activeEmployees(), att: getAttendance(), leave: getLeave() };
+    const rows = [];
+    for (let i = n - 1; i >= 0; i--) {
+      const d = new Date(end.getFullYear(), end.getMonth(), end.getDate() - i);
+      const st = getDailyStats(localDateKey(d), ctx);
+      st.dow = isoDayOf(d);
+      rows.push(st);
+    }
+    return rows;
+  }
+
+  /** Ringkasan bulanan SATU karyawan (dipakai kartu ringkasan di dashboard karyawan). */
+  function getUserMonthSummary(userId, dateKey) {
+    const user = findUserById(userId);
+    const today = dateKey || localDateKey();
+    const first = today.slice(0, 8) + "01";
+    const out = { hadir: 0, terlambat: 0, tidakHadir: 0, cuti: 0 };
+    if (!user) return out;
+    const att = getAttendance().filter((a) => a.userId === userId);
+    const leave = getLeave();
+    let d = dateFromKey(first);
+    const end = dateFromKey(today);
+    while (d <= end) {
+      const key = localDateKey(d);
+      if (!(user.joinDate && user.joinDate > key)) {
+        const a = att.find((x) => x.date === key);
+        if (a && (a.status === "hadir" || a.status === "terlambat") && a.checkIn) {
+          if (a.status === "terlambat") out.terlambat++; else out.hadir++;
+        } else if ((a && a.status === "izin") || onApprovedLeave(leave, userId, key)) {
+          if (isScheduledOn(user, d)) out.cuti++;
+        } else if (key < today && isScheduledOn(user, d)) {
+          out.tidakHadir++; // hari ini belum dihitung "tidak hadir" (masih bisa absen)
+        }
+      }
+      d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+    }
+    return out;
+  }
+
+  /** Statistik per departemen untuk satu hari. */
+  function getDepartmentStats(dateKey) {
+    const key = dateKey || localDateKey();
+    const emps = activeEmployees();
+    const att = getAttendance();
+    const leave = getLeave();
+    const groups = {};
+    emps.forEach((u) => {
+      const dept = (u.department || "Tanpa Departemen").trim() || "Tanpa Departemen";
+      (groups[dept] = groups[dept] || []).push(u);
+    });
+    return Object.keys(groups).sort().map((dept) => {
+      const st = getDailyStats(key, { emps: groups[dept], att, leave });
+      return Object.assign({ department: dept }, st);
+    });
+  }
+
+  /** Jumlah semua hal yang menunggu keputusan admin. */
+  function getPendingApprovalCount() {
+    const registrations = getUsers().filter((u) => u.status === "pending").length;
+    const leaveN = getLeave().filter((l) => l.status === "pending").length;
+    const overtimeN = getOvertime().filter((o) => o.status === "pending").length;
+    const outside = getOutsideRequests().filter((r) => r.status === "pending").length;
+    return { registrations, leave: leaveN, overtime: overtimeN, outside, total: registrations + leaveN + overtimeN + outside };
+  }
+
+  /**
+   * Cadangan data (JSON) seluruh key localStorage aplikasi. HANYA-BACA.
+   * Tidak menyertakan sesi login & indikator mengetik. Foto absensi ada di
+   * IndexedDB perangkat (bukan di sini) sehingga TIDAK ikut tercadangkan.
+   */
+  function exportBackup() {
+    const skip = { session: 1, chatTyping: 1 };
+    const data = {};
+    Object.keys(KEYS).forEach((name) => {
+      if (skip[name]) return;
+      const v = read(KEYS[name], null);
+      if (v !== null) data[KEYS[name]] = v;
+    });
+    return {
+      app: "PT. Depo PRG Employee Portal",
+      adapter: ADAPTER_NAME,
+      schemaVersion: SCHEMA_VERSION,
+      exportedAt: new Date().toISOString(),
+      note: "Cadangan localStorage. Foto absensi (IndexedDB) tidak termasuk.",
+      data
+    };
+  }
+
   return {
     KEYS, uid, hashPassword, localDateKey,
     getUsers, saveUsers, findUserByUsername, findUserById, registerEmployee,
@@ -1144,6 +1303,10 @@ const Store = (function () {
     getChatMessages, chatMembers, sendChatMessage, deleteChatMessage,
     markChatRead, chatLastReadAt, unreadChatCount,
     setChatTyping, clearChatTyping, getChatTyping,
-    CHAT_IMAGE_MAX_BYTES
+    CHAT_IMAGE_MAX_BYTES,
+    // v39 (aditif, hanya-baca)
+    SCHEMA_VERSION, ADAPTER_NAME,
+    getDailyStats, getAttendanceTrend, getUserMonthSummary, getDepartmentStats,
+    getPendingApprovalCount, exportBackup
   };
 })();

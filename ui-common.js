@@ -230,13 +230,18 @@ function applyTheme(theme) {
   }
 }
 
+const PW_EYE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/></svg>';
+const PW_EYE_OFF = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 3l18 18M10.6 5.7A9.6 9.6 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a16 16 0 0 1-3.2 3.9M6.6 7.3A15.6 15.6 0 0 0 2.5 12S6 18.5 12 18.5c1.5 0 2.8-.4 4-1M9.9 9.9a3 3 0 0 0 4.2 4.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 function initPasswordToggles() {
   document.querySelectorAll(".pw-toggle").forEach((btn) => {
+    btn.innerHTML = PW_EYE;
     btn.addEventListener("click", () => {
       const input = document.getElementById(btn.dataset.toggleFor);
       if (!input) return;
       input.type = input.type === "password" ? "text" : "password";
-      btn.textContent = input.type === "password" ? "👁" : "🙈";
+      const shown = input.type !== "password";
+      btn.innerHTML = shown ? PW_EYE_OFF : PW_EYE;
+      btn.setAttribute("aria-label", shown ? "Sembunyikan kata sandi" : "Tampilkan kata sandi");
     });
   });
 }

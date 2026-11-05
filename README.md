@@ -1,3 +1,22 @@
+# PT. Depo PRG — Employee Portal & HRIS 2026 (Build v39)
+
+**Redesign v39 — Premium HRIS.** Tampilan baru (Luxury Corporate Blue, Apple-inspired), semua fitur, ID DOM,
+key localStorage, dan API `Store` lama dipertahankan. Ringkas:
+
+- **Desain**: lapisan CSS "v7" di akhir `style.css` (CSS variables: `--navy #14264A`, `--blue #2563EB`, dst; terang & gelap).
+- **Login**: dua kolom di desktop, kartu di tengah di HP; tab Karyawan/Admin HR jelas; status loading/error/sukses; tampil/sembunyi sandi.
+- **Karyawan**: sapaan sesuai jam, kartu absensi (jam realtime, masuk/pulang, tombol besar), kartu GPS (status jujur, jarak, radius, akurasi, tombol refresh), ringkasan bulan dari Store, bottom-nav melayang, profil bergaya menu.
+- **Admin**: header + pencarian karyawan, 6 kartu statistik dari Store, tren 7/30 hari, distribusi, statistik departemen, tabel kehadiran (cari/filter/urut/halaman/detail), aktivitas terbaru, breadcrumb + pencarian di semua tabel, tabel jadi kartu di HP, cadangan data JSON.
+- **File baru**: `ui-enhance.js` (breadcrumb/pencarian tabel admin), `FIREBASE_MIGRATION.md`, `logo-lama-512.png` (arsip logo lama).
+- **Logo**: logo bawaan ZIP berupa ikon stok "tanda tanya"; diganti logo kubus biru "P" (ikon PWA & favicon ikut berubah). Ganti `logo-*.png`/`favicon.svg` bila punya logo resmi.
+- **Store (aditif)**: `getDailyStats`, `getAttendanceTrend`, `getUserMonthSummary`, `getDepartmentStats`, `getPendingApprovalCount`, `exportBackup`, `SCHEMA_VERSION`, `ADAPTER_NAME`. Tidak ada perubahan schema/key.
+- **PWA**: cache `depoprg-shell-v39`, semua aset `?v=39`.
+- **Perbaikan bug**: kartu "Tidak hadir" admin dulu hampir selalu 0 (rumus salah) — kini dihitung dari jadwal shift, absensi, dan cuti; status GPS tidak lagi "Memeriksa…" selamanya saat GPS gagal dan tidak "valid" saat akurasi buruk.
+
+Catatan: localStorage = penyimpanan lokal browser, **bukan** database server dan tidak sinkron antar perangkat.
+
+---
+
 # PT. Depo PRG — Absensi Digital
 
 **Perubahan terbaru**
