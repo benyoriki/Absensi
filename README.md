@@ -1,4 +1,7 @@
-# PT. Depo PRG — Employee Portal & HRIS 2026 (Build v39)
+# PT. Depo PRG — Employee Portal & HRIS 2026 (Build v42)
+
+> **v42 — Final Visual Polish**: lihat `CHANGELOG-V42.md` dan `LAPORAN-PENGUJIAN-V42.md`. Satu stylesheet (`style.css`), cache `depoprg-shell-v42`.
+
 
 **Redesign v39 — Premium HRIS.** Tampilan baru (Luxury Corporate Blue, Apple-inspired), semua fitur, ID DOM,
 key localStorage, dan API `Store` lama dipertahankan. Ringkas:

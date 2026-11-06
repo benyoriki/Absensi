@@ -70,15 +70,15 @@
 <link rel="icon" type="image/png" sizes="32x32" href="logo-32.png" />
 <link rel="apple-touch-icon" href="logo-192.png" />
 <link rel="manifest" href="manifest.webmanifest" />
-<meta name="theme-color" content="#14264A" />
+<meta name="theme-color" content="#1D4ED8" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="PT. Depo PRG" />
 <meta name="mobile-web-app-capable" content="yes" />
 <script>(function(){try{var t=JSON.parse(localStorage.getItem("rakabu_theme"));if(t!=="light"&&t!=="dark"){t=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.setAttribute("data-theme",t)}catch(e){}})();</script>
-<link rel="stylesheet" href="style.css?v=40" />
+<link rel="stylesheet" href="style.css?v=42" />
 </head>
-<body>
+<body class="pg-login">
 <div id="app-loading-screen" class="loading-screen" role="status" aria-live="polite" aria-label="Memuat halaman">
   <div class="loading-screen__grid" aria-hidden="true"></div>
   <span class="ls-orb ls-orb--a" aria-hidden="true"></span><span class="ls-orb ls-orb--b" aria-hidden="true"></span>
@@ -103,46 +103,44 @@
   <!-- ============ KIRI: BRANDING (desktop) ============ -->
   <aside class="auth-hero" aria-hidden="true">
     <div class="auth-hero__top">
-      <img class="auth-hero__logo" src="logo-192.png" alt="" width="56" height="56" />
-      <div>
+      <span class="auth-hero__logo-tile"><img class="auth-hero__logo" src="logo-192.png" alt="" width="56" height="56" /></span>
+      <div class="auth-hero__brandbox">
         <strong class="auth-hero__brand">PT. Depo PRG</strong>
-        <span class="auth-hero__brand-sub">Employee Portal &amp; HRIS</span>
+        <span class="auth-hero__brand-sub">Employee Portal</span>
       </div>
     </div>
-
+    <p class="auth-hero__tagline">Sistem Absensi &amp; Manajemen Karyawan</p>
     <p class="auth-hero__title">Absensi &amp; manajemen karyawan<br><em>yang rapi dan akurat.</em></p>
     <p class="auth-hero__lead">Absen masuk &amp; pulang dari HP dengan validasi lokasi GPS dan foto, lengkap dengan jadwal, cuti, lembur, dan laporan untuk HR.</p>
 
-    <svg class="auth-hero__art" viewBox="0 0 520 250" role="img" aria-label="Ilustrasi gudang PT. Depo PRG" focusable="false">
+    <svg class="auth-hero__art" viewBox="0 0 520 150" role="img" aria-label="Ilustrasi gudang PT. Depo PRG" focusable="false" preserveAspectRatio="xMidYMax slice">
       <defs>
-        <linearGradient id="ha-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#DCE8FF"/><stop offset="1" stop-color="#F4F8FF"/></linearGradient>
-        <linearGradient id="ha-roof" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1E3A8A"/><stop offset="1" stop-color="#2563EB"/></linearGradient>
+        <linearGradient id="ha-roof" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1E40AF"/><stop offset="1" stop-color="#2F6BEA"/></linearGradient>
+        <linearGradient id="ha-wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#DCE7FB"/></linearGradient>
+        <linearGradient id="ha-ground" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A5B8D8"/><stop offset="1" stop-color="#8AA0C6"/></linearGradient>
       </defs>
-      <rect width="520" height="250" rx="22" fill="url(#ha-sky)"/>
-      <circle cx="430" cy="52" r="26" fill="#fff" opacity=".85"/>
-      <path d="M0 214h520v36H0z" fill="#CBD7EE"/>
-      <path d="M0 214h520" stroke="#B6C5E3" stroke-width="2"/>
-      <!-- bangunan gudang -->
-      <path d="M52 214V104L260 54l208 50v110Z" fill="#fff" stroke="#C9D6F0" stroke-width="2"/>
-      <path d="M44 106 260 46l216 60-12 14L260 66 56 120Z" fill="url(#ha-roof)"/>
-      <rect x="86" y="130" width="76" height="84" rx="6" fill="#E8EFFD" stroke="#B9C9EA"/>
-      <rect x="182" y="130" width="76" height="84" rx="6" fill="#E8EFFD" stroke="#B9C9EA"/>
-      <rect x="278" y="130" width="76" height="84" rx="6" fill="#E8EFFD" stroke="#B9C9EA"/>
-      <rect x="374" y="130" width="76" height="84" rx="6" fill="#E8EFFD" stroke="#B9C9EA"/>
-      <g stroke="#B9C9EA" stroke-width="2"><path d="M96 146h56M96 160h56M96 174h56M96 188h56M192 146h56M192 160h56M192 174h56M192 188h56M288 146h56M288 160h56M288 174h56M288 188h56M384 146h56M384 160h56M384 174h56M384 188h56"/></g>
-      <!-- papan nama -->
-      <rect x="196" y="84" width="128" height="26" rx="8" fill="#14264A"/>
-      <text x="260" y="102" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-weight="700" font-size="14" fill="#fff">DEPO PRG</text>
-      <!-- pin lokasi -->
-      <g transform="translate(392 18)">
-        <path d="M24 66S4 44 4 28a20 20 0 0 1 40 0c0 16-20 38-20 38Z" fill="#2563EB"/>
-        <circle cx="24" cy="28" r="8" fill="#fff"/>
+      <path d="M0 112c70-18 150-26 250-24 90 2 170 10 270-2v64H0Z" fill="#6FA85A" opacity=".5"/>
+      <rect x="0" y="122" width="520" height="28" fill="url(#ha-ground)"/>
+      <path d="M0 137h520" stroke="#fff" stroke-opacity=".4" stroke-width="2" stroke-dasharray="24 16"/>
+      <rect x="64" y="56" width="340" height="66" fill="url(#ha-wall)"/>
+      <path d="M56 60 206 30 414 50v14H56Z" fill="url(#ha-roof)"/>
+      <rect x="64" y="80" width="340" height="6" fill="#1E40AF"/>
+      <g fill="#B8C9E8" stroke="#9DB2D8" stroke-width="1.2">
+        <rect x="82" y="92" width="40" height="30" rx="2"/><rect x="130" y="92" width="40" height="30" rx="2"/><rect x="178" y="92" width="40" height="30" rx="2"/><rect x="226" y="92" width="40" height="30" rx="2"/><rect x="274" y="92" width="40" height="30" rx="2"/>
       </g>
-      <!-- truk -->
-      <g transform="translate(18 176)">
-        <rect x="0" y="6" width="58" height="32" rx="4" fill="#fff" stroke="#B9C9EA"/>
-        <path d="M58 14h18l10 12v12H58Z" fill="#2563EB"/>
-        <circle cx="18" cy="40" r="7" fill="#14264A"/><circle cx="70" cy="40" r="7" fill="#14264A"/>
+      <g stroke="#9DB2D8" stroke-width="1.1"><path d="M86 100h32M86 108h32M86 116h32M134 100h32M134 108h32M134 116h32M182 100h32M182 108h32M182 116h32M230 100h32M230 108h32M230 116h32M278 100h32M278 108h32M278 116h32"/></g>
+      <rect x="404" y="66" width="70" height="56" rx="2" fill="#EAF1FF"/>
+      <rect x="404" y="62" width="70" height="6" fill="#1E3A8A"/>
+      <rect x="412" y="74" width="54" height="15" rx="3" fill="#1E3A8A"/>
+      <text x="439" y="85" text-anchor="middle" textLength="44" lengthAdjust="spacingAndGlyphs" font-family="Segoe UI,Arial,sans-serif" font-weight="800" font-size="9" fill="#fff">DEPO PRG</text>
+      <rect x="414" y="98" width="14" height="24" rx="1.5" fill="#9DB2D8"/><rect x="434" y="98" width="30" height="14" rx="1.5" fill="#CFE0FF"/>
+      <g transform="translate(300 98)">
+        <rect x="0" y="0" width="84" height="26" rx="3" fill="#fff"/>
+        <rect x="0" y="17" width="84" height="4" fill="#2F6BEA"/>
+        <path d="M84 5h18l10 11v10H84Z" fill="#2F6BEA"/>
+        <path d="M89 9h11l6 7H89Z" fill="#CFE0FF"/>
+        <circle cx="18" cy="27" r="6" fill="#14264A"/><circle cx="18" cy="27" r="2.3" fill="#9DB2D8"/>
+        <circle cx="98" cy="27" r="6" fill="#14264A"/><circle cx="98" cy="27" r="2.3" fill="#9DB2D8"/>
       </g>
     </svg>
 
@@ -163,6 +161,7 @@
 
     <!-- ============ LOGIN KARYAWAN ============ -->
     <div id="view-login">
+      <div class="auth-panel">
       <div class="auth-brand">
         <span class="auth-brand__mark" aria-hidden="true">
           <img src="logo-192.png" alt="" class="auth-brand__mark-img" />
@@ -174,8 +173,8 @@
       </div>
 
       <div class="role-switch" role="group" aria-label="Pilih jenis akun">
-        <span class="role-switch__item is-active" aria-current="true">Karyawan</span>
-        <button type="button" id="admin-access-link" class="role-switch__item">Admin HR</button>
+        <span class="role-switch__item is-active" aria-current="true"><svg class="rs-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8.4" r="3.6" stroke="currentColor" stroke-width="1.8"/><path d="M4.6 20c1-3.6 4-5.6 7.4-5.6s6.4 2 7.4 5.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Karyawan</span>
+        <button type="button" id="admin-access-link" class="role-switch__item"><svg class="rs-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="7.5" width="17" height="12" rx="2.4" stroke="currentColor" stroke-width="1.8"/><path d="M9 7.5V6a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 6v1.5M3.5 12.5h17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Admin HR</button>
       </div>
 
       <h2>Masuk ke akun Anda</h2>
@@ -187,31 +186,41 @@
         <label for="login-username">ID Karyawan</label>
         <div class="input-icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8.4" r="3.6" stroke="currentColor" stroke-width="1.7"/><path d="M4.6 20c1-3.6 4-5.6 7.4-5.6s6.4 2 7.4 5.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-          <input id="login-username" name="username" type="text" autocomplete="username" placeholder="Contoh: LKN001" required />
+          <input id="login-username" name="username" type="text" autocomplete="username" placeholder="ID Karyawan (contoh: LKN001)" required />
         </div>
         <span class="field-error" id="login-username-error" role="alert"></span>
 
         <label for="login-password">Kata Sandi</label>
         <div class="pw-field input-icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2.4" stroke="currentColor" stroke-width="1.7"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-          <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Masukkan kata sandi" required />
+          <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Password" required />
           <button type="button" class="pw-toggle" data-toggle-for="login-password" aria-label="Tampilkan kata sandi"></button>
         </div>
         <span class="field-error" id="login-password-error" role="alert"></span>
 
+        <div class="auth-row">
+          <label class="check" for="login-remember"><input type="checkbox" id="login-remember" /><span class="check__box" aria-hidden="true"></span><span>Ingat saya</span></label>
+          <button type="button" class="link-btn" id="forgot-password-btn">Lupa Password?</button>
+        </div>
+        <p class="auth-forgot-note" id="forgot-password-note" hidden>Lupa kata sandi? Hubungi Admin HR untuk mengatur ulang kata sandi Anda.</p>
+
         <button type="submit" class="btn btn--primary btn--block" id="login-submit-btn">
-          <span id="login-submit-label">MASUK</span>
+          <span class="btn__ico" data-icon="logIn" data-icon-size="20"></span><span id="login-submit-label">Masuk</span>
         </button>
-        <button type="button" class="btn btn--demo btn--block" id="demo-employee-btn">Masuk dengan Akun Demo</button>
+        <div class="auth-alt">
+          <a href="register.html" class="btn btn--outline" id="register-link"><span class="btn__ico" data-icon="userPlus" data-icon-size="18"></span>Daftar Akun</a>
+        <button type="button" class="btn btn--outline" id="demo-employee-btn"><span class="btn__ico" data-icon="gamepad" data-icon-size="18"></span>Akun Demo</button>
+        </div>
       </form>
+      </div><!-- /auth-panel -->
 
-      <p class="auth-foot">Belum punya akun? <a href="register.html" class="link-btn">Daftar akun karyawan</a></p>
-      <p class="auth-foot auth-foot--soft">Lupa kata sandi? Hubungi Admin HR untuk bantuan.</p>
-
-      <div class="install-box">
-        <button type="button" class="btn btn--ghost btn--block" data-install-btn>⬇ Instal Aplikasi (PWA)</button>
-        <p class="install-hint" data-install-hint hidden></p>
-      </div>
+      <ul class="feat-tiles" aria-label="Fitur utama">
+        <li><span data-icon="pin" data-icon-size="26"></span><b>GPS &amp;<br>Geofence</b></li>
+        <li><span data-icon="camera" data-icon-size="26"></span><b>Foto<br>Absensi</b></li>
+        <li><span data-icon="barChart" data-icon-size="26"></span><b>Laporan<br>Excel/PDF</b></li>
+        <li><button type="button" data-install-btn aria-label="Instal aplikasi (PWA)"><span data-icon="phone" data-icon-size="26"></span><b>PWA<br>(Install App)</b></button></li>
+      </ul>
+      <p class="install-hint" data-install-hint hidden></p>
 
       <div class="auth-security">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;margin-top:2px" aria-hidden="true"><path d="M12 3l7 3v5c0 4.6-3 8.7-7 10-4-1.3-7-5.4-7-10V6l7-3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
@@ -224,6 +233,7 @@
 
     <!-- ============ LOGIN ADMIN HR ============ -->
     <div id="view-admin-login" hidden>
+      <div class="auth-panel">
       <div class="auth-brand">
         <span class="auth-brand__mark" aria-hidden="true">
           <img src="logo-192.png" alt="" class="auth-brand__mark-img" />
@@ -235,8 +245,8 @@
       </div>
 
       <div class="role-switch" role="group" aria-label="Pilih jenis akun">
-        <button type="button" id="back-to-login-btn" class="role-switch__item" aria-label="Kembali ke login karyawan">← Karyawan</button>
-        <span class="role-switch__item is-active" aria-current="true">Admin HR</span>
+        <button type="button" id="back-to-login-btn" class="role-switch__item" aria-label="Kembali ke login karyawan"><svg class="rs-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8.4" r="3.6" stroke="currentColor" stroke-width="1.8"/><path d="M4.6 20c1-3.6 4-5.6 7.4-5.6s6.4 2 7.4 5.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Karyawan</button>
+        <span class="role-switch__item is-active" aria-current="true"><svg class="rs-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="7.5" width="17" height="12" rx="2.4" stroke="currentColor" stroke-width="1.8"/><path d="M9 7.5V6a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 6v1.5M3.5 12.5h17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Admin HR</span>
       </div>
 
       <h2>Masuk sebagai Admin</h2>
@@ -260,9 +270,10 @@
         </div>
         <span class="field-error" id="admin-pin-error" role="alert"></span>
 
-        <button type="submit" class="btn btn--primary btn--block" id="admin-submit-btn">MASUK SEBAGAI ADMIN</button>
-        <button type="button" class="btn btn--demo btn--block" id="demo-admin-btn">Masuk dengan Akun Demo Admin</button>
+        <button type="submit" class="btn btn--primary btn--block" id="admin-submit-btn"><span class="btn__ico" data-icon="logIn" data-icon-size="20"></span>Masuk sebagai Admin</button>
+        <button type="button" class="btn btn--outline btn--block" id="demo-admin-btn"><span class="btn__ico" data-icon="gamepad" data-icon-size="20"></span>Akun Demo Admin</button>
       </form>
+      </div><!-- /auth-panel -->
       <p class="fine-print auth-demo-note">Demo — Admin: <b>admin</b> / <b>admin123</b></p>
     </div>
 
@@ -271,10 +282,11 @@
 
 <div id="toast-region" class="toast-region" aria-live="polite"></div>
 
-<script src="config.js?v=40"></script>
-<script src="store.js?v=40"></script>
-<script src="ui-common.js?v=40"></script>
-<script src="modal.js?v=40"></script>
-<script src="auth.js?v=40"></script>
+<script src="config.js?v=42"></script>
+<script src="store.js?v=42"></script>
+<script src="ui-common.js?v=42"></script>
+<script src="modal.js?v=42"></script>
+<script src="auth.js?v=42"></script>
+<script src="ui-v42.js?v=42"></script>
 </body>
 </html>

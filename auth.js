@@ -50,7 +50,7 @@
       const btn = document.getElementById("login-submit-btn");
       const label = document.getElementById("login-submit-label");
       btn.disabled = isLoading;
-      label.innerHTML = isLoading ? '<span class="spinner spinner--on-dark"></span> Memproses…' : "MASUK";
+      label.innerHTML = isLoading ? '<span class="spinner spinner--on-dark"></span> Memproses…' : "Masuk";
     }
 
     /* ---------------- Tombol akun demo ---------------- */

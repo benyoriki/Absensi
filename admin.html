@@ -56,9 +56,9 @@
 <meta name="apple-mobile-web-app-title" content="PT. Depo PRG" />
 <meta name="mobile-web-app-capable" content="yes" />
 <script>(function(){try{var t=JSON.parse(localStorage.getItem("rakabu_theme"));if(t!=="light"&&t!=="dark"){t=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.setAttribute("data-theme",t)}catch(e){}})();</script>
-<link rel="stylesheet" href="style.css?v=40" />
+<link rel="stylesheet" href="style.css?v=42" />
 </head>
-<body>
+<body class="pg-admin">
 <div id="app-loading-screen" class="loading-screen" role="status" aria-live="polite" aria-label="Memuat halaman">
   <div class="loading-screen__grid" aria-hidden="true"></div>
   <span class="ls-orb ls-orb--a" aria-hidden="true"></span><span class="ls-orb ls-orb--b" aria-hidden="true"></span>
@@ -81,13 +81,14 @@
 
 <div class="app-shell">
   <header class="app-header">
+    <button type="button" class="icon-btn menu-toggle" id="menu-toggle" aria-label="Buka menu"><span data-icon="menu" data-icon-size="24"></span></button>
     <div class="app-header__brand">
       <span class="brand-mark" aria-hidden="true">
         <img src="logo-192.png" alt="" class="brand-mark__img" />
       </span>
       <div class="brand-text">
         <h1>PT. Depo PRG</h1>
-        <p>Dashboard Admin HR</p>
+        <p>Admin HR</p>
       </div>
     </div>
     <form class="header-search" id="admin-global-search-form" role="search" autocomplete="off">
@@ -100,12 +101,12 @@
         <span id="clock-date" class="clock-date">-- -- ----</span>
       </div>
       <button type="button" class="icon-btn" data-install-btn hidden aria-label="Instal aplikasi" title="Instal aplikasi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v10m0 0-4-4m4 4 4-4M5 19h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-      <button id="theme-toggle" class="icon-btn" type="button" aria-label="Ganti tampilan terang/gelap">
-        <svg id="theme-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-      </button>
       <button id="notif-btn" class="icon-btn notif-btn" type="button" aria-label="Notifikasi" data-nav="notifikasi">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9a6 6 0 1 1 12 0c0 4 1.5 5.5 1.5 5.5H4.5S6 13 6 9Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9.5 17a2.5 2.5 0 0 0 5 0" stroke="currentColor" stroke-width="1.7"/></svg>
         <span id="notif-dot" class="notif-dot" hidden>0</span>
+      </button>
+      <button id="theme-toggle" class="icon-btn" type="button" aria-label="Ganti tampilan terang/gelap">
+        <svg id="theme-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
       </button>
       <button class="avatar-btn" id="avatar-btn" type="button" aria-label="Profil admin">HR</button>
     </div>
@@ -140,7 +141,7 @@
       <!-- ===================== DASHBOARD ===================== -->
       <section data-page="dashboard">
         <div class="page-title flex-between">
-          <div><h2>Dashboard Admin HR</h2><p>Monitoring kehadiran &amp; aktivitas karyawan. Semua angka dihitung dari data Store.</p></div>
+          <div><h2>Dasbor Admin</h2><p>Monitoring kehadiran &amp; aktivitas karyawan.</p></div>
           <span class="date-chip" id="dash-date">-</span>
         </div>
 
@@ -149,7 +150,7 @@
         <div class="dash-split mt-1">
           <section class="card">
             <div class="card__head">
-              <h3>Tren Kehadiran</h3>
+              <h3 id="trend-title">Tren Kehadiran <span class="trend-days">7 Hari Terakhir</span></h3>
               <div class="chip-group chip-group--tight" role="group" aria-label="Rentang tren">
                 <button type="button" class="chip is-active" data-trend="7">7 hari</button>
                 <button type="button" class="chip" data-trend="30">30 hari</button>
@@ -172,17 +173,17 @@
             <div id="dept-stats" class="dept-stats"></div>
           </section>
           <section class="card">
-            <div class="card__head"><h3>Aktivitas Terbaru</h3></div>
+            <div class="card__head"><h3>Aktivitas Terbaru</h3><button type="button" class="link-btn" data-nav="notifikasi">Lihat Semua</button></div>
             <ul id="recent-activity-list" class="history-list activity-list"></ul>
           </section>
         </div>
 
         <section class="card mt-1">
-          <div class="card__head"><h3>Daftar Kehadiran</h3></div>
+          <div class="card__head"><h3>Monitoring Kehadiran Karyawan</h3></div>
           <div class="toolbar">
             <div class="toolbar__search"><input id="da-search" type="search" placeholder="Cari nama / ID…" aria-label="Cari kehadiran" /></div>
             <input id="da-date" type="date" aria-label="Tanggal" />
-            <select id="da-dept" aria-label="Filter departemen"><option value="">Semua departemen</option></select>
+            <select id="da-dept" aria-label="Filter departemen"><option value="">Semua dept.</option></select>
             <select id="da-status" aria-label="Filter status">
               <option value="">Semua status</option>
               <option value="hadir">Hadir</option>
@@ -484,11 +485,11 @@
   </div>
 
   <nav class="bottom-nav" aria-label="Navigasi bawah admin">
-    <button class="bottom-nav__item" data-nav="dashboard"><span class="inline-icon" data-icon="home" data-icon-size="20"></span><span>Home</span></button>
-    <button class="bottom-nav__item" data-nav="pendaftaran"><span class="inline-icon" data-icon="plusCircle" data-icon-size="20"></span><span>Daftar</span></button>
-    <button class="bottom-nav__item" data-nav="chat"><span class="inline-icon" data-icon="chatGroup" data-icon-size="20"></span><span>Chat</span><span class="nav-chat-badge" data-chat-badge hidden>0</span></button>
-    <button class="bottom-nav__item" data-nav="absensi"><span class="inline-icon" data-icon="clipboard" data-icon-size="20"></span><span>Absensi</span></button>
-    <button class="bottom-nav__item" id="more-btn"><span class="inline-icon" data-icon="more" data-icon-size="20"></span><span>Lainnya</span></button>
+    <button class="bottom-nav__item" data-nav="dashboard"><span class="inline-icon" data-icon="home" data-icon-size="22"></span><span>Dasbor</span></button>
+    <button class="bottom-nav__item" data-nav="karyawan"><span class="inline-icon" data-icon="users" data-icon-size="22"></span><span>Karyawan</span></button>
+    <button class="bottom-nav__item" data-nav="absensi"><span class="inline-icon" data-icon="calendarCheck" data-icon-size="22"></span><span>Absensi</span></button>
+    <button class="bottom-nav__item" data-nav="laporan"><span class="inline-icon" data-icon="barChart" data-icon-size="22"></span><span>Laporan</span></button>
+    <button class="bottom-nav__item" id="more-btn"><span class="inline-icon" data-icon="grid" data-icon-size="22"></span><span>Lainnya</span><span class="nav-chat-badge" data-chat-badge hidden>0</span></button>
   </nav>
 </div>
 
@@ -496,6 +497,8 @@
   <div class="modal" style="max-width:340px">
     <div class="modal__head"><h2>Menu Lainnya</h2><button class="icon-btn" id="more-close-btn" aria-label="Tutup">✕</button></div>
     <div class="stack">
+      <button class="sidebar__link" data-nav="pendaftaran"><span class="inline-icon" data-icon="plusCircle" data-icon-size="18"></span> Pendaftaran Baru</button>
+      <button class="sidebar__link" data-nav="chat"><span class="inline-icon" data-icon="chatGroup" data-icon-size="18"></span> Chat Grup <span class="nav-chat-badge" data-chat-badge hidden>0</span></button>
       <button class="sidebar__link" data-nav="karyawan"><span class="inline-icon" data-icon="users" data-icon-size="18"></span> Data Karyawan</button>
       <button class="sidebar__link" data-nav="shift"><span class="inline-icon" data-icon="clock" data-icon-size="18"></span> Shift Kerja</button>
       <button class="sidebar__link" data-nav="monitoring"><span class="inline-icon" data-icon="satellite" data-icon-size="18"></span> Monitoring Lokasi</button>
@@ -647,15 +650,16 @@
 
 <div id="toast-region" class="toast-region" aria-live="polite"></div>
 
-<script src="config.js?v=40"></script>
-<script src="store.js?v=40"></script>
-<script src="ui-common.js?v=40"></script>
-<script src="modal.js?v=40"></script>
-<script src="geo.js?v=40"></script>
-<script src="chat.js?v=40"></script>
-<script src="photo.js?v=40"></script>
-<script src="report-export.js?v=40"></script>
-<script src="ui-enhance.js?v=40"></script>
-<script src="admin.js?v=40"></script>
+<script src="config.js?v=42"></script>
+<script src="store.js?v=42"></script>
+<script src="ui-common.js?v=42"></script>
+<script src="modal.js?v=42"></script>
+<script src="geo.js?v=42"></script>
+<script src="chat.js?v=42"></script>
+<script src="photo.js?v=42"></script>
+<script src="report-export.js?v=42"></script>
+<script src="ui-enhance.js?v=42"></script>
+<script src="admin.js?v=42"></script>
+<script src="ui-v42.js?v=42"></script>
 </body>
 </html>

@@ -110,6 +110,8 @@
     document.querySelectorAll("[data-trend]").forEach((chip) => chip.addEventListener("click", () => {
       document.querySelectorAll("[data-trend]").forEach((c) => c.classList.toggle("is-active", c === chip));
       trendDays = Number(chip.dataset.trend) || 7;
+      const td = document.querySelector("#trend-title .trend-days");
+      if (td) td.textContent = trendDays + " Hari Terakhir";
       renderTrendChart();
     }));
     ["input", "change"].forEach((ev) => {
@@ -242,22 +244,23 @@
     const pend = Store.getPendingApprovalCount();
     const pct = st.total ? Math.round((st.present / st.total) * 100) : 0;
 
+    const pctOf = (n) => (st.total ? Math.round((n / st.total) * 100) : 0);
     const cards = [
-      { label: "TOTAL KARYAWAN", value: st.total, hint: `${users.length} akun terdaftar`, icon: "users", color: "info" },
-      { label: "HADIR HARI INI", value: st.present, hint: st.total ? `${pct}% dari karyawan aktif` : "-", icon: "checkCircle", color: "success" },
-      { label: "TERLAMBAT", value: st.terlambat, hint: "dari yang sudah absen", icon: "clock", color: "warning" },
-      { label: "TIDAK HADIR", value: st.tidakHadir, hint: "belum absen / tanpa keterangan", icon: "slash", color: "danger" },
-      { label: "CUTI / IZIN", value: st.cuti, hint: "cuti disetujui & izin", icon: "umbrella", color: "info" },
-      { label: "PENDING APPROVAL", value: pend.total, hint: `${pend.registrations} daftar · ${pend.leave} cuti · ${pend.overtime} lembur · ${pend.outside} luar lokasi`, icon: "plusCircle", color: "warning" }
+      { label: "Total Karyawan", value: st.total, hint: `${users.length} akun`, icon: "users", color: "info" },
+      { label: "Hadir Hari Ini", value: st.present, pct: st.total ? `(${pctOf(st.present)}%)` : "", hint: "", icon: "checkCircle", color: "success" },
+      { label: "Terlambat", value: st.terlambat, pct: st.total ? `(${pctOf(st.terlambat)}%)` : "", hint: "", icon: "clock", color: "warning" },
+      { label: "Tidak Hadir", value: st.tidakHadir, pct: st.total ? `(${pctOf(st.tidakHadir)}%)` : "", hint: "", icon: "xCircle", color: "danger" },
+      { label: "Cuti / Izin", value: st.cuti, hint: "disetujui", icon: "umbrella", color: "info", extra: true },
+      { label: "Pending Approval", value: pend.total, hint: [[pend.registrations, "daftar"], [pend.leave, "cuti"], [pend.overtime, "lembur"], [pend.outside, "luar lokasi"]].filter((x) => x[0] > 0).map((x) => `${x[0]} ${x[1]}`).join(" · ") || "Tidak ada", icon: "plusCircle", color: "warning", extra: true }
     ];
     el.statCards.innerHTML = cards.map((c) => `
-      <div class="stat-card stat-card--${c.color}">
-        <div class="stat-card__top">
-          <div class="stat-card__icon" style="background:var(--${c.color === 'neutral' ? 'surface-sunken' : c.color + '-100'});color:var(--${c.color === 'neutral' ? 'text-500' : c.color + '-600'})">${iconSvg(c.icon, 19)}</div>
+      <div class="stat-card stat-card--${c.color}${c.extra ? " stat-card--extra" : ""}">
+        <div class="stat-card__icon" style="background:var(--${c.color}-100);color:var(--${c.color}-600)">${iconSvg(c.icon, 24)}</div>
+        <div class="stat-card__body">
+          <div class="stat-card__value">${c.value}${c.pct ? `<small class="stat-card__pct">${c.pct}</small>` : ""}</div>
+          <div class="stat-card__label">${c.label}</div>
+          ${c.hint ? `<div class="stat-card__hint">${escapeHtml(c.hint)}</div>` : ""}
         </div>
-        <div class="stat-card__value">${c.value}</div>
-        <div class="stat-card__label">${c.label}</div>
-        ${c.hint ? `<div class="stat-card__hint">${escapeHtml(c.hint)}</div>` : ""}
       </div>`).join("");
 
     el.sidebarPendingBadge.hidden = pend.registrations === 0;
@@ -292,22 +295,24 @@
     el.attendanceDonut.innerHTML = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" style="stroke:var(--border)" stroke-width="${strokeW}"/>${circles}
       <text x="${cx}" y="${cy + 2}" text-anchor="middle" font-weight="800" font-size="22" style="fill:var(--text-900)">${pct}%</text>
       <text x="${cx}" y="${cy + 18}" text-anchor="middle" font-size="9" style="fill:var(--text-500)">Hadir</text>`;
+    const pctSeg = (n) => (st.total ? Math.round((n / st.total) * 100) : 0);
     el.attendanceLegend.innerHTML = segments.map((s) => `
-      <div class="legend__item"><span class="legend__swatch" style="background:${s.color}"></span>${s.label}: <b>${s.value}</b></div>`).join("")
+      <div class="legend__item"><span class="legend__swatch" style="background:${s.color}"></span><span class="legend__name">${s.label}</span><b>${s.value}${st.total ? ` (${pctSeg(s.value)}%)` : ""}</b></div>`).join("")
       + (st.libur ? `<div class="legend__item"><span class="legend__swatch" style="background:var(--border-strong)"></span>Libur: <b>${st.libur}</b></div>` : "");
   }
 
   // Grafik tren SVG ringan (tanpa library): Hadir, Terlambat, Tidak hadir.
   function renderTrendChart() {
     const rows = Store.getAttendanceTrend(trendDays);
-    const W = 640, H = 230, padL = 34, padR = 12, padT = 14, padB = 30;
+    const narrow = window.innerWidth < 600; // HP: kanvas lebih pendek agar grafik tidak mendominasi
+    const W = narrow ? 380 : 640, H = narrow ? 150 : 230, padL = narrow ? 28 : 34, padR = narrow ? 18 : 12, padT = 12, padB = narrow ? 24 : 30;
     const iw = W - padL - padR, ih = H - padT - padB;
     const maxV = Math.max(1, ...rows.map((r) => Math.max(r.present, r.terlambat, r.tidakHadir)));
     const yMax = Math.max(4, Math.ceil((maxV * 1.1) / 4) * 4); // kelipatan 4 -> label sumbu Y bulat & unik
     const xAt = (i) => padL + (rows.length === 1 ? iw / 2 : (i / (rows.length - 1)) * iw);
     const yAt = (v) => padT + ih - (v / yMax) * ih;
     const series = [
-      { key: "present", label: "Hadir", color: "var(--success-600)", area: true },
+      { key: "present", label: "Hadir", color: "var(--blue)", area: true, main: true },
       { key: "terlambat", label: "Terlambat", color: "var(--warning-solid)" },
       { key: "tidakHadir", label: "Tidak hadir", color: "var(--danger-600)" }
     ];
@@ -317,7 +322,7 @@
       const y = yAt((yMax / 4) * i);
       grid += `<line x1="${padL}" x2="${W - padR}" y1="${y}" y2="${y}" style="stroke:var(--border)" stroke-dasharray="3 4"/><text x="${padL - 8}" y="${y + 3}" text-anchor="end" font-size="10" style="fill:var(--text-500)">${v}</text>`;
     }
-    const every = rows.length > 14 ? 5 : 1;
+    const every = rows.length > 14 ? 5 : (narrow && rows.length > 5 ? 2 : 1);
     let labels = "";
     rows.forEach((r, i) => {
       if (i % every !== 0 && i !== rows.length - 1) return;
@@ -328,9 +333,9 @@
     series.forEach((s) => {
       const pts = rows.map((r, i) => [xAt(i), yAt(r[s.key])]);
       const line = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
-      if (s.area && pts.length > 1) paths += `<path d="${line} L${pts[pts.length - 1][0].toFixed(1)} ${padT + ih} L${pts[0][0].toFixed(1)} ${padT + ih} Z" style="fill:${s.color}" opacity=".12"/>`;
-      paths += `<path d="${line}" fill="none" style="stroke:${s.color}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>`;
-      if (rows.length <= 14) pts.forEach((p, i) => { paths += `<circle cx="${p[0]}" cy="${p[1]}" r="3.4" style="fill:var(--surface);stroke:${s.color}" stroke-width="2"><title>${s.label} ${rows[i].dateKey}: ${rows[i][s.key]}</title></circle>`; });
+      if (s.area && pts.length > 1) paths += `<path d="${line} L${pts[pts.length - 1][0].toFixed(1)} ${padT + ih} L${pts[0][0].toFixed(1)} ${padT + ih} Z" style="fill:${s.color}" opacity=".16"/>`;
+      paths += `<path d="${line}" fill="none" style="stroke:${s.color}" stroke-width="${s.main ? 2.6 : 1.6}" stroke-linecap="round" stroke-linejoin="round"${s.main ? "" : ' stroke-dasharray="5 4" opacity=".75"'}/>`;
+      if (rows.length <= 14) pts.forEach((p, i) => { paths += `<circle cx="${p[0]}" cy="${p[1]}" r="${s.main ? 4 : 2.6}" style="fill:var(--surface);stroke:${s.color}" stroke-width="2"><title>${s.label} ${rows[i].dateKey}: ${rows[i][s.key]}</title></circle>`; });
     });
     el.weeklyBarChart.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Tren kehadiran ${trendDays} hari">${grid}${paths}${labels}</svg>
       <div class="legend legend--row">${series.map((s) => `<div class="legend__item"><span class="legend__swatch" style="background:${s.color}"></span>${s.label}</div>`).join("")}</div>`;
@@ -367,7 +372,7 @@
     const top = items.slice(0, 8);
     el.recentActivityList.innerHTML = top.length ? top.map((n) => `
       <li>
-        <div class="history-list__dot" style="background:${iconColorForType(n.type)}"></div>
+        <span class="act-ico act-ico--${/terlambat/i.test((n.message || "") + (n.title || "")) ? "late" : escapeHtml(String(n.type || "info"))}">${iconSvg(activityIcon(n), 20)}</span>
         <div class="history-list__body">
           <div class="history-list__time">${escapeHtml(n.title)}</div>
           <div class="history-list__meta">${escapeHtml(n.message)}</div>
@@ -381,7 +386,7 @@
     if (!el.daDate.value) el.daDate.value = Store.localDateKey();
     const cur = el.daDept.value;
     const depts = Array.from(new Set(Store.getUsers().filter((u) => u.role === "employee" && u.status === "active").map((u) => u.department || "Tanpa Departemen"))).sort();
-    el.daDept.innerHTML = '<option value="">Semua departemen</option>' + depts.map((d) => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join("");
+    el.daDept.innerHTML = '<option value="">Semua dept.</option>' + depts.map((d) => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join("");
     el.daDept.value = depts.includes(cur) ? cur : "";
   }
 
@@ -474,6 +479,10 @@
     Modal.show("att-detail-modal");
   }
 
+  function activityIcon(n) {
+    if (/terlambat/i.test((n.message || "") + (n.title || ""))) return "alertTriangle";
+    return { attendance: "calendarCheck", registration: "userPlus", leave: "calendar", overtime: "clock", zone: "alertTriangle", outside: "alertTriangle" }[n.type] || "bell";
+  }
   function iconColorForType(type) {
     return { attendance: "var(--success-600)", registration: "var(--info-600)", leave: "var(--brand-600)", overtime: "var(--gold-500)", zone: "var(--danger-600)", outside: "var(--warning-600)", info: "var(--text-400)" }[type] || "var(--brand-600)";
   }

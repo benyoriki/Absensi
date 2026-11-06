@@ -326,7 +326,7 @@
     }
     if (el.statRadius) el.statRadius.textContent = CONFIG.ATTENDANCE_RADIUS + " m";
     if (el.officeInfo) el.officeInfo.textContent = "Titik absen: " + Number(CONFIG.OFFICE_LOCATION.latitude).toFixed(6) + ", " + Number(CONFIG.OFFICE_LOCATION.longitude).toFixed(6) + " (PT. Depo PRG)";
-    el.avatarBtn.innerHTML = avatarMarkup(user);
+    el.avatarBtn.innerHTML = avatarMarkup(user); syncWelcomeAvatar(user);
     // Bug fix: label radius sebelumnya di-hardcode di HTML ("15m" / "15
     // meter"), jadi kalau CONFIG.ATTENDANCE_RADIUS diubah, teksnya jadi
     // salah/basi. Sekarang selalu diisi dari CONFIG saat halaman dimuat.
@@ -343,6 +343,12 @@
       el.todaySchedule.textContent = schedule.isWorkday ? `${schedule.start} – ${schedule.end}` : "Libur hari ini";
       if (el.todayShiftName) el.todayShiftName.textContent = schedule.name;
     }
+  }
+
+  // Foto/inisial di kartu sapaan (mockup v41) mengikuti avatar header.
+  function syncWelcomeAvatar(u) {
+    const w = document.getElementById("welcome-avatar");
+    if (w) w.innerHTML = avatarMarkup(u);
   }
 
   // Sapaan mengikuti jam lokal perangkat (pagi 04–10, siang 11–14, sore 15–17, malam sisanya).
@@ -397,7 +403,7 @@
   function updateAttendanceStatusUI(record) {
     const badge = el.attendanceStatusBadge;
     if (!record) {
-      badge.textContent = "BELUM ABSEN"; badge.className = "badge badge--neutral";
+      badge.textContent = "Belum Absen"; badge.className = "badge badge--neutral";
       el.checkInBtn.disabled = false; el.checkInSub.textContent = "Tekan untuk memulai";
       el.checkOutBtn.disabled = true; el.checkOutSub.textContent = "Absen masuk dahulu";
       el.heroCheckin.textContent = "—"; el.heroCheckout.textContent = "—";
@@ -406,11 +412,11 @@
     el.heroCheckin.textContent = record.checkIn || "—";
     el.heroCheckout.textContent = record.checkOut || "—";
     if (record.checkOut) {
-      badge.textContent = "SUDAH ABSEN PULANG"; badge.className = "badge badge--info";
+      badge.textContent = "Sudah Absen Pulang"; badge.className = "badge badge--info";
       el.checkInBtn.disabled = true; el.checkInSub.textContent = "Sudah absen hari ini";
       el.checkOutBtn.disabled = true; el.checkOutSub.textContent = "Sudah absen pulang";
     } else {
-      badge.textContent = record.status === "terlambat" ? "TERLAMBAT" : "SUDAH ABSEN MASUK";
+      badge.textContent = record.status === "terlambat" ? "Terlambat" : "Sudah Absen Masuk";
       badge.className = record.status === "terlambat" ? "badge badge--warning" : "badge badge--success";
       el.checkInBtn.disabled = true; el.checkInSub.textContent = "Sudah absen masuk pukul " + record.checkIn;
       el.checkOutBtn.disabled = false; el.checkOutSub.textContent = "Tekan untuk pulang";
@@ -421,7 +427,7 @@
   /* GEOLOCATION UI (radar, jarak) — dipakai untuk kartu lokasi & absen   */
   /* ------------------------------------------------------------------ */
   function onGeoUpdate(data) {
-    el.statDistance.textContent = data.distance.toFixed(1) + " m";
+    el.statDistance.textContent = data.distance.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + " m";
     el.statAccuracy.textContent = "±" + Math.round(data.accuracy) + " m";
     el.statUpdated.textContent = new Date().toTimeString().slice(0, 8);
 
@@ -443,8 +449,8 @@
         el.locationStatusPill.textContent = "Akurasi kurang baik";
         el.locationStatusPill.className = "pill pill--warning";
       } else {
-        el.locationStatusPill.textContent = withinAttendance ? "Lokasi valid" : "Di luar radius";
-        el.locationStatusPill.className = "pill " + (withinAttendance ? "pill--success" : "pill--warning");
+        el.locationStatusPill.textContent = withinAttendance ? "Lokasi valid" : "Di luar Radius";
+        el.locationStatusPill.className = "pill " + (withinAttendance ? "pill--success" : "pill--danger");
       }
     }
 
@@ -847,7 +853,7 @@
       Store.updateUser(user.id, { photo: reader.result });
       renderProfil();
       // Foto profil juga tampil di avatar header, jadi ikut disegarkan.
-      el.avatarBtn.innerHTML = avatarMarkup(Store.findUserById(user.id));
+      el.avatarBtn.innerHTML = avatarMarkup(Store.findUserById(user.id)); syncWelcomeAvatar(Store.findUserById(user.id));
       showToast("Foto profil diperbarui.", "success");
       el.profilePhotoInput.value = "";
     };
