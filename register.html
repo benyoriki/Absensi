@@ -75,25 +75,32 @@
 <meta name="apple-mobile-web-app-title" content="PT. Depo PRG" />
 <meta name="mobile-web-app-capable" content="yes" />
 <script>(function(){try{var t=JSON.parse(localStorage.getItem("rakabu_theme"));if(t!=="light"&&t!=="dark"){t=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.setAttribute("data-theme",t)}catch(e){}})();</script>
-<link rel="stylesheet" href="style.css?v=42" />
+<link rel="stylesheet" href="style.css?v=43" />
+<link rel="stylesheet" href="style-v43.css?v=43" />
+<script src="adapt.js?v=43"></script>
 </head>
 <body>
-<div id="app-loading-screen" class="loading-screen" role="status" aria-live="polite" aria-label="Memuat halaman">
-  <div class="loading-screen__grid" aria-hidden="true"></div>
-  <span class="ls-orb ls-orb--a" aria-hidden="true"></span><span class="ls-orb ls-orb--b" aria-hidden="true"></span>
-  <div class="loading-screen__inner">
-    <div class="loading-screen__logo">
-      <span class="ls-ring ls-ring--1" aria-hidden="true"></span><span class="ls-ring ls-ring--2" aria-hidden="true"></span><span class="ls-spin" aria-hidden="true"></span>
-      <img src="logo-192.png" alt="" width="64" height="64" />
+<div id="app-loading-screen" class="ld" role="status" aria-live="polite" aria-label="Memuat halaman">
+  <span class="ld__glow ld__glow--a" aria-hidden="true"></span><span class="ld__glow ld__glow--b" aria-hidden="true"></span>
+  <div class="ld__grid" aria-hidden="true"></div>
+  <div class="ld__inner">
+    <div class="ld__logo">
+      <span class="ld__ring" aria-hidden="true"></span><span class="ld__pulse" aria-hidden="true"></span>
+      <span class="ld__tile"><img src="logo-192.png" alt="" width="72" height="72" /></span>
     </div>
-    <span class="loading-screen__brand">PT. Depo PRG</span>
-    <span class="ls-tag">Absensi Digital &middot; Portal Karyawan</span>
-    <div class="loading-screen__text">
-      <span class="ls-status">Memuat halaman…</span>
-      <div class="loading-screen__progress"><div class="loading-screen__progress-bar" id="loading-progress-bar"></div></div>
-      <span class="loading-screen__percent" id="loading-progress-percent">0%</span>
+    <h2 class="ld__brand">PT. Depo PRG</h2>
+    <p class="ld__tag">Absensi Digital &middot; Portal Karyawan</p>
+    <ul class="ld__steps" aria-hidden="true">
+      <li class="ld-step" data-ld-step><i></i>GPS</li>
+      <li class="ld-step" data-ld-step><i></i>Data</li>
+      <li class="ld-step" data-ld-step><i></i>Jadwal</li>
+      <li class="ld-step" data-ld-step><i></i>Siap</li>
+    </ul>
+    <div class="ld__meter">
+      <div class="ld__meter-top"><span id="loading-status-text">Menyiapkan lokasi GPS</span><b id="loading-progress-percent">0%</b></div>
+      <div class="ld__track"><div class="ld__bar" id="loading-progress-bar"></div></div>
     </div>
-    <p class="ls-credit">sistem &amp; website developer <a href="https://benyoriki.com/" target="_blank" rel="noopener">benyoriki.com</a></p>
+    <p class="ld__credit">Dikembangkan oleh tim <a href="https://benyoriki.com/" target="_blank" rel="noopener">benyoriki.com</a></p>
   </div>
 </div>
 <a class="skip-link" href="#main">Langsung ke konten utama</a>
@@ -236,10 +243,10 @@
 
 <div id="toast-region" class="toast-region" aria-live="polite"></div>
 
-<script src="config.js?v=42"></script>
-<script src="store.js?v=42"></script>
-<script src="ui-common.js?v=42"></script>
-<script src="modal.js?v=42"></script>
-<script src="register.js?v=42"></script>
+<script src="config.js?v=43"></script>
+<script src="store.js?v=43"></script>
+<script src="ui-common.js?v=43"></script>
+<script src="modal.js?v=43"></script>
+<script src="register.js?v=43"></script>
 </body>
 </html>

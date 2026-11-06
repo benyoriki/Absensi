@@ -587,7 +587,7 @@
       <div class="modal__head"><h2>Detail Karyawan</h2><button class="icon-btn" id="employee-modal-close" aria-label="Tutup">✕</button></div>
       <div class="profile-head">
         <div class="avatar-lg">${avatarMarkup(u)}</div>
-        <div><h3>${escapeHtml(displayName(u))}</h3><p>${escapeHtml(u.position)} · ${escapeHtml(u.department)}</p></div>
+        <div class="profile-head__info"><h3>${escapeHtml(displayName(u))}<button type="button" class="name-edit-btn" id="edit-name-shortcut" aria-label="Edit nama karyawan" title="Edit nama"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M13.5 6.5l4 4" stroke="currentColor" stroke-width="1.8"/></svg></button></h3><p>${escapeHtml(u.position)} · ${escapeHtml(u.department)}</p></div>
       </div>
       <dl class="stat-list">
         <div class="stat-list__item"><dt>ID Karyawan</dt><dd class="mono">${escapeHtml(u.id)}</dd></div>
@@ -618,6 +618,11 @@
         <button class="btn btn--ghost btn--sm" data-action="reset-password">Reset Password</button>
       </div>
       <form id="edit-employee-form" class="mt-1">
+        <div class="field-row field-row--name">
+          <div class="field-grow"><label for="edit-name">Nama Lengkap</label><input id="edit-name" value="${escapeHtml(u.name)}" maxlength="60" autocomplete="off" placeholder="Nama lengkap karyawan" required /></div>
+          <div class="field-gelar"><label for="edit-degree">Gelar</label><input id="edit-degree" value="${escapeHtml(u.degree || "")}" maxlength="30" autocomplete="off" placeholder="S.Kom" /></div>
+        </div>
+        <span class="field-error" id="edit-name-error" role="alert"></span>
         <div class="field-row">
           <div><label for="edit-position">Jabatan</label><input id="edit-position" value="${escapeHtml(u.position)}" /></div>
           <div><label for="edit-department">Departemen</label><input id="edit-department" value="${escapeHtml(u.department)}" /></div>
@@ -647,14 +652,32 @@
         showToast("Password direset ke 123456.", "success");
       });
     });
+    const nameShortcut = document.getElementById("edit-name-shortcut");
+    if (nameShortcut) nameShortcut.addEventListener("click", () => {
+      const inp = document.getElementById("edit-name");
+      if (!inp) return;
+      inp.scrollIntoView({ behavior: "smooth", block: "center" });
+      setTimeout(() => { inp.focus(); inp.select(); }, 250);
+    });
     document.getElementById("edit-employee-form").addEventListener("submit", (e) => {
       e.preventDefault();
+      const newName = document.getElementById("edit-name").value.replace(/\s+/g, " ").trim();
+      const nameErr = document.getElementById("edit-name-error");
+      if (newName.length < 2) {
+        if (nameErr) nameErr.textContent = "Nama minimal 2 karakter.";
+        document.getElementById("edit-name").focus();
+        return;
+      }
+      if (nameErr) nameErr.textContent = "";
+      const nameChanged = newName !== u.name;
       Store.updateUser(u.id, {
+        name: newName,
+        degree: document.getElementById("edit-degree").value.trim() || null,
         position: document.getElementById("edit-position").value.trim(),
         department: document.getElementById("edit-department").value.trim(),
         shiftId: document.getElementById("edit-shift").value
       });
-      showToast("Data karyawan diperbarui.", "success");
+      showToast(nameChanged ? "Nama karyawan diperbarui menjadi " + newName + "." : "Data karyawan diperbarui.", "success");
       Modal.hide("employee-modal");
       renderAll();
     });

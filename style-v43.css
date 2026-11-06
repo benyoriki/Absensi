@@ -1,0 +1,342 @@
+/* ==========================================================================
+   PT. DEPO PRG — style-v43.css  (lapisan override, dimuat SETELAH style.css)
+   Isi: loading screen baru, tombol instal PWA, kredit developer, kolom sandi
+   tersamar, form edit nama, perbaikan layout tablet/PC, polish tampilan 2026.
+   Prinsip performa (aman untuk PC lama / Windows 7): hanya animasi
+   transform + opacity, tanpa filter blur / backdrop-filter, tanpa fitur CSS
+   baru (color-mix, nesting, :has) — semuanya jalan di Chrome/Edge 109.
+   ========================================================================== */
+
+/* ---------- Token tambahan ---------- */
+:root{
+  --v43-r-card:1.35rem;
+  --v43-sh-card:0 1px 2px rgba(15,30,70,.05),0 14px 34px -18px rgba(20,40,100,.28);
+  --v43-sh-pop:0 24px 60px -24px rgba(20,40,100,.5);
+  --v43-amber:#FFB02E;
+  --v43-amber-2:#FF8A00;
+}
+[data-theme="dark"]{
+  --v43-sh-card:0 1px 0 rgba(255,255,255,.04) inset,0 18px 40px -22px rgba(0,0,0,.75);
+  --v43-sh-pop:0 28px 70px -24px rgba(0,0,0,.85);
+}
+
+/* ==========================================================================
+   A. LOADING SCREEN (4 detik)
+   ========================================================================== */
+.ld{position:fixed;left:0;top:0;right:0;bottom:0;z-index:9999;display:flex;align-items:center;justify-content:center;overflow:hidden;color:#EAF0FF;
+  font-family:var(--font-body,"Segoe UI",system-ui,-apple-system,sans-serif);
+  background:radial-gradient(70% 55% at 12% 6%,rgba(59,110,255,.5),transparent 62%),radial-gradient(60% 50% at 92% 96%,rgba(255,150,30,.30),transparent 62%),linear-gradient(165deg,#050A1F 0%,#0A1440 55%,#122266 100%);
+  transition:opacity .55s ease,visibility .55s ease}
+.ld.is-hidden{opacity:0;visibility:hidden;pointer-events:none}
+.ld.is-hidden .ld__inner{transform:scale(1.05);opacity:0}
+.ld__grid{position:absolute;left:0;top:0;right:0;bottom:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);background-size:44px 44px;-webkit-mask-image:radial-gradient(60% 55% at 50% 45%,#000,transparent 100%);mask-image:radial-gradient(60% 55% at 50% 45%,#000,transparent 100%)}
+.ld__glow{position:absolute;width:42rem;height:42rem;border-radius:50%;pointer-events:none;will-change:transform}
+.ld__glow--a{left:-14rem;top:-16rem;background:radial-gradient(circle,rgba(59,110,255,.34),transparent 65%);animation:ld-drift 9s ease-in-out infinite alternate}
+.ld__glow--b{right:-16rem;bottom:-18rem;background:radial-gradient(circle,rgba(255,170,50,.22),transparent 65%);animation:ld-drift 11s ease-in-out infinite alternate-reverse}
+.ld__inner{position:relative;z-index:1;width:min(23rem,88vw);display:flex;flex-direction:column;align-items:center;text-align:center;transition:transform .6s ease,opacity .45s ease}
+.ld__inner > *{animation:ld-in .7s cubic-bezier(.2,.8,.2,1) both}
+.ld__inner > *:nth-child(2){animation-delay:.08s}.ld__inner > *:nth-child(3){animation-delay:.16s}.ld__inner > *:nth-child(4){animation-delay:.26s}.ld__inner > *:nth-child(5){animation-delay:.36s}.ld__inner > *:nth-child(6){animation-delay:.46s}
+.ld__logo{position:relative;width:8.6rem;height:8.6rem;display:grid;place-items:center;margin:0 0 1.3rem}
+.ld__tile{position:relative;z-index:2;display:block;width:5.6rem;height:5.6rem;border-radius:1.6rem;background:#fff;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,.35),0 24px 48px -12px rgba(30,70,230,.75),0 0 60px rgba(70,120,255,.35);animation:ld-float 3s ease-in-out infinite}
+.ld__tile img{display:block;width:100%;height:100%;object-fit:cover}
+.ld__ring{position:absolute;left:0;top:0;right:0;bottom:0;border-radius:50%;background:conic-gradient(from 0deg,rgba(255,176,46,0) 0,#FFB02E 28%,#3B6EFF 62%,rgba(59,110,255,0) 100%);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 3px));mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 3px));animation:ld-rot 1.5s linear infinite;will-change:transform}
+.ld__pulse{position:absolute;left:.95rem;top:.95rem;right:.95rem;bottom:.95rem;border-radius:50%;border:1.5px solid rgba(130,170,255,.7);opacity:0;animation:ld-pulse 2.2s ease-out infinite}
+.ld__brand{margin:0;font-size:2.05rem;font-weight:800;letter-spacing:-.035em;line-height:1.1;color:#fff;background:linear-gradient(180deg,#fff 30%,#B9CCFF);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.ld__tag{margin:.7rem 0 0;padding:.34rem .9rem;border-radius:99px;font-size:.68rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#FFC46B;background:rgba(255,159,28,.12);border:1px solid rgba(255,159,28,.4)}
+.ld__steps{list-style:none;display:flex;flex-wrap:wrap;justify-content:center;gap:.4rem;margin:1.6rem 0 1.15rem;padding:0}
+.ld-step{display:inline-flex;align-items:center;gap:.4rem;padding:.34rem .72rem;border-radius:99px;font-size:.72rem;font-weight:700;color:rgba(220,230,255,.5);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);transition:color .3s,background .3s,border-color .3s}
+.ld-step i{display:block;flex:none;width:.5rem;height:.5rem;border-radius:50%;background:currentColor}
+.ld-step.is-now{color:#fff;border-color:rgba(130,170,255,.65);background:rgba(59,110,255,.28)}
+.ld-step.is-now i{animation:ld-blink 1s ease-in-out infinite}
+.ld-step.is-done{color:#7FE3B0;border-color:rgba(127,227,176,.35);background:rgba(52,211,153,.12)}
+.ld-step.is-done i{width:.55rem;height:.3rem;border-radius:0;background:none;border:solid currentColor;border-width:0 0 2px 2px;transform:rotate(-45deg) translate(1px,-1px)}
+.ld__meter{width:100%}
+.ld__meter-top{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;margin:0 0 .5rem;font-size:.82rem;font-weight:600;color:rgba(214,224,255,.78)}
+.ld__meter-top b{font-size:1.05rem;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;font-family:var(--font-body,inherit)}
+.ld__track{position:relative;height:.5rem;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden}
+.ld__bar{position:absolute;left:0;top:0;bottom:0;width:100%;border-radius:99px;background:linear-gradient(90deg,#3B6EFF,#6AA2FF 62%,#FFB02E);transform:scaleX(0);transform-origin:0 50%;will-change:transform;overflow:hidden}
+.ld__bar::after{content:"";position:absolute;left:0;top:0;right:0;bottom:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);transform:translateX(-100%);animation:ld-shine 1.5s ease-in-out infinite}
+.ld__credit{margin:1.7rem 0 0;font-size:.78rem;color:rgba(214,224,255,.66)}
+.ld__credit a{color:#FFB84D;font-weight:800;text-decoration:none;border-bottom:1px dashed rgba(255,184,77,.55);padding:.35rem .05rem}
+@keyframes ld-in{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes ld-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes ld-rot{to{transform:rotate(360deg)}}
+@keyframes ld-pulse{0%{opacity:.75;transform:scale(.85)}100%{opacity:0;transform:scale(1.55)}}
+@keyframes ld-shine{to{transform:translateX(100%)}}
+@keyframes ld-blink{50%{opacity:.25}}
+@keyframes ld-drift{to{transform:translate3d(3rem,2rem,0) scale(1.08)}}
+@media (prefers-reduced-motion:reduce){.ld *,.ld{animation:none !important}.ld__ring{opacity:.6}}
+
+/* ==========================================================================
+   B. TOMBOL INSTAL PWA (HP & PC) + PANDUAN
+   ========================================================================== */
+.install-pill{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:none;gap:.5rem;height:2.5rem;padding:0 1rem 0 .3rem;border:1px solid rgba(255,255,255,.28);border-radius:99px;background:linear-gradient(135deg,#3B7BFF,#1E4FD8);color:#fff;font-family:var(--font-body,inherit);font-size:.82rem;font-weight:700;line-height:1;letter-spacing:.01em;cursor:pointer;box-shadow:0 8px 18px -8px rgba(37,99,235,.9),inset 0 1px 0 rgba(255,255,255,.25);transition:transform .15s ease,box-shadow .15s ease}
+.install-pill[hidden]{display:none !important}
+.install-pill:hover{transform:translateY(-1px);box-shadow:0 12px 22px -8px rgba(37,99,235,1),inset 0 1px 0 rgba(255,255,255,.3)}
+.install-pill:active{transform:scale(.97)}
+.install-pill__ico{display:grid;place-items:center;width:1.95rem;height:1.95rem;border-radius:50%;background:rgba(255,255,255,.2);overflow:hidden}
+.install-pill__ico svg{display:block;animation:ins-bob 1.8s ease-in-out infinite}
+.install-pill.is-ready::after{content:"";position:absolute;left:-2px;top:-2px;right:-2px;bottom:-2px;border-radius:99px;border:2px solid rgba(96,150,255,.75);animation:ins-ring 2s ease-out infinite;pointer-events:none}
+@keyframes ins-bob{0%,100%{transform:translateY(-1px)}50%{transform:translateY(2px)}}
+@keyframes ins-ring{0%{opacity:.85;transform:scale(1)}100%{opacity:0;transform:scale(1.25)}}
+.install-pill--float{position:absolute;top:.62rem;right:3.45rem;z-index:6;height:2.3rem}
+@media (max-width:559px){
+  .install-pill{padding:0 .3rem}
+  .install-pill__txt{display:none}
+  .app-header .install-pill{height:2.4rem;width:2.4rem;padding:0}
+}
+@media (min-width:900px){
+  html:root:not(.z) body.pg-login .install-pill--float{position:fixed;top:1rem;right:4.2rem}
+}
+@media (prefers-reduced-motion:reduce){.install-pill__ico svg,.install-pill.is-ready::after{animation:none}}
+
+.ins-overlay{position:fixed;left:0;top:0;right:0;bottom:0;z-index:10000;display:flex;align-items:flex-end;justify-content:center;background:rgba(4,8,24,.62);animation:ins-fade .2s ease both}
+.ins-sheet{position:relative;width:100%;max-width:30rem;background:var(--surface);color:var(--text-900);border-radius:1.6rem 1.6rem 0 0;padding:1.4rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom,0px));box-shadow:0 -20px 60px rgba(0,0,0,.4);animation:ins-up .3s cubic-bezier(.2,.8,.2,1) both}
+.ins-hero{display:flex;align-items:center;gap:.9rem;margin:0 0 1.1rem;padding-right:2.2rem}
+.ins-hero h2{margin:0 0 .2rem;font-size:1.1rem;font-weight:800;letter-spacing:-.02em;line-height:1.2}
+.ins-hero p{margin:0;font-size:.82rem;line-height:1.4;color:var(--text-500)}
+.ins-app{flex:none;display:block;width:3.5rem;height:3.5rem;border-radius:1rem;overflow:hidden;box-shadow:0 10px 22px -10px rgba(30,70,230,.7),0 0 0 1px var(--border)}
+.ins-app img{display:block;width:100%;height:100%;object-fit:cover}
+.ins-steps{counter-reset:s;list-style:none;margin:0 0 1.2rem;padding:0;display:grid;gap:.55rem}
+.ins-steps li{counter-increment:s;display:flex;gap:.7rem;align-items:flex-start;padding:.7rem .8rem;border:1px solid var(--border);border-radius:.9rem;background:var(--surface-sunken);font-size:.88rem;line-height:1.45}
+.ins-steps li::before{content:counter(s);flex:none;display:grid;place-items:center;width:1.55rem;height:1.55rem;border-radius:50%;background:#2563EB;color:#fff;font-weight:800;font-size:.8rem}
+.ins-close{position:absolute;top:.85rem;right:.85rem;width:2.1rem;height:2.1rem;border-radius:50%;border:1px solid var(--border);background:var(--surface-sunken);color:var(--text-700);cursor:pointer;font-size:.9rem}
+@media (min-width:640px){.ins-overlay{align-items:center}.ins-sheet{border-radius:1.6rem;padding:1.6rem}}
+@keyframes ins-fade{from{opacity:0}}
+@keyframes ins-up{from{opacity:0;transform:translateY(24px)}}
+
+/* ==========================================================================
+   C. KREDIT DEVELOPER + KOLOM SANDI TERSAMAR
+   ========================================================================== */
+.credit-line{display:block;margin:.12rem 0 0;font-size:.64rem;font-weight:500;line-height:1.25;color:var(--text-500);white-space:nowrap}
+.credit-line a{color:var(--blue,#2563EB);font-weight:800;text-decoration:none;padding:.25rem 0;border-bottom:1px dashed currentColor}
+.credit-line a:hover{opacity:.8}
+[data-theme="dark"] .credit-line a{color:#FFB84D}
+html:root:not(.z) body.pg-emp .app-header .brand-text .credit-line{margin:.1rem 0 0;font-size:.64rem;font-weight:500;line-height:1.25;color:var(--text-500)}
+html:root:not(.z) body.pg-emp .app-header .brand-text{min-width:0}
+html:root:not(.z) body.pg-emp{--header-h:4.6rem}
+html:root:not(.z) body.pg-emp .app-header{height:auto;min-height:var(--header-h)}
+html:root:not(.z) body.pg-login .auth-hero__brandbox .credit-line{display:block;margin-top:.35rem;font-size:.78rem;color:rgba(255,255,255,.85)}
+html:root:not(.z) body.pg-login .auth-hero__brandbox .credit-line a{color:#FFD08A;border-bottom-color:rgba(255,208,138,.6)}
+
+input.pw-mask{-webkit-text-security:disc;text-security:disc}
+input.pw-mask.is-revealed{-webkit-text-security:none;text-security:none}
+
+/* ==========================================================================
+   D. FORM EDIT NAMA KARYAWAN (Admin → Detail Karyawan)
+   ========================================================================== */
+.profile-head__info{min-width:0}
+.profile-head__info h3{display:flex;align-items:center;flex-wrap:wrap;gap:.35rem;overflow-wrap:anywhere}
+.name-edit-btn{display:inline-grid;place-items:center;flex:none;width:1.9rem;height:1.9rem;border-radius:50%;border:1px solid var(--border);background:var(--surface-sunken);color:var(--blue,#2563EB);cursor:pointer;transition:background .15s,transform .15s}
+.name-edit-btn:hover{background:var(--blue-soft,#EFF6FF);transform:scale(1.08)}
+[data-theme="dark"] .name-edit-btn{color:#93C5FD}
+[data-theme="dark"] .name-edit-btn:hover{background:var(--brand-100)}
+.field-row--name{align-items:flex-end}
+.field-row--name .field-grow{flex:1 1 auto;min-width:0}
+.field-row--name .field-gelar{flex:0 0 7.5rem;min-width:0}
+#edit-name{font-weight:700}
+#edit-name-error:empty{display:none}
+
+/* header HP: rapat supaya semua ikon + kredit muat di layar 360–430px */
+@media (max-width:479px){
+  html:root:not(.z) body.pg-emp .app-header,html:root:not(.z) body.pg-admin .app-header{padding-left:.7rem;padding-right:.7rem;gap:.35rem}
+  html:root:not(.z) body.pg-emp .app-header__brand,html:root:not(.z) body.pg-admin .app-header__brand{min-width:0;flex:1 1 auto;gap:.5rem}
+  html:root:not(.z) body.pg-emp .app-header__meta,html:root:not(.z) body.pg-admin .app-header__meta{gap:.15rem;flex:none}
+  html:root:not(.z) body.pg-emp .app-header .icon-btn,html:root:not(.z) body.pg-admin .app-header .icon-btn{width:2.25rem;height:2.25rem}
+  html:root:not(.z) body.pg-emp .app-header .install-pill,html:root:not(.z) body.pg-admin .app-header .install-pill{width:2.25rem;height:2.25rem}
+  html:root:not(.z) body.pg-emp .avatar-btn{width:2.5rem;height:2.5rem}
+  html:root:not(.z) body.pg-admin .avatar-btn{width:2.4rem;height:2.4rem}
+  html:root:not(.z) body.pg-emp .brand-mark,html:root:not(.z) body.pg-admin .brand-mark{width:2.4rem;height:2.4rem;flex:none}
+  html:root:not(.z) body.pg-admin .menu-toggle{width:2.2rem;height:2.2rem}
+  html:root:not(.z) body.pg-emp .brand-text h1,html:root:not(.z) body.pg-admin .brand-text h1{font-size:1rem;white-space:nowrap}
+  html:root:not(.z) body.pg-emp .app-header .brand-text .credit-line{white-space:normal;font-size:.6rem;line-height:1.2}
+}
+
+/* ==========================================================================
+   E. HALAMAN LOGIN — tablet portrait, PC, polish
+   ========================================================================== */
+html:root:not(.z) body.pg-login{background:var(--m-page)}
+@media (min-width:640px) and (max-width:899px){
+  html:root:not(.z) body.pg-login .auth-shell{display:flex;flex-direction:column;align-items:stretch;min-height:100vh;background:radial-gradient(60% 40% at 50% 100%,rgba(37,99,235,.14),transparent 70%),var(--m-page)}
+  html:root:not(.z) body.pg-login .auth-hero{height:clamp(19rem,32vh,24rem);padding-top:calc(env(safe-area-inset-top,0px) + 1.6rem)}
+  html:root:not(.z) body.pg-login .auth-hero__logo-tile{width:4.2rem;height:4.2rem;border-radius:1.15rem}
+  html:root:not(.z) body.pg-login .auth-hero__brand{font-size:2.1rem}
+  html:root:not(.z) body.pg-login .auth-hero__brand-sub{font-size:1.1rem}
+  html:root:not(.z) body.pg-login .auth-hero__tagline{font-size:1rem}
+  html:root:not(.z) body.pg-login .auth-card{flex:1 1 auto}
+  html:root:not(.z) body.pg-login #view-login,html:root:not(.z) body.pg-login #view-admin-login{width:min(100% - 2rem,32rem);max-width:32rem;margin:-1.6rem auto 0;padding-bottom:2rem}
+  html:root:not(.z) body.pg-login .auth-panel{padding:1.4rem 1.4rem 1.5rem;border-radius:1.7rem}
+  html:root:not(.z) body.pg-login .auth-panel .input-icon input{height:3.3rem;min-height:3.3rem;font-size:1rem}
+  html:root:not(.z) body.pg-login .auth-panel .btn{min-height:3.3rem}
+  html:root:not(.z) body.pg-login .feat-tiles li{min-height:5rem}
+  html:root:not(.z) body.pg-login .feat-tiles b{font-size:.74rem}
+  html:root:not(.z) body.pg-login .install-pill--float{top:1rem;right:4.4rem}
+  html:root:not(.z) body.pg-login .theme-toggle-float{top:1rem;right:1.1rem;width:2.6rem;height:2.6rem}
+}
+@media (min-width:900px){
+  html:root:not(.z) body.pg-login .auth-hero{background:radial-gradient(70% 50% at 18% 6%,rgba(255,255,255,.22),transparent 62%),radial-gradient(60% 45% at 100% 100%,rgba(255,176,46,.28),transparent 62%),linear-gradient(160deg,#1647C9 0%,#2A6FEA 55%,#6FA8F5 100%)}
+  html:root:not(.z) body.pg-login .auth-hero__title{font-size:clamp(1.9rem,2.5vw,2.6rem)}
+  html:root:not(.z) body.pg-login .auth-panel{padding:1.6rem 1.6rem 1.7rem;border-radius:1.9rem;box-shadow:var(--v43-sh-pop)}
+  html:root:not(.z) body.pg-login .auth-hero__list li{padding:.15rem 0}
+  html:root:not(.z) body.pg-login .auth-hero__ico{width:2.6rem;height:2.6rem;border-radius:.9rem}
+  html:root:not(.z) body.pg-login #view-login,html:root:not(.z) body.pg-login #view-admin-login{max-width:28.5rem}
+}
+@media (min-width:900px) and (max-height:760px){
+  html:root:not(.z) body.pg-login .auth-hero{padding-top:2rem;padding-bottom:2rem}
+  html:root:not(.z) body.pg-login .auth-hero__art{margin-top:1.2rem}
+  html:root:not(.z) body.pg-login .auth-hero__list{display:none}
+}
+@media (min-width:1500px){
+  html:root:not(.z) body.pg-login .auth-hero{padding-left:clamp(4.5rem,9vw,9rem);padding-right:4rem}
+  html:root:not(.z) body.pg-login #view-login,html:root:not(.z) body.pg-login #view-admin-login{max-width:30rem}
+}
+html:root:not(.z) body.pg-login .auth-panel .btn--primary{background:linear-gradient(135deg,#3B7BFF 0%,#1B55DB 100%);box-shadow:0 14px 26px -14px rgba(27,85,219,.95),inset 0 1px 0 rgba(255,255,255,.22)}
+html:root:not(.z) body.pg-login .auth-panel .btn--primary:hover{transform:translateY(-1px)}
+html:root:not(.z) body.pg-login .auth-panel .btn:active{transform:scale(.985)}
+
+/* ==========================================================================
+   F. KERANGKA APLIKASI — tablet & PC
+   ========================================================================== */
+/* konten dipusatkan & dibatasi lebar supaya tidak melebar di monitor besar */
+@media (min-width:900px){
+  html:root:not(.z) body.pg-emp .main-content,html:root:not(.z) body.pg-admin .main-content{width:100%;max-width:80rem;margin-left:auto;margin-right:auto}
+}
+@media (min-width:1600px){
+  html:root:not(.z) body.pg-emp .main-content,html:root:not(.z) body.pg-admin .main-content{max-width:88rem}
+}
+/* tablet landscape / laptop kecil: sidebar lebih ramping */
+@media (min-width:900px) and (max-width:1099px){
+  :root{--sidebar-w:13.75rem}
+  html:root:not(.z) body.pg-emp .main-content,html:root:not(.z) body.pg-admin .main-content{padding-left:1.4rem;padding-right:1.4rem}
+}
+/* tablet portrait: bottom-nav tengah & konten nyaman */
+@media (min-width:640px) and (max-width:899px){
+  html:root:not(.z) body.pg-emp .main-content{max-width:46rem;margin-left:auto;margin-right:auto;padding-left:1.4rem;padding-right:1.4rem}
+  html:root:not(.z) body.pg-admin .main-content{max-width:58rem;margin-left:auto;margin-right:auto;padding-left:1.4rem;padding-right:1.4rem}
+  html:root:not(.z) body.pg-emp .bottom-nav,html:root:not(.z) body.pg-admin .bottom-nav{left:50%;right:auto;width:min(36rem,calc(100% - 2rem));transform:translateX(-50%);bottom:calc(.8rem + env(safe-area-inset-bottom,0px));border-radius:1.5rem;border:1px solid var(--border);box-shadow:0 18px 40px -14px rgba(10,20,60,.45)}
+  html:root:not(.z) body.pg-admin .grid-stats{grid-template-columns:repeat(3,1fr)}
+  html:root:not(.z) body.pg-emp .summary-grid{gap:.8rem}
+  html:root:not(.z) body.pg-emp #greeting{font-size:1.7rem}
+}
+/* header: lebih lega di PC */
+@media (min-width:900px){
+  html:root:not(.z) body.pg-admin .app-header,html:root:not(.z) body.pg-emp .app-header{padding-left:1.4rem;padding-right:1.4rem}
+  html:root:not(.z) body.pg-emp .app-header__meta,html:root:not(.z) body.pg-admin .app-header__meta{gap:.55rem}
+}
+html:root:not(.z) body.pg-admin .app-header__meta,html:root:not(.z) body.pg-emp .app-header__meta{display:flex;align-items:center}
+/* kartu & transisi halus (hanya perangkat dengan hover) */
+@media (hover:hover){
+  html:root:not(.z) body.pg-emp .card,html:root:not(.z) body.pg-admin .card,html:root:not(.z) body.pg-admin .stat-card{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+  html:root:not(.z) body.pg-emp .card:hover,html:root:not(.z) body.pg-admin .card:hover,html:root:not(.z) body.pg-admin .stat-card:hover{transform:translateY(-2px);box-shadow:var(--v43-sh-pop)}
+  html:root:not(.z) body.pg-emp .sum-tile{transition:transform .18s ease}
+  html:root:not(.z) body.pg-emp .sum-tile:hover{transform:translateY(-3px)}
+}
+
+/* sidebar PC: aksen lebih modern */
+@media (min-width:900px){
+  html:root:not(.z) body .sidebar .sidebar__link{position:relative;transition:background .15s,color .15s}
+  html:root:not(.z) body .sidebar .sidebar__link.is-active{background:linear-gradient(135deg,#3B7BFF,#2358E0);box-shadow:0 10px 20px -10px rgba(59,123,255,.9)}
+  html:root:not(.z) body .sidebar{background:linear-gradient(180deg,#0A1233 0%,#0C1844 100%)}
+}
+
+/* ==========================================================================
+   G. DASHBOARD KARYAWAN — kartu absensi, GPS, ringkasan
+   ========================================================================== */
+html:root:not(.z) body.pg-emp .hero-card{position:relative;overflow:hidden;color:#fff;border:0;border-radius:var(--v43-r-card);
+  background:radial-gradient(70% 90% at 100% 0%,rgba(255,176,46,.22),transparent 60%),linear-gradient(150deg,#2150D8 0%,#17358F 55%,#0F2260 100%);
+  box-shadow:0 26px 50px -26px rgba(20,48,160,.9),inset 0 1px 0 rgba(255,255,255,.14)}
+html:root:not(.z) body.pg-emp .hero-card::before{display:block;content:"";position:absolute;right:-3.2rem;top:-3.2rem;width:11rem;height:11rem;border-radius:50%;border:1.5px solid rgba(255,255,255,.12);pointer-events:none}
+html:root:not(.z) body.pg-emp .hero-card::after{display:block;content:"";position:absolute;right:-.4rem;top:-.4rem;width:6.5rem;height:6.5rem;border-radius:50%;border:1.5px solid rgba(255,255,255,.1);pointer-events:none}
+html:root:not(.z) body.pg-emp .hero-card__label{color:rgba(255,255,255,.88)}
+html:root:not(.z) body.pg-emp .hero-card .hero-clock{color:#fff;text-shadow:0 2px 14px rgba(8,20,80,.35)}
+html:root:not(.z) body.pg-emp .hero-card .tz-chip{background:var(--v43-amber);color:#3A2300}
+html:root:not(.z) body.pg-emp .hero-card .badge{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.22)}
+html:root:not(.z) body.pg-emp .hero-card .badge--success{background:rgba(52,211,153,.2);color:#8FF0C2;border-color:rgba(52,211,153,.4)}
+html:root:not(.z) body.pg-emp .hero-card .badge--warning{background:rgba(255,176,46,.2);color:#FFD08A;border-color:rgba(255,176,46,.45)}
+html:root:not(.z) body.pg-emp .hero-card .badge--danger{background:rgba(248,113,113,.2);color:#FFB4B4;border-color:rgba(248,113,113,.4)}
+html:root:not(.z) body.pg-emp .hero-card .hero-times__item{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);box-shadow:none}
+html:root:not(.z) body.pg-emp .hero-card .hero-times__item span{color:rgba(255,255,255,.75)}
+html:root:not(.z) body.pg-emp .hero-card .hero-times__item strong{color:#fff}
+html:root:not(.z) body.pg-emp .hero-card .hero-times__item .ht-ico{background:rgba(255,255,255,.16);color:#fff}
+html:root:not(.z) body.pg-emp .hero-card .btn--checkin{background:linear-gradient(135deg,#FFC24A 0%,#FF9A0E 100%);color:#3A2300;border:0;box-shadow:0 14px 24px -12px rgba(255,150,10,.95),inset 0 1px 0 rgba(255,255,255,.5)}
+html:root:not(.z) body.pg-emp .hero-card .btn--checkin .btn__icon-badge{background:rgba(58,35,0,.12);color:#3A2300;border-color:transparent}
+html:root:not(.z) body.pg-emp .hero-card .btn--checkin:disabled{background:rgba(255,255,255,.12);color:rgba(255,255,255,.55);box-shadow:none}
+html:root:not(.z) body.pg-emp .hero-card .btn--checkout{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.3);box-shadow:none}
+html:root:not(.z) body.pg-emp .hero-card .btn--checkout .btn__icon-badge{background:rgba(255,255,255,.16);color:#fff;border-color:transparent}
+html:root:not(.z) body.pg-emp .hero-card .btn--checkout:disabled{background:rgba(255,255,255,.07);color:rgba(255,255,255,.45);border:1px dashed rgba(255,255,255,.25)}
+html:root:not(.z) body.pg-emp .hero-card .btn--action:not(:disabled):hover{filter:brightness(1.06)}
+html:root:not(.z) body.pg-emp .hero-card .btn--action .btn__label{color:inherit}
+
+/* GPS: radar versi gelap/terang yang konsisten */
+html:root:not(.z) body.pg-emp .radar-wrap{border-radius:1.3rem}
+html[data-theme="dark"]:root:not(.z) body.pg-emp .radar-wrap{background:radial-gradient(circle at 50% 40%,#12284F,#0B1730);border-color:#22365C}
+html[data-theme="dark"]:root:not(.z) body.pg-emp .radar{background:radial-gradient(circle,rgba(59,123,255,.16) 0%,rgba(10,22,48,.9) 72%);border-radius:50%;box-shadow:inset 0 0 0 1px rgba(120,160,255,.22),0 0 40px -10px rgba(59,123,255,.5)}
+html[data-theme="dark"]:root:not(.z) body.pg-emp .radar::before{background:transparent}
+html[data-theme="dark"]:root:not(.z) body.pg-emp .radar__ring{border-color:rgba(130,170,255,.28)}
+html[data-theme="dark"]:root:not(.z) body.pg-emp .radar__ring--office{border-color:#6AA2FF;background:radial-gradient(circle,rgba(59,123,255,.4),rgba(59,123,255,.08) 70%)}
+html[data-theme="dark"]:root:not(.z) body.pg-emp .radar__sweep{background:conic-gradient(from 0deg,rgba(106,162,255,.42),rgba(106,162,255,0) 28%)}
+html[data-theme="dark"]:root:not(.z) body.pg-emp .radar__tick{background:rgba(150,185,255,.4)}
+html[data-theme="dark"]:root:not(.z) body.pg-emp .radar__limit-label{color:#A9C3FF}
+html[data-theme="dark"]:root:not(.z) body.pg-emp .location-card .gps-actions .btn--ghost{background:transparent;color:#93C5FD;border-color:#4C7BFF}
+
+/* Ringkasan bulan ini (perbaiki kartu putih di mode gelap) */
+html[data-theme="dark"]:root:not(.z) body.pg-emp .sum-tile--info{background:#12264A;color:#93C5FD;border-color:rgba(147,197,253,.25)}
+html[data-theme="dark"]:root:not(.z) body.pg-emp .sum-tile--success{background:#0F2D20;color:#4ADE80;border-color:rgba(74,222,128,.22)}
+html[data-theme="dark"]:root:not(.z) body.pg-emp .sum-tile--warning{background:#33260A;color:#FBBF24;border-color:rgba(251,191,36,.25)}
+html[data-theme="dark"]:root:not(.z) body.pg-emp .sum-tile--danger{background:#38161A;color:#F87171;border-color:rgba(248,113,113,.25)}
+html[data-theme="dark"]:root:not(.z) body.pg-emp .sum-tile > span:last-child{color:var(--text-700)}
+html:root:not(.z) body.pg-emp .sum-tile{border-radius:1.15rem}
+html:root:not(.z) body.pg-emp .sum-tile strong{font-size:1.85rem}
+
+/* kartu umum + bottom-nav aktif di mode gelap */
+html:root:not(.z) body.pg-emp .card,html:root:not(.z) body.pg-admin .card{border-radius:var(--v43-r-card);box-shadow:var(--v43-sh-card)}
+html[data-theme="dark"]:root:not(.z) body.pg-emp .bottom-nav__item.is-active,html[data-theme="dark"]:root:not(.z) body.pg-admin .bottom-nav__item.is-active{background:#14305F;color:#fff}
+html[data-theme="dark"]:root:not(.z) body.pg-emp .btn--action:disabled{background:#1A2740;color:#7C8DAD}
+
+/* greeting: avatar dengan cincin */
+html:root:not(.z) body.pg-emp .greeting-row .avatar-md,html:root:not(.z) body.pg-emp .greet-avatar{box-shadow:0 0 0 3px var(--surface),0 0 0 5px rgba(59,123,255,.45)}
+
+/* PC: dua kolom dashboard karyawan lebih seimbang */
+@media (min-width:900px){
+  html:root:not(.z) body.pg-emp .hero-card{padding:1.6rem 1.8rem}
+  html:root:not(.z) body.pg-emp .hero-clock{font-size:3.2rem}
+  html:root:not(.z) body.pg-emp #greeting{font-size:2.1rem}
+}
+
+/* ==========================================================================
+   H. DASHBOARD ADMIN — kartu statistik
+   ========================================================================== */
+html:root:not(.z) body.pg-admin .stat-card{border-radius:1.2rem;box-shadow:var(--v43-sh-card);position:relative;overflow:hidden}
+html:root:not(.z) body.pg-admin .stat-card::after{display:block;content:"";position:absolute;right:-1.4rem;top:-1.4rem;width:5rem;height:5rem;border-radius:50%;background:rgba(59,123,255,.07);pointer-events:none}
+html:root:not(.z) body.pg-admin .stat-card--success::after{background:rgba(34,197,94,.08)}
+html:root:not(.z) body.pg-admin .stat-card--warning::after{background:rgba(245,158,11,.1)}
+html:root:not(.z) body.pg-admin .stat-card--danger::after{background:rgba(239,68,68,.08)}
+html:root:not(.z) body.pg-admin .page-title h2{letter-spacing:-.03em}
+html:root:not(.z) body.pg-admin .app-header .install-pill{border-color:rgba(255,255,255,.3)}
+@media (min-width:900px){
+  html:root:not(.z) body.pg-admin .app-header{background:linear-gradient(90deg,#0A1233,#10205A)}
+  html:root:not(.z) body.pg-admin .header-search{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);color:#C9D6F5}
+  html:root:not(.z) body.pg-admin .header-search input{color:#fff}
+  html:root:not(.z) body.pg-admin .header-search input::placeholder{color:#9FB2D6}
+}
+
+/* modal: sheet bawah di HP, kartu tengah di PC (nama karyawan, dll.) */
+@media (min-width:640px){
+  html:not(.dop) .modal{box-shadow:var(--v43-sh-pop)}
+}
+
+/* ==========================================================================
+   I. Aksesibilitas & performa
+   ========================================================================== */
+@media (prefers-reduced-motion:reduce){
+  html:root:not(.z) body.pg-emp .card,html:root:not(.z) body.pg-admin .card,html:root:not(.z) body.pg-admin .stat-card,html:root:not(.z) body.pg-emp .sum-tile{transition:none}
+}
+
+/* mode "Situs desktop" di HP: zoom SVG global lama dimatikan (diganti perbaikan per-ikon di adapt.js) */
+html.dop svg{zoom:1 !important}
+
+/* HP: hero login sedikit lebih tinggi agar baris kredit tidak menabrak ilustrasi */
+@media (max-width:639px){
+  html:root:not(.z) body.pg-login .auth-hero{height:19.2rem;min-height:19.2rem}
+  html:root:not(.z) body.pg-login #view-login,html:root:not(.z) body.pg-login #view-admin-login{margin-top:-1.4rem}
+}

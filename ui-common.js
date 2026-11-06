@@ -10,60 +10,64 @@
    visual, bukan menunda fungsi apa pun).
    ========================================================================== */
 (function initLoadingScreen() {
-  // Durasi tampil minimum dikembalikan ke 3 detik sesuai permintaan —
-  // memberi waktu logo & animasi loading terlihat penuh sebelum masuk ke
-  // dashboard.
-  // Kunjungan pertama dalam satu sesi: 2,4 dtk (logo terlihat penuh). Pindah
-  // halaman berikutnya: 0,9 dtk supaya navigasi terasa cepat & ringan.
-  let seen = false;
-  try { seen = sessionStorage.getItem("depoprg_seen") === "1"; sessionStorage.setItem("depoprg_seen", "1"); } catch (e) { /* abaikan */ }
-  const MIN_VISIBLE_MS = seen ? 900 : 2400;
+  // Durasi loading screen: 4 detik (ubah angka ini bila ingin lebih cepat/lambat).
+  const LOADING_MS = 4000;
+  const STEPS = ["Menyiapkan lokasi GPS", "Memuat data karyawan", "Menyinkronkan jadwal kerja", "Siap digunakan"];
   const shownAt = Date.now();
+  const el = document.getElementById("app-loading-screen");
+  if (!el) return;
   const bar = document.getElementById("loading-progress-bar");
   const percentEl = document.getElementById("loading-progress-percent");
-  let rafId = null;
-  let finished = false;
+  const statusEl = document.getElementById("loading-status-text");
+  const stepEls = el.querySelectorAll("[data-ld-step]");
+  let rafId = null, finished = false, hiding = false, lastStep = -1;
 
   function paint(pct) {
-    const clamped = Math.max(0, Math.min(100, pct));
-    if (bar) bar.style.width = clamped + "%";
-    if (percentEl) percentEl.textContent = Math.round(clamped) + "%";
+    const p = Math.max(0, Math.min(100, pct));
+    // transform (bukan width) supaya ringan di PC lama / Windows 7
+    if (bar) bar.style.transform = "scaleX(" + (p / 100) + ")";
+    if (percentEl) percentEl.textContent = Math.round(p) + "%";
+    const step = p < 28 ? 0 : p < 58 ? 1 : p < 90 ? 2 : 3;
+    if (step !== lastStep) {
+      lastStep = step;
+      if (statusEl) statusEl.textContent = STEPS[step];
+      for (let i = 0; i < stepEls.length; i++) {
+        stepEls[i].className = "ld-step" + (i < step ? " is-done" : i === step ? " is-now" : "");
+      }
+    }
   }
-
-  // Bar naik landai mengikuti waktu tampil minimum, tapi sengaja ditahan di
-  // 96% — 4% terakhir baru diisi penuh oleh hide() di bawah, tepat saat
-  // halaman betul-betul selesai dimuat. Supaya progress yang terlihat tidak
-  // pernah berbohong (bar 100% padahal masih memuat).
+  // Progress naik mengikuti waktu (ease-out ringan), ditahan di 96% sampai
+  // halaman benar-benar selesai dimuat.
   function tick() {
     if (finished) return;
-    const elapsed = Date.now() - shownAt;
-    const pct = Math.min(96, (elapsed / MIN_VISIBLE_MS) * 100);
-    paint(pct);
-    if (pct < 96) rafId = requestAnimationFrame(tick);
+    const t = Math.min(1, (Date.now() - shownAt) / LOADING_MS);
+    const eased = 1 - Math.pow(1 - t, 1.6);
+    paint(Math.min(96, eased * 96));
+    rafId = requestAnimationFrame(tick);
   }
+  paint(0);
   rafId = requestAnimationFrame(tick);
 
   function hide() {
-    const el = document.getElementById("app-loading-screen");
-    if (!el) return;
-    const wait = Math.max(0, MIN_VISIBLE_MS - (Date.now() - shownAt));
+    if (hiding) return;
+    hiding = true;
+    const wait = Math.max(0, LOADING_MS - (Date.now() - shownAt));
     setTimeout(() => {
       finished = true;
       if (rafId) cancelAnimationFrame(rafId);
       paint(100);
+      for (let i = 0; i < stepEls.length; i++) stepEls[i].className = "ld-step is-done";
       setTimeout(() => {
         el.classList.add("is-hidden");
-        setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 500);
-      }, 260);
+        document.documentElement.classList.add("app-ready");
+        setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 600);
+      }, 280);
     }, wait);
   }
   if (document.readyState === "complete") hide();
   else window.addEventListener("load", hide);
-  // Jaring pengaman: kalau karena sebab apa pun event "load" tidak pernah
-  // tertembak (mis. ada request pihak ketiga yang menggantung), jangan
-  // sampai loading screen menutupi halaman selamanya. Diberi jeda lebih
-  // lama dari MIN_VISIBLE_MS supaya tidak memotong durasi tampil normal.
-  setTimeout(hide, 6000);
+  // Jaring pengaman bila event "load" tidak pernah tertembak.
+  setTimeout(hide, LOADING_MS + 2500);
 })();
 
 /* ==========================================================================
@@ -232,14 +236,42 @@ function applyTheme(theme) {
 
 const PW_EYE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/></svg>';
 const PW_EYE_OFF = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 3l18 18M10.6 5.7A9.6 9.6 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a16 16 0 0 1-3.2 3.9M6.6 7.3A15.6 15.6 0 0 0 2.5 12S6 18.5 12 18.5c1.5 0 2.8-.4 4-1M9.9 9.9a3 3 0 0 0 4.2 4.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+/* Peringatan "Ubah sandi Anda" (Google Password Manager) muncul karena Chrome
+   memeriksa kolom <input type="password"> saat login berhasil, dan sandi demo
+   (123456 / admin123) memang ada di daftar kebocoran publik. Situs tidak bisa
+   mematikan peringatan itu, tetapi kolom yang diberi data-no-leak="1" dibuat
+   sebagai kolom teks yang disamarkan CSS (-webkit-text-security), sehingga
+   Chrome tidak menganggapnya sebagai form sandi dan tidak memeriksanya.
+   Set false untuk kembali ke kolom sandi biasa (mis. setelah memakai sandi kuat). */
+const SUPPRESS_BROWSER_PW_CHECK = true;
+function supportsTextSecurity() {
+  try { return !!(window.CSS && CSS.supports && CSS.supports("-webkit-text-security", "disc")); } catch (e) { return false; }
+}
 function initPasswordToggles() {
+  const mask = SUPPRESS_BROWSER_PW_CHECK && supportsTextSecurity();
   document.querySelectorAll(".pw-toggle").forEach((btn) => {
+    const input = document.getElementById(btn.dataset.toggleFor);
+    if (mask && input && input.dataset.noLeak === "1") {
+      input.type = "text";
+      input.classList.add("pw-mask");
+      input.setAttribute("autocomplete", "off");
+      input.setAttribute("autocapitalize", "off");
+      input.setAttribute("autocorrect", "off");
+      input.setAttribute("spellcheck", "false");
+      input.setAttribute("data-lpignore", "true");
+      input.setAttribute("data-1p-ignore", "true");
+    }
     btn.innerHTML = PW_EYE;
     btn.addEventListener("click", () => {
-      const input = document.getElementById(btn.dataset.toggleFor);
       if (!input) return;
-      input.type = input.type === "password" ? "text" : "password";
-      const shown = input.type !== "password";
+      let shown;
+      if (input.classList.contains("pw-mask")) {
+        shown = !input.classList.contains("is-revealed");
+        input.classList.toggle("is-revealed", shown);
+      } else {
+        input.type = input.type === "password" ? "text" : "password";
+        shown = input.type !== "password";
+      }
       btn.innerHTML = shown ? PW_EYE_OFF : PW_EYE;
       btn.setAttribute("aria-label", shown ? "Sembunyikan kata sandi" : "Tampilkan kata sandi");
     });
@@ -423,20 +455,55 @@ document.addEventListener("DOMContentLoaded", () => {
   function isStandalone() {
     return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true;
   }
-  function hintText() {
+  function platform() {
     var ua = navigator.userAgent || "";
-    if (/iphone|ipad|ipod/i.test(ua)) return "Di iPhone/iPad: ketuk tombol Bagikan (kotak berpanah) di Safari, lalu pilih \u201cTambah ke Layar Utama\u201d.";
-    return "Buka menu browser (\u22EE atau \u22EF) lalu pilih \u201cInstal aplikasi\u201d atau \u201cTambahkan ke layar utama\u201d. Pastikan halaman dibuka lewat HTTPS.";
+    if (/iphone|ipad|ipod/i.test(ua) || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1)) return "ios";
+    if (/android/i.test(ua)) return "android";
+    if (/firefox/i.test(ua)) return "firefox";
+    if (/edg\//i.test(ua)) return "edge";
+    if (/chrome|chromium/i.test(ua)) return "chrome";
+    if (/safari/i.test(ua)) return "safari";
+    return "other";
+  }
+  function steps() {
+    switch (platform()) {
+      case "ios": return ["Buka halaman ini di <b>Safari</b>.", "Ketuk tombol <b>Bagikan</b> (kotak dengan panah ke atas).", "Pilih <b>Tambah ke Layar Utama</b>, lalu ketuk <b>Tambah</b>."];
+      case "android": return ["Ketuk menu <b>\u22EE</b> di pojok kanan atas Chrome.", "Pilih <b>Instal aplikasi</b> atau <b>Tambahkan ke layar utama</b>.", "Ketuk <b>Instal</b>. Ikon PT. Depo PRG muncul di layar utama."];
+      case "edge": return ["Klik ikon <b>Aplikasi</b> di ujung kanan kolom alamat, atau menu <b>\u22EF</b> \u2192 <b>Aplikasi</b>.", "Pilih <b>Instal situs ini sebagai aplikasi</b>.", "Klik <b>Instal</b>. Aplikasi terbuka di jendelanya sendiri."];
+      case "firefox": return ["Firefox desktop belum mendukung instal aplikasi web.", "Gunakan <b>Google Chrome</b> atau <b>Microsoft Edge</b> untuk memasang aplikasi ini di PC.", "Di Android, menu <b>\u22EE</b> \u2192 <b>Instal</b> tersedia di Firefox."];
+      case "safari": return ["Di Safari (macOS Sonoma+): menu <b>File</b> \u2192 <b>Tambahkan ke Dock</b>.", "Atau gunakan Chrome / Edge, lalu klik ikon <b>Instal</b> di kolom alamat."];
+      default: return ["Klik ikon <b>Instal</b> (monitor dengan panah) di ujung kanan kolom alamat Chrome.", "Atau buka menu <b>\u22EE</b> \u2192 <b>Transmisikan, simpan, dan bagikan</b> \u2192 <b>Instal halaman sebagai aplikasi</b>.", "Klik <b>Instal</b>. Aplikasi terbuka di jendelanya sendiri."];
+    }
   }
   function buttons() { return Array.prototype.slice.call(document.querySelectorAll("[data-install-btn]")); }
   function refresh() {
     var hide = isStandalone();
-    buttons().forEach(function (b) {
-      var isHeaderIcon = b.classList.contains("icon-btn");
-      if (hide) { b.hidden = true; return; }
-      b.hidden = isHeaderIcon ? !deferred : false;
-    });
+    buttons().forEach(function (b) { b.hidden = hide; b.classList.toggle("is-ready", !!deferred); });
     if (hide) { var box = document.querySelector(".install-box"); if (box) box.hidden = true; }
+  }
+  function closeSheet() {
+    var s = document.getElementById("install-sheet");
+    if (s && s.parentNode) s.parentNode.removeChild(s);
+    document.removeEventListener("keydown", onKey);
+  }
+  function onKey(e) { if (e.key === "Escape") closeSheet(); }
+  function openSheet() {
+    closeSheet();
+    var w = document.createElement("div");
+    w.id = "install-sheet";
+    w.className = "ins-overlay";
+    w.innerHTML =
+      '<div class="ins-sheet" role="dialog" aria-modal="true" aria-labelledby="ins-title">' +
+        '<button type="button" class="ins-close" aria-label="Tutup">\u2715</button>' +
+        '<div class="ins-hero"><span class="ins-app"><img src="logo-192.png" alt="" width="56" height="56"></span>' +
+        '<div><h2 id="ins-title">Pasang aplikasi PT. Depo PRG</h2><p>Buka lebih cepat dari layar utama / desktop, tampil layar penuh, tetap ringan.</p></div></div>' +
+        '<ol class="ins-steps">' + steps().map(function (t) { return "<li><span>" + t + "</span></li>"; }).join("") + "</ol>" +
+        '<button type="button" class="btn btn--primary btn--block ins-ok">Mengerti</button>' +
+      "</div>";
+    document.body.appendChild(w);
+    w.addEventListener("click", function (e) { if (e.target === w || (e.target.closest && (e.target.closest(".ins-close") || e.target.closest(".ins-ok")))) closeSheet(); });
+    document.addEventListener("keydown", onKey);
+    var ok = w.querySelector(".ins-ok"); if (ok) ok.focus();
   }
   window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); deferred = e; refresh(); });
   window.addEventListener("appinstalled", function () { deferred = null; refresh(); if (typeof showToast === "function") showToast("Aplikasi berhasil dipasang.", "success"); });
@@ -448,9 +515,7 @@ document.addEventListener("DOMContentLoaded", () => {
       deferred.userChoice.then(function () { deferred = null; refresh(); }).catch(function () {});
       return;
     }
-    var hint = document.querySelector("[data-install-hint]");
-    if (hint) { hint.textContent = hintText(); hint.hidden = !hint.hidden; }
-    else if (typeof showToast === "function") showToast(hintText(), "info");
+    openSheet();
   });
   document.addEventListener("DOMContentLoaded", refresh);
 })();
@@ -475,7 +540,7 @@ document.addEventListener("DOMContentLoaded", () => {
       var touch = (navigator.maxTouchPoints || 0) > 0;
       var sw = Math.min(screen.width, screen.height);
       var vw = window.innerWidth || root.clientWidth || 0;
-      var shown = Math.min(screen.width, screen.height) <= 600 ? (window.matchMedia && window.matchMedia("(orientation:landscape)").matches ? Math.max(screen.width, screen.height) : sw) : 0;
+      var shown = (sw <= 600 && !(window.matchMedia && window.matchMedia("(orientation:landscape)").matches)) ? sw : 0;
       if (touch && sw <= 600 && vw >= 800 && shown) {
         var ratio = Math.max(1, Math.min(3, vw / shown));
         root.classList.add("dop");
