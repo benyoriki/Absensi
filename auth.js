@@ -23,7 +23,7 @@
       e.preventDefault();
       clearErrors(["login-username-error", "login-password-error"]);
       const username = document.getElementById("login-username").value.trim();
-      const password = document.getElementById("login-password").value;
+      const password = document.getElementById("login-secret").value;
 
       setStatus("login-status", "", "");
       if (!username) return setError("login-username-error", "ID Karyawan wajib diisi.");
@@ -57,13 +57,13 @@
     const demoEmp = document.getElementById("demo-employee-btn");
     if (demoEmp) demoEmp.addEventListener("click", () => {
       document.getElementById("login-username").value = "LKN001";
-      document.getElementById("login-password").value = "123456";
+      document.getElementById("login-secret").value = "123456";
       document.getElementById("login-submit-btn").click();
     });
     const demoAdm = document.getElementById("demo-admin-btn");
     if (demoAdm) demoAdm.addEventListener("click", () => {
       document.getElementById("admin-username").value = "admin";
-      document.getElementById("admin-pin").value = "admin123";
+      document.getElementById("admin-secret").value = "admin123";
       document.getElementById("admin-login-form").querySelector('button[type="submit"]').click();
     });
 
@@ -98,7 +98,7 @@
       clearErrors(["admin-username-error", "admin-pin-error"]);
       setStatus("admin-login-status", "", "");
       const username = document.getElementById("admin-username").value.trim();
-      const pin = document.getElementById("admin-pin").value;
+      const pin = document.getElementById("admin-secret").value;
       if (!username) return setError("admin-username-error", "Username admin wajib diisi.");
       if (!pin) return setError("admin-pin-error", "Password/PIN wajib diisi.");
 

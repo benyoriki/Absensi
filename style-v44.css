@@ -1,0 +1,164 @@
+/* ==========================================================================
+   style-v44.css — Tampilan modern 2026 (glass + aurora, bento di desktop)
+   Dimuat PALING AKHIR. Hanya menimpa tampilan; ID, logika & data tidak berubah.
+   Prefiks selektor sengaja sama dengan style.css agar menang tanpa !important.
+   ========================================================================== */
+:root{
+  --font-display:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI Variable Display","Segoe UI",Roboto,Arial,sans-serif;
+  --font-body:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI Variable Text","Segoe UI",Roboto,Arial,sans-serif;
+  --r-xl:28px;--r-lg:22px;--r-md:16px;--r-sm:12px;
+  --radius-lg:22px;--radius-md:16px;--radius-sm:12px;
+  --ease-out:cubic-bezier(.22,1,.36,1);
+  --accent:#4F7CFF;--accent-2:#7C5CFF;--amber-a:#FFC15A;--amber-b:#FF8A1F;
+  --glass:rgba(255,255,255,.72);--glass-brd:rgba(255,255,255,.65);--glass-hi:inset 0 1px 0 rgba(255,255,255,.7);
+  --ring:0 0 0 3px rgba(79,124,255,.35);
+}
+[data-theme="dark"]{
+  --glass:rgba(20,30,56,.58);--glass-brd:rgba(148,170,255,.14);--glass-hi:inset 0 1px 0 rgba(255,255,255,.06);
+  --bg:#060A16;--surface:#0E1630;--surface-raised:#131D3B;--surface-sunken:#0A1127;--border:rgba(148,170,255,.14);
+}
+:root:not([data-theme="dark"]){--bg:#EEF2FC;--border:rgba(20,38,74,.09)}
+
+/* ---- Latar aurora ---- */
+html:root:not(.z) body{background:var(--bg);background-attachment:fixed;letter-spacing:-.005em;-webkit-font-smoothing:antialiased}
+html:root:not(.z) body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(60rem 40rem at 12% -10%,rgba(79,124,255,.28),transparent 60%),
+             radial-gradient(48rem 34rem at 100% 0%,rgba(124,92,255,.20),transparent 60%),
+             radial-gradient(40rem 30rem at 70% 110%,rgba(255,170,60,.14),transparent 60%)}
+[data-theme="dark"] html:root:not(.z) body::before{background:radial-gradient(60rem 40rem at 10% -10%,rgba(60,100,255,.30),transparent 60%),
+             radial-gradient(46rem 34rem at 100% 5%,rgba(124,92,255,.22),transparent 60%),
+             radial-gradient(40rem 30rem at 60% 115%,rgba(255,140,40,.12),transparent 60%)}
+html:root:not(.z) body h1,html:root:not(.z) body h2,html:root:not(.z) body h3{letter-spacing:-.025em;font-weight:800}
+
+/* ---- Kartu kaca ---- */
+html:root:not(.z) body .card,html:root:not(.z) body .menu-card,html:root:not(.z) body .modal,html:root:not(.z) body .auth-card,html:root:not(.z) body .stat-card,html:root:not(.z) body .sum-tile,html:root:not(.z) body .toolbar{
+  background:var(--glass);border:1px solid var(--glass-brd);border-radius:var(--r-lg);
+  -webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);
+  box-shadow:var(--glass-hi),0 1px 2px rgba(10,20,50,.06),0 18px 40px -18px rgba(10,20,50,.28)}
+html:root:not(.z) body .card__head h3,html:root:not(.z) body .card__head h2{font-size:1.02rem}
+html:root:not(.z) body .pill,html:root:not(.z) body .chip,html:root:not(.z) body .tz-chip{border-radius:999px;font-weight:700}
+
+/* ---- Tombol ---- */
+html:root:not(.z) body .btn{border-radius:var(--r-md);font-weight:700;transition:transform .18s var(--ease-out),box-shadow .18s,filter .18s}
+html:root:not(.z) body .btn:active{transform:scale(.97)}
+html:root:not(.z) body .btn--primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border:0;
+  box-shadow:0 10px 24px -8px rgba(79,124,255,.65),inset 0 1px 0 rgba(255,255,255,.25)}
+html:root:not(.z) body .btn--primary:hover{filter:brightness(1.08);transform:translateY(-1px)}
+html:root:not(.z) body .btn--action,html:root:not(.z) body .btn--action.btn--primary{background:linear-gradient(135deg,var(--amber-a),var(--amber-b));color:#3A1F00;
+  box-shadow:0 14px 30px -10px rgba(255,138,31,.7),inset 0 1px 0 rgba(255,255,255,.45)}
+html:root:not(.z) body .btn--ghost,html:root:not(.z) body .btn--outline{background:var(--glass);border:1px solid var(--glass-brd);backdrop-filter:blur(10px)}
+html:root:not(.z) body :where(a,button,input,select,textarea,[tabindex]):focus-visible{outline:none;box-shadow:var(--ring)}
+
+/* ---- Input ---- */
+html:root:not(.z) body input:not([type=checkbox]):not([type=radio]),html:root:not(.z) body select,html:root:not(.z) body textarea{border-radius:var(--r-md);
+  background:rgba(127,140,180,.08);border:1px solid var(--border);transition:border-color .15s,box-shadow .15s,background .15s}
+html:root:not(.z) body input:focus,html:root:not(.z) body select:focus,html:root:not(.z) body textarea:focus{border-color:var(--accent);background:rgba(79,124,255,.07);box-shadow:var(--ring);outline:none}
+
+/* ---- Header & navigasi bawah (melayang) ---- */
+html:root:not(.z) body .app-header{background:var(--glass);-webkit-backdrop-filter:blur(20px) saturate(1.5);backdrop-filter:blur(20px) saturate(1.5);
+  border-bottom:1px solid var(--glass-brd);box-shadow:0 8px 30px -16px rgba(10,20,50,.4)}
+html:root:not(.z) body .bottom-nav{left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));width:auto;border-radius:26px;
+  background:var(--glass);-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);
+  border:1px solid var(--glass-brd);box-shadow:0 20px 44px -14px rgba(5,10,30,.6)}
+html:root:not(.z) body .bottom-nav__item{border-radius:20px;font-weight:700;transition:background .2s,color .2s,transform .2s var(--ease-out)}
+html:root:not(.z) body .bottom-nav__item.is-active{background:linear-gradient(135deg,rgba(79,124,255,.28),rgba(124,92,255,.24));color:var(--text-900);
+  box-shadow:inset 0 0 0 1px rgba(120,150,255,.35)}
+html:root:not(.z) body .main-content{padding-bottom:calc(var(--bottomnav-h) + 36px + env(safe-area-inset-bottom))}
+
+/* ---- Kartu absensi utama (karyawan) ---- */
+html:root:not(.z) body.pg-emp .hero-card{border-radius:var(--r-xl);color:#fff;border:1px solid rgba(255,255,255,.18);
+  background:radial-gradient(120% 90% at 100% 0%,rgba(255,255,255,.18),transparent 55%),
+             radial-gradient(90% 80% at 0% 100%,rgba(255,170,60,.25),transparent 60%),
+             linear-gradient(145deg,#2B52E0 0%,#3B3FD8 48%,#5B3FD6 100%);
+  box-shadow:0 30px 60px -24px rgba(60,80,230,.75),inset 0 1px 0 rgba(255,255,255,.3)}
+html:root:not(.z) body.pg-emp .hero-clock{font-size:clamp(2.6rem,11vw,3.6rem);font-weight:800;letter-spacing:-.04em;color:#fff;font-variant-numeric:tabular-nums}
+html:root:not(.z) body.pg-emp .hero-times__item{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:18px;
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+html:root:not(.z) body.pg-emp .btn--action{min-height:58px;font-size:1.02rem}
+html:root:not(.z) body.pg-emp .location-card{border-radius:var(--r-xl)}
+html:root:not(.z) body.pg-emp .welcome__avatar{border-radius:50%;box-shadow:0 0 0 3px rgba(255,255,255,.25),0 10px 24px -8px rgba(0,0,0,.5)}
+html:root:not(.z) body.pg-emp .sum-tile{border-radius:20px;transition:transform .2s var(--ease-out)}
+html:root:not(.z) body.pg-emp .sum-tile:hover{transform:translateY(-2px)}
+
+/* ---- Admin ---- */
+html:root:not(.z) body.pg-admin .stat-card{border-radius:22px;transition:transform .2s var(--ease-out),box-shadow .2s}
+html:root:not(.z) body.pg-admin .stat-card:hover{transform:translateY(-3px)}
+html:root:not(.z) body.pg-admin .page-title.flex-between{flex-direction:column;align-items:stretch;gap:.9rem}
+html:root:not(.z) body.pg-admin .page-title.flex-between>div:first-child{min-width:0;width:100%}
+html:root:not(.z) body.pg-admin .page-title h2{font-size:clamp(1.5rem,5vw,2rem)}
+html:root:not(.z) body.pg-admin .table-wrap{border-radius:var(--r-lg);border:1px solid var(--border);overflow:auto}
+html:root:not(.z) body.pg-admin .data-table th{font-weight:700;background:rgba(127,140,180,.10)}
+html:root:not(.z) body.pg-admin .data-table tbody tr{transition:background .15s}
+html:root:not(.z) body.pg-admin .data-table tbody tr:hover{background:rgba(79,124,255,.08)}
+html:root:not(.z) body.pg-admin .sidebar{background:var(--glass);-webkit-backdrop-filter:blur(22px);backdrop-filter:blur(22px);border-right:1px solid var(--glass-brd)}
+html:root:not(.z) body.pg-admin .sidebar__link{border-radius:14px;font-weight:600;transition:background .15s,transform .15s}
+html:root:not(.z) body.pg-admin .sidebar__link:hover{background:rgba(79,124,255,.10)}
+html:root:not(.z) body.pg-admin .sidebar__link.is-active{background:linear-gradient(135deg,rgba(79,124,255,.30),rgba(124,92,255,.22));box-shadow:inset 0 0 0 1px rgba(120,150,255,.35)}
+
+/* ---- Login ---- */
+html:root:not(.z) body.pg-login .auth-card{border-radius:30px;padding:clamp(1.2rem,4vw,2.2rem)}
+html:root:not(.z) body.pg-login .auth-hero{background:radial-gradient(90% 70% at 85% 0%,rgba(255,255,255,.18),transparent 60%),linear-gradient(150deg,#2447D8,#4B3FD6 60%,#6A3FD0)}
+html:root:not(.z) body.pg-login .role-switch{border-radius:18px;background:rgba(127,140,180,.12)}
+html:root:not(.z) body.pg-login .role-switch__item.is-active{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;box-shadow:0 8px 20px -8px rgba(79,124,255,.7)}
+html:root:not(.z) body.pg-login .btn--primary.btn--block{min-height:54px;font-size:1.02rem}
+
+/* ---- Desktop: tata letak bento ---- */
+@media (min-width:900px){
+  html:root:not(.z) body.pg-emp .main-content{max-width:1240px;margin-inline:auto;padding-inline:2rem}
+  html:root:not(.z) body.pg-emp .dash-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:1.4rem;align-items:start}
+  html:root:not(.z) body.pg-emp .dash-grid>.summary-grid,html:root:not(.z) body.pg-emp .dash-grid>section:nth-of-type(n+3){grid-column:1/-1}
+  html:root:not(.z) body.pg-emp .bottom-nav{left:50%;right:auto;transform:translateX(-50%);width:min(560px,92vw)}
+  html:root:not(.z) body.pg-admin .main-content{max-width:1360px;margin-inline:auto}
+  html:root:not(.z) body.pg-admin .grid-stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:1.1rem}
+  html:root:not(.z) body.pg-login .auth-shell{min-height:100vh}
+}
+@media (min-width:1280px){html:root:not(.z) body.pg-admin .grid-stats{grid-template-columns:repeat(6,minmax(0,1fr))}}
+@media (max-width:420px){html:root:not(.z) body .card{border-radius:20px}html:root:not(.z) body.pg-emp .hero-clock{font-size:2.5rem}}
+@media (prefers-reduced-motion:reduce){html:root:not(.z) body *{animation-duration:.01ms !important;transition-duration:.01ms !important}}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  html:root:not(.z) body .card,html:root:not(.z) body .menu-card,html:root:not(.z) body .modal,html:root:not(.z) body .auth-card,html:root:not(.z) body .app-header,html:root:not(.z) body .bottom-nav,html:root:not(.z) body .sidebar{background:var(--surface-raised)}}
+
+/* ==========================================================================
+   v45 — Perbaikan regresi v44 + polish profesional
+   ========================================================================== */
+/* 1. Celah kosong di judul halaman admin: flex-basis anak jadi TINGGI saat kolom */
+html:root:not(.z) body.pg-admin .page-title.flex-between{display:flex;flex-direction:column;align-items:stretch;flex-wrap:nowrap;gap:.8rem}
+html:root:not(.z) body.pg-admin .page-title.flex-between>*{flex:0 0 auto !important;width:100%;min-width:0;max-width:100%}
+html:root:not(.z) body.pg-admin .page-title.flex-between>div:last-child{width:auto;align-self:flex-start}
+html:root:not(.z) body.pg-admin section[data-page="dashboard"] .page-title.flex-between{flex-direction:row;align-items:baseline;justify-content:space-between;flex-wrap:wrap}
+html:root:not(.z) body.pg-admin section[data-page="dashboard"] .page-title.flex-between>*{width:auto}
+@media (min-width:900px){
+  html:root:not(.z) body.pg-admin .page-title.flex-between{flex-direction:row;align-items:flex-end;justify-content:space-between;flex-wrap:wrap}
+  html:root:not(.z) body.pg-admin .page-title.flex-between>*{width:auto}
+  html:root:not(.z) body.pg-admin .page-title.flex-between>div:first-child{flex:1 1 24rem !important}
+}
+/* 2. Tombol Install/Tema di login ikut bergulir bersama hero (tidak menimpa kartu) */
+html:root:not(.z) body.pg-login .theme-toggle-float,html:root:not(.z) body.pg-login .install-pill--float{position:absolute !important}
+/* 3. Sheet & modal: permukaan solid (kaca abu-abu terlihat kusam) */
+html:root:not(.z) body .modal{background:var(--surface-raised);-webkit-backdrop-filter:none;backdrop-filter:none;border:1px solid var(--border);
+  box-shadow:0 -10px 50px -12px rgba(5,10,30,.45)}
+html:root:not(.z) body .modal-overlay{-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+html:root:not(.z) body .menu-row{border-radius:16px;transition:background .15s}
+html:root:not(.z) body .menu-row:hover,html:root:not(.z) body .menu-row:active{background:rgba(79,124,255,.10)}
+/* 4. Kolom cari: hapus garis ganda */
+html:root:not(.z) body .toolbar{padding:.6rem;border-radius:20px}
+html:root:not(.z) body .toolbar__search input,html:root:not(.z) body .toolbar input[type=search],html:root:not(.z) body .toolbar input[type=text]{border:0;background:transparent;box-shadow:none}
+html:root:not(.z) body .toolbar__search{border:1px solid var(--border);border-radius:16px;background:rgba(127,140,180,.08)}
+html:root:not(.z) body .toolbar__search:focus-within{border-color:var(--accent);box-shadow:var(--ring)}
+/* 5. Polish: angka rapi, header, transisi halaman, scrollbar, seleksi */
+html:root:not(.z) body{font-variant-numeric:tabular-nums;font-feature-settings:"ss01","cv11"}
+html:root:not(.z) body ::selection{background:rgba(79,124,255,.35)}
+html:root:not(.z) body .app-header{background:linear-gradient(180deg,rgba(26,44,104,.96),rgba(18,32,84,.92));color:#fff;border-bottom:1px solid rgba(255,255,255,.08)}
+[data-theme="dark"] html:root:not(.z) body .app-header{background:linear-gradient(180deg,rgba(14,24,56,.9),rgba(10,18,42,.86))}
+html:root:not(.z) body.pg-admin [data-page]:not([hidden]),html:root:not(.z) body.pg-emp [data-page]:not([hidden]){animation:pg45 .38s var(--ease-out)}
+@keyframes pg45{from{opacity:0;transform:translateY(8px)}}
+html:root:not(.z) body.pg-admin .stat-card__value,html:root:not(.z) body.pg-admin .stat-card strong{font-weight:800;letter-spacing:-.04em}
+html:root:not(.z) body.pg-admin .stat-card{padding:1.1rem 1.15rem}
+html:root:not(.z) body.pg-admin .data-table th{font-size:.74rem;letter-spacing:.02em;color:var(--text-500)}
+html:root:not(.z) body.pg-admin .data-table td{padding-block:.8rem}
+html:root:not(.z) body .section-head h3,html:root:not(.z) body .card__head h3{font-weight:800}
+html:root:not(.z) body .card{transition:box-shadow .25s,transform .25s var(--ease-out)}
+@media (hover:hover){html:root:not(.z) body .card:hover{box-shadow:var(--glass-hi),0 2px 4px rgba(10,20,50,.06),0 26px 50px -20px rgba(10,20,50,.34)}}
+@media (min-width:900px){
+  *{scrollbar-width:thin;scrollbar-color:rgba(127,140,180,.45) transparent}
+}

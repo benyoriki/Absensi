@@ -740,7 +740,7 @@
         <div class="history-list__dot" style="background:${statusDotColor(l.status)}"></div>
         <div class="history-list__body">
           <div class="history-list__time">${l.type} · ${l.days} hari</div>
-          <div class="history-list__meta">${l.startDate} s/d ${l.endDate} — ${escapeHtml(l.reason)}</div>
+          <div class="history-list__meta">${formatDateRangeID(l.startDate, l.endDate)} — ${escapeHtml(l.reason)}</div>
         </div>
         ${leaveStatusPill(l.status)}
       </li>`).join("") : emptyStateHtml("Belum ada pengajuan cuti.");

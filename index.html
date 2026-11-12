@@ -76,9 +76,13 @@
 <meta name="apple-mobile-web-app-title" content="PT. Depo PRG" />
 <meta name="mobile-web-app-capable" content="yes" />
 <script>(function(){try{var t=JSON.parse(localStorage.getItem("rakabu_theme"));if(t!=="light"&&t!=="dark"){t=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.setAttribute("data-theme",t)}catch(e){}})();</script>
-<link rel="stylesheet" href="style.css?v=43" />
-<link rel="stylesheet" href="style-v43.css?v=43" />
-<script src="adapt.js?v=43"></script>
+<link rel="stylesheet" href="style.css?v=46" />
+<link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
+<link rel="stylesheet" href="style-v43.css?v=46" />
+<link rel="stylesheet" href="style-v44.css?v=46" />
+<link rel="stylesheet" href="style-v46.css?v=46" />
+<script src="adapt.js?v=46"></script>
 </head>
 <body class="pg-login">
 <div id="app-loading-screen" class="ld" role="status" aria-live="polite" aria-label="Memuat halaman">
@@ -199,11 +203,11 @@
         </div>
         <span class="field-error" id="login-username-error" role="alert"></span>
 
-        <label for="login-password">Kata Sandi</label>
+        <label for="login-secret">Kata Sandi</label>
         <div class="pw-field input-icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2.4" stroke="currentColor" stroke-width="1.7"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-          <input id="login-password" name="password" type="password" data-no-leak="1" autocomplete="current-password" placeholder="Password" required />
-          <button type="button" class="pw-toggle" data-toggle-for="login-password" aria-label="Tampilkan kata sandi"></button>
+          <input id="login-secret" name="k_login" type="text" class="pw-mask" data-no-leak="1" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" inputmode="text" placeholder="Kata sandi" required />
+          <button type="button" class="pw-toggle" data-toggle-for="login-secret" aria-label="Tampilkan kata sandi"></button>
         </div>
         <span class="field-error" id="login-password-error" role="alert"></span>
 
@@ -271,11 +275,11 @@
         </div>
         <span class="field-error" id="admin-username-error" role="alert"></span>
 
-        <label for="admin-pin">Password Admin</label>
+        <label for="admin-secret">Password Admin</label>
         <div class="pw-field input-icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2.4" stroke="currentColor" stroke-width="1.7"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-          <input id="admin-pin" type="password" data-no-leak="1" autocomplete="off" placeholder="Masukkan password admin" required />
-          <button type="button" class="pw-toggle" data-toggle-for="admin-pin" aria-label="Tampilkan kata sandi"></button>
+          <input id="admin-secret" name="k_admin" type="text" class="pw-mask" data-no-leak="1" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" placeholder="Masukkan kata sandi admin" required />
+          <button type="button" class="pw-toggle" data-toggle-for="admin-secret" aria-label="Tampilkan kata sandi"></button>
         </div>
         <span class="field-error" id="admin-pin-error" role="alert"></span>
 
@@ -291,11 +295,12 @@
 
 <div id="toast-region" class="toast-region" aria-live="polite"></div>
 
-<script src="config.js?v=43"></script>
-<script src="store.js?v=43"></script>
-<script src="ui-common.js?v=43"></script>
-<script src="modal.js?v=43"></script>
-<script src="auth.js?v=43"></script>
-<script src="ui-v42.js?v=43"></script>
+<script src="config.js?v=46"></script>
+<script src="store.js?v=46"></script>
+<script src="demo-data.js?v=46"></script>
+<script src="ui-common.js?v=46"></script>
+<script src="modal.js?v=46"></script>
+<script src="auth.js?v=46"></script>
+<script src="ui-v42.js?v=46"></script>
 </body>
 </html>

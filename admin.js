@@ -608,7 +608,7 @@
       <h3 style="font-size:.92rem;margin-bottom:.6em">Riwayat Cuti Terakhir</h3>
       <ul class="history-list">${leaves.length ? leaves.map((l) => `
         <li><div class="history-list__dot" style="background:var(--brand-600)"></div>
-        <div class="history-list__body"><div class="history-list__time">${l.type} (${l.days} hari)</div><div class="history-list__meta">${l.startDate} s/d ${l.endDate}</div></div></li>`).join("") : emptyStateHtml("Belum ada pengajuan cuti.")}</ul>
+        <div class="history-list__body"><div class="history-list__time">${l.type} (${l.days} hari)</div><div class="history-list__meta">${formatDateRangeID(l.startDate, l.endDate)}</div></div></li>`).join("") : emptyStateHtml("Belum ada pengajuan cuti.")}</ul>
 
       <div class="section-divider"></div>
       <h3 style="font-size:.92rem;margin-bottom:.8em">Kelola Akun</h3>
@@ -1191,7 +1191,7 @@
       return `<tr>
         <td>${escapeHtml(u ? u.name : l.userId)}</td>
         <td>${escapeHtml(l.type)}</td>
-        <td>${l.startDate} s/d ${l.endDate}</td>
+        <td>${formatDateRangeID(l.startDate, l.endDate)}</td>
         <td>${l.days}</td>
         <td>${escapeHtml(l.reason)}</td>
         <td>${leaveStatusPill(l.status)}</td>
@@ -1214,9 +1214,9 @@
     }));
   }
   function leaveStatusPill(status) {
-    if (status === "pending") return '<span class="pill pill--warning">🟡 Pending</span>';
-    if (status === "approved") return '<span class="pill pill--success">🟢 Approved</span>';
-    return '<span class="pill pill--danger">🔴 Rejected</span>';
+    if (status === "pending") return '<span class="pill pill--warning">Menunggu</span>';
+    if (status === "approved") return '<span class="pill pill--success">Disetujui</span>';
+    return '<span class="pill pill--danger">Ditolak</span>';
   }
 
   /* ------------------------------------------------------------------ */

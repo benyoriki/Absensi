@@ -1,0 +1,140 @@
+/* ==========================================================================
+   v46 — PERBAIKAN TAMPILAN (dimuat PALING AKHIR setelah style.css, v43, v44)
+   --------------------------------------------------------------------------
+   Akar masalah utama: lapisan v44 memberi `backdrop-filter` pada .auth-card.
+   Properti itu membuat .auth-card menjadi "containing block" untuk anak yang
+   position:absolute — akibatnya tombol Instal & Tema (yang seharusnya di
+   pojok atas hero biru) malah menempel di dalam kartu login dan menimpa tab
+   "Admin HR". Semua perbaikan di bawah memakai selektor berspesifisitas sama
+   dengan lapisan sebelumnya supaya menang tanpa !important berlebihan.
+   ========================================================================== */
+
+/* 1. LOGIN — ikon Instal & Tema kembali ke pojok hero -------------------- */
+html:root:not(.z) body.pg-login .auth-card{
+  -webkit-backdrop-filter:none;backdrop-filter:none;transform:none;filter:none;
+}
+html:root:not(.z) body.pg-login .auth-shell{position:relative}
+html:root:not(.z) body.pg-login .install-pill--float,
+html:root:not(.z) body.pg-login .theme-toggle-float{
+  position:absolute !important;z-index:20;
+  top:calc(env(safe-area-inset-top,0px) + .65rem);
+}
+html:root:not(.z) body.pg-login .theme-toggle-float{
+  right:.75rem;width:2.4rem;height:2.4rem;min-height:0;padding:0;border-radius:50%;
+  display:grid;place-items:center;
+  background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.5);color:#fff;
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+}
+html:root:not(.z) body.pg-login .install-pill--float{
+  right:3.55rem;height:2.4rem;min-width:2.4rem;
+}
+@media (max-width:899.98px){
+  /* Di HP: hanya ikon (bulat), teks "Instal" disembunyikan agar tidak melebar */
+  html:root:not(.z) body.pg-login .install-pill--float{width:2.4rem;padding:0}
+  html:root:not(.z) body.pg-login .install-pill--float .install-pill__txt{display:none}
+  html:root:not(.z) body.pg-login .install-pill--float .install-pill__ico{width:2.4rem;height:2.4rem;background:transparent}
+}
+@media (min-width:900px){
+  /* Di desktop: kolom kanan putih → tombol tampil sebagai kapsul biasa */
+  html:root:not(.z) body.pg-login .install-pill--float{right:4.4rem;top:1rem;width:auto;padding:0 1rem 0 .3rem}
+  html:root:not(.z) body.pg-login .theme-toggle-float{right:1.1rem;top:1rem;background:var(--surface);color:var(--m-ink,var(--text-900));border-color:var(--m-line,var(--border))}
+}
+/* Halaman daftar: tombol tema juga tidak boleh menimpa kartu */
+html:root:not(.z) body.pg-register .auth-card,
+html:root:not(.z) body.pg-reg .auth-card{-webkit-backdrop-filter:none;backdrop-filter:none}
+
+/* 2. Header karyawan/admin: kredit pengembang jangan memanjang 3 baris ---- */
+@media (max-width:899.98px){
+  html:root:not(.z) body.pg-emp .app-header .brand-text .credit-line,
+  html:root:not(.z) body.pg-admin .app-header .brand-text .credit-line{display:none}
+}
+
+/* 3. Halaman Cuti / Lembur / Profil karyawan: satu kolom di HP ------------ */
+@media (max-width:899.98px){
+  html:root:not(.z) body.pg-emp section[data-page="cuti"] .grid-two,
+  html:root:not(.z) body.pg-emp section[data-page="lembur"] .grid-two,
+  html:root:not(.z) body.pg-emp section[data-page="profil"] .grid-two{grid-template-columns:minmax(0,1fr)}
+  html:root:not(.z) body.pg-emp section[data-page="cuti"] .grid-two .card,
+  html:root:not(.z) body.pg-emp section[data-page="lembur"] .grid-two .card{padding:1rem}
+  html:root:not(.z) body.pg-emp section[data-page="cuti"] .grid-two .card__head h3,
+  html:root:not(.z) body.pg-emp section[data-page="lembur"] .grid-two .card__head h3{font-size:1rem;color:var(--text-900)}
+}
+html:root:not(.z) body.pg-emp .grid-two > *{min-width:0}
+html:root:not(.z) body.pg-emp .history-list li{min-width:0;overflow-wrap:anywhere}
+.field-row{min-width:0}
+.field-row > *{min-width:0}
+.field-row input[type="date"],.field-row input[type="time"]{width:100%;min-width:0}
+
+/* 4. Kartu statistik admin: label tidak dipotong "…" ---------------------- */
+html:root:not(.z) body.pg-admin .stat-card,
+html:root:not(.z) body.pg-admin .stat-card *{min-width:0}
+html:root:not(.z) body.pg-admin .stat-card .stat-card__label,
+html:root:not(.z) body.pg-admin .stat-card .stat-card__sub,
+html:root:not(.z) body.pg-admin .stat-card [class*="label"],
+html:root:not(.z) body.pg-admin .stat-card [class*="sub"],
+html:root:not(.z) body.pg-admin .stat-card small,
+html:root:not(.z) body.pg-admin .stat-card p{
+  white-space:normal;text-overflow:clip;overflow:visible;overflow-wrap:anywhere;line-height:1.25;
+}
+
+/* 5. Kolom cari tabel: satu garis saja, hitungan data rapi di kanan ------- */
+html:root:not(.z) body .toolbar{
+  background:transparent;border:0;box-shadow:none;padding:0;border-radius:0;
+  -webkit-backdrop-filter:none;backdrop-filter:none;
+}
+html:root:not(.z) body .toolbar__search{flex:1 1 220px;position:relative}
+html:root:not(.z) body .toolbar__search input,
+html:root:not(.z) body .toolbar input[type="search"]{
+  border:1px solid var(--border);background:rgba(127,140,180,.08);border-radius:16px;
+  box-shadow:none;outline:0;width:100%;
+}
+html:root:not(.z) body .toolbar__search{border:0;background:transparent;border-radius:0}
+html:root:not(.z) body .toolbar__search:focus-within{border:0;box-shadow:none}
+html:root:not(.z) body .toolbar__search input:focus{border-color:var(--accent);box-shadow:var(--ring)}
+html:root:not(.z) body .toolbar__count{flex:0 0 100%;margin:0;text-align:right;font-size:.78rem}
+@media (min-width:900px){
+  html:root:not(.z) body .toolbar__count{flex:0 0 auto;margin-left:auto}
+}
+
+/* 6. Jaring pengaman umum -------------------------------------------------- */
+html,body{max-width:100%;overflow-x:hidden}
+img,svg,video,canvas{max-width:100%}
+.table-wrap,.table-scroll{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+/* 7. Kartu "Data Dummy" di Pengaturan admin ------------------------------- */
+.demo-box{display:flex;flex-direction:column;gap:.75rem}
+.demo-box__stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem;margin:0;padding:0;list-style:none}
+.demo-box__stats li{padding:.55rem .7rem;border-radius:12px;background:rgba(127,140,180,.1);font-size:.82rem;display:flex;justify-content:space-between;gap:.5rem}
+.demo-box__stats b{font-variant-numeric:tabular-nums}
+.demo-box__actions{display:flex;flex-wrap:wrap;gap:.5rem}
+.demo-box__actions .btn{flex:1 1 9rem}
+
+/* 8. Avatar chat: inisial terbaca di mode gelap -------------------------- */
+.chat-avatar,.chat-avatar--sm{background:var(--brand-100);color:var(--brand-700)}
+[data-theme="dark"] .chat-avatar:not(.chat-avatar--spacer):not(.chat-avatar--group){
+  background:linear-gradient(135deg,#2F5BD7,#5B7CFA);color:#fff;font-weight:800;
+}
+[data-theme="dark"] .chat-avatar--spacer{background:transparent}
+
+/* 9. Label & hint kartu statistik boleh turun baris (tidak dipotong) ------ */
+html:root:not(.z) body .stat-card__label,
+html:root:not(.z) body .stat-card__hint{
+  white-space:normal !important;overflow:visible !important;text-overflow:clip !important;
+  overflow-wrap:anywhere;line-height:1.25;
+}
+
+/* 10. Toolbar admin di HP berbentuk grid: hitungan data memakai satu baris penuh */
+html:root:not(.z) body.pg-admin .toolbar__count{grid-column:1/-1;justify-self:end}
+
+/* 11. Sidebar admin (desktop) mode terang: teks terbaca di atas latar kaca putih */
+[data-theme="light"] html:root:not(.z) body.pg-admin .sidebar .sidebar__link,
+html:root:not(.z)[data-theme="light"] body.pg-admin .sidebar .sidebar__link{color:#2B3A63}
+html:root:not(.z)[data-theme="light"] body.pg-admin .sidebar .sidebar__link:hover{color:#14264A}
+html:root:not(.z)[data-theme="light"] body.pg-admin .sidebar .sidebar__link.is-active{color:#fff}
+html:root:not(.z)[data-theme="light"] body.pg-admin .sidebar .sidebar__group-label{color:#5D6B8C}
+
+/* 12. Halaman Daftar: tombol tema tidak menimpa judul */
+@media (max-width:899.98px){
+  html:root:not(.z) body:not(.pg-login):not(.pg-admin):not(.pg-emp) .auth-brand{padding-right:3.2rem}
+  html:root:not(.z) body:not(.pg-login):not(.pg-admin):not(.pg-emp) .auth-brand__text h1{font-size:1.3rem;line-height:1.2}
+}

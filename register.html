@@ -75,9 +75,13 @@
 <meta name="apple-mobile-web-app-title" content="PT. Depo PRG" />
 <meta name="mobile-web-app-capable" content="yes" />
 <script>(function(){try{var t=JSON.parse(localStorage.getItem("rakabu_theme"));if(t!=="light"&&t!=="dark"){t=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.setAttribute("data-theme",t)}catch(e){}})();</script>
-<link rel="stylesheet" href="style.css?v=43" />
-<link rel="stylesheet" href="style-v43.css?v=43" />
-<script src="adapt.js?v=43"></script>
+<link rel="stylesheet" href="style.css?v=46" />
+<link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
+<link rel="stylesheet" href="style-v43.css?v=46" />
+<link rel="stylesheet" href="style-v44.css?v=46" />
+<link rel="stylesheet" href="style-v46.css?v=46" />
+<script src="adapt.js?v=46"></script>
 </head>
 <body>
 <div id="app-loading-screen" class="ld" role="status" aria-live="polite" aria-label="Memuat halaman">
@@ -205,7 +209,7 @@
           <div>
             <label for="reg-password">Kata Sandi</label>
             <div class="pw-field">
-              <input id="reg-password" type="password" placeholder="Minimal 6 karakter" minlength="6" required />
+              <input id="reg-password" name="k_reg1" type="text" class="pw-mask" data-no-leak="1" autocomplete="off" spellcheck="false" data-1p-ignore="true" placeholder="Minimal 6 karakter" minlength="6" required />
               <button type="button" class="pw-toggle" data-toggle-for="reg-password" aria-label="Tampilkan kata sandi">👁</button>
             </div>
             <span class="field-error" id="reg-password-error" role="alert"></span>
@@ -213,7 +217,7 @@
           <div>
             <label for="reg-password2">Konfirmasi Kata Sandi</label>
             <div class="pw-field">
-              <input id="reg-password2" type="password" placeholder="Ulangi kata sandi" minlength="6" required />
+              <input id="reg-password2" name="k_reg2" type="text" class="pw-mask" data-no-leak="1" autocomplete="off" spellcheck="false" data-1p-ignore="true" placeholder="Ulangi kata sandi" minlength="6" required />
               <button type="button" class="pw-toggle" data-toggle-for="reg-password2" aria-label="Tampilkan kata sandi">👁</button>
             </div>
             <span class="field-error" id="reg-password2-error" role="alert"></span>
@@ -243,10 +247,11 @@
 
 <div id="toast-region" class="toast-region" aria-live="polite"></div>
 
-<script src="config.js?v=43"></script>
-<script src="store.js?v=43"></script>
-<script src="ui-common.js?v=43"></script>
-<script src="modal.js?v=43"></script>
-<script src="register.js?v=43"></script>
+<script src="config.js?v=46"></script>
+<script src="store.js?v=46"></script>
+<script src="demo-data.js?v=46"></script>
+<script src="ui-common.js?v=46"></script>
+<script src="modal.js?v=46"></script>
+<script src="register.js?v=46"></script>
 </body>
 </html>

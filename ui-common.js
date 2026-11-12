@@ -261,6 +261,7 @@ function initPasswordToggles() {
       input.setAttribute("data-lpignore", "true");
       input.setAttribute("data-1p-ignore", "true");
     }
+    if (!mask && input && input.classList.contains("pw-mask")) { input.type = "password"; input.classList.remove("pw-mask"); }
     btn.innerHTML = PW_EYE;
     btn.addEventListener("click", () => {
       if (!input) return;
@@ -305,6 +306,19 @@ function displayName(user) {
 function avatarMarkup(user) {
   if (user && user.photo) return `<img src="${user.photo}" alt="" />`;
   return escapeHtml(initials(user ? user.name : ""));
+}
+
+/** "20 Nov 2026" atau "20–22 Nov 2026" / "30 Nov – 2 Des 2026" (v46). */
+function formatDateRangeID(a, b) {
+  if (!a) return "-";
+  const M = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+  const pa = String(a).split("-").map(Number);
+  const pb = String(b || a).split("-").map(Number);
+  if (pa.length < 3 || pb.length < 3 || pa.some(isNaN) || pb.some(isNaN)) return a + (b && b !== a ? " – " + b : "");
+  if (a === b || !b) return pa[2] + " " + M[pa[1] - 1] + " " + pa[0];
+  if (pa[0] === pb[0] && pa[1] === pb[1]) return pa[2] + "–" + pb[2] + " " + M[pa[1] - 1] + " " + pa[0];
+  if (pa[0] === pb[0]) return pa[2] + " " + M[pa[1] - 1] + " – " + pb[2] + " " + M[pb[1] - 1] + " " + pa[0];
+  return pa[2] + " " + M[pa[1] - 1] + " " + pa[0] + " – " + pb[2] + " " + M[pb[1] - 1] + " " + pb[0];
 }
 
 function formatRupiah(n) {

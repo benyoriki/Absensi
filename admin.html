@@ -56,9 +56,13 @@
 <meta name="apple-mobile-web-app-title" content="PT. Depo PRG" />
 <meta name="mobile-web-app-capable" content="yes" />
 <script>(function(){try{var t=JSON.parse(localStorage.getItem("rakabu_theme"));if(t!=="light"&&t!=="dark"){t=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.setAttribute("data-theme",t)}catch(e){}})();</script>
-<link rel="stylesheet" href="style.css?v=43" />
-<link rel="stylesheet" href="style-v43.css?v=43" />
-<script src="adapt.js?v=43"></script>
+<link rel="stylesheet" href="style.css?v=46" />
+<link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
+<link rel="stylesheet" href="style-v43.css?v=46" />
+<link rel="stylesheet" href="style-v44.css?v=46" />
+<link rel="stylesheet" href="style-v46.css?v=46" />
+<script src="adapt.js?v=46"></script>
 </head>
 <body class="pg-admin">
 <div id="app-loading-screen" class="ld" role="status" aria-live="polite" aria-label="Memuat halaman">
@@ -435,6 +439,17 @@
           <p class="fine-print">Unduh salinan seluruh data aplikasi (akun, absensi, cuti, lembur, shift, pengaturan, chat) sebagai berkas JSON. Foto absensi tersimpan terpisah di perangkat dan tidak ikut tercadangkan. <span id="backup-schema-note"></span></p>
           <button id="backup-export-btn" type="button" class="btn btn--ghost mt-1"><span class="inline-icon" data-icon="fileText" data-icon-size="16"></span> Unduh Cadangan (JSON)</button>
         </section>
+        <section class="card mt-1" id="demo-data-card">
+          <div class="card__head"><h3>Data Dummy (uji performa)</h3></div>
+          <div class="demo-box">
+            <p class="fine-print" id="demo-data-note">Data contoh agar tampilan dan kecepatan aplikasi bisa diuji sebelum data asli dipakai. Hanya data berlabel dummy yang diubah; akun & data asli tidak disentuh.</p>
+            <ul class="demo-box__stats" id="demo-data-stats"></ul>
+            <div class="demo-box__actions">
+              <button id="demo-reload-btn" type="button" class="btn btn--primary">Muat ulang data dummy</button>
+              <button id="demo-clear-btn" type="button" class="btn btn--danger-ghost">Hapus data dummy</button>
+            </div>
+          </div>
+        </section>
         <section class="card mt-1">
           <div class="card__head"><h3>Keterbatasan LocalStorage</h3></div>
           <p class="fine-print">Aplikasi ini masih memakai LocalStorage sebagai penyimpanan sementara (tahap prototipe). Artinya: data hanya tersimpan di peramban/perangkat masing-masing, TIDAK ada sinkronisasi otomatis antar-HP secara real-time, dan data bisa hilang jika cache/penyimpanan peramban dibersihkan. Untuk produksi, sistem ini perlu dipindahkan ke backend sungguhan (mis. Firebase Authentication + Firestore).</p>
@@ -657,16 +672,17 @@
 
 <div id="toast-region" class="toast-region" aria-live="polite"></div>
 
-<script src="config.js?v=43"></script>
-<script src="store.js?v=43"></script>
-<script src="ui-common.js?v=43"></script>
-<script src="modal.js?v=43"></script>
-<script src="geo.js?v=43"></script>
-<script src="chat.js?v=43"></script>
-<script src="photo.js?v=43"></script>
-<script src="report-export.js?v=43"></script>
-<script src="ui-enhance.js?v=43"></script>
-<script src="admin.js?v=43"></script>
-<script src="ui-v42.js?v=43"></script>
+<script src="config.js?v=46"></script>
+<script src="store.js?v=46"></script>
+<script src="demo-data.js?v=46"></script>
+<script src="ui-common.js?v=46"></script>
+<script src="modal.js?v=46"></script>
+<script src="geo.js?v=46"></script>
+<script src="chat.js?v=46"></script>
+<script src="photo.js?v=46"></script>
+<script src="report-export.js?v=46"></script>
+<script src="ui-enhance.js?v=46"></script>
+<script src="admin.js?v=46"></script>
+<script src="ui-v42.js?v=46"></script>
 </body>
 </html>

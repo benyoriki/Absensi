@@ -71,7 +71,11 @@ const CONFIG = {
 
   // Toleransi keterlambatan (menit) dihitung dari jam masuk SHIFT karyawan.
   // Contoh: shift masuk 08:00 + toleransi 15 menit → telat jika absen > 08:15.
-  LATE_GRACE_MINUTES: 15
+  LATE_GRACE_MINUTES: 15,
+
+  // Data dummy (demo-data.js) untuk uji performa & tampilan. Set false untuk
+  // memakai data kosong/asli. Bisa juga dimatikan sementara dengan ?demo=off.
+  DEMO_DATA: true
 };
 
 // Catatan: alias bare (OFFICE_LOCATION / OFFICE_MAPS_URL / ATTENDANCE_RADIUS)
