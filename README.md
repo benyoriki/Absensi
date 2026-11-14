@@ -26,7 +26,7 @@ Catatan: localStorage = penyimpanan lokal browser, **bukan** database server dan
 - Semua file di root (tanpa folder) — upload langsung ke root repo GitHub.
 - Nama aplikasi: **PT. Depo PRG**. Ikon baru, bingkai 5%.
 - **Absen foto**: Absen Masuk/Pulang membuka kamera; foto distempel jam, tanggal, hari, alamat, koordinat, kompas, nama, jarak, dan kode verifikasi (`photo.js`). Foto disimpan di IndexedDB perangkat.
-- Titik absen: link Maps `https://maps.app.goo.gl/Uptwi83tp6D83noA9?g_st=ac`, toleransi **10 meter** (`config.js`). Cek koordinat di `config.js` / menu Admin > Lokasi Kantor.
+- Titik absen: link Maps `https://maps.app.goo.gl/pZUmxACbiEQcC6wW6?g_st=ac`, radius **30 m + toleransi GPS hingga 20 m** (`config.js`). Cek koordinat di `config.js` / menu Admin > Lokasi Kantor.
 
 - **Tampilan baru (Navy & Orange)**: ringan untuk Windows 7 (Chrome/Edge 109) — tanpa blur, tanpa `color-mix()`, tanpa font Google. Instagram: @benyoriki.
 

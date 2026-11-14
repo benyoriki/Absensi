@@ -332,7 +332,7 @@
     // salah/basi. Sekarang selalu diisi dari CONFIG saat halaman dimuat.
     if (el.radarLimitLabel) el.radarLimitLabel.textContent = CONFIG.ATTENDANCE_RADIUS + "m";
     if (el.progressCaption) {
-      el.progressCaption.innerHTML = `Batas absensi: <strong>${CONFIG.ATTENDANCE_RADIUS} meter</strong> dari kantor. Area kerja: <strong>${CONFIG.OUTSIDE_AREA_RADIUS} meter</strong> (peringatan jika keluar &gt; ${CONFIG.OUTSIDE_AREA_MINUTES} menit).`;
+      el.progressCaption.innerHTML = `Batas absensi: <strong>${CONFIG.ATTENDANCE_RADIUS} meter</strong> dari kantor (+ toleransi akurasi GPS hingga ${CONFIG.GPS_TOLERANCE_MAX} m). Area kerja: <strong>${CONFIG.OUTSIDE_AREA_RADIUS} meter</strong> (peringatan jika keluar &gt; ${CONFIG.OUTSIDE_AREA_MINUTES} menit).`;
     }
     // Jadwal hari ini sekarang diambil dari SHIFT yang ditautkan admin ke
     // akun karyawan (bukan lagi teks "08:00–17:00" yang di-hardcode di
@@ -431,15 +431,17 @@
     el.statAccuracy.textContent = "±" + Math.round(data.accuracy) + " m";
     el.statUpdated.textContent = new Date().toTimeString().slice(0, 8);
 
-    const withinAttendance = data.distance <= CONFIG.ATTENDANCE_RADIUS;
+    const ev = data.eval || evaluateLocation(data.distance, data.accuracy);
+    const withinAttendance = ev.allowed;
     // Jika ZoneMonitor sedang aktif (sudah absen masuk), biarkan
     // updateZonePill() yang mengatur teks pill (status area kerja).
     // Sebelum absen masuk, pill menampilkan status radius absensi biasa.
-    const accuracyPoor = data.accuracy > CONFIG.MAX_ACCEPTABLE_ACCURACY;
+    const accuracyPoor = ev.status === "poor-accuracy";
     // Teks status HANYA tampilan. Aturan absen tetap divalidasi di
     // renderAttendanceCheck (radius + akurasi) — tidak diubah.
     if (el.gpsStateTitle) {
       el.gpsStateTitle.textContent = accuracyPoor ? "Akurasi GPS kurang baik"
+        : ev.status === "tolerance" ? "Lokasi valid — dalam toleransi GPS"
         : withinAttendance ? "Lokasi valid — Anda dalam radius absensi"
         : "Di luar radius absensi";
       el.gpsStateTitle.setAttribute("data-state", accuracyPoor ? "warn" : withinAttendance ? "ok" : "bad");
@@ -449,14 +451,16 @@
         el.locationStatusPill.textContent = "Akurasi kurang baik";
         el.locationStatusPill.className = "pill pill--warning";
       } else {
-        el.locationStatusPill.textContent = withinAttendance ? "Lokasi valid" : "Di luar Radius";
+        el.locationStatusPill.textContent = ev.status === "tolerance" ? "Lokasi valid (toleransi)" : withinAttendance ? "Lokasi valid" : "Di luar Radius";
         el.locationStatusPill.className = "pill " + (withinAttendance ? "pill--success" : "pill--danger");
       }
     }
 
-    setLocationNote(data.accuracy > CONFIG.MAX_ACCEPTABLE_ACCURACY
-      ? "Akurasi lokasi terlalu rendah. Silakan aktifkan GPS dengan akurasi tinggi dan coba lagi."
-      : "Akurasi lokasi bergantung pada perangkat, GPS, jaringan, dan kondisi lingkungan.");
+    setLocationNote(accuracyPoor
+      ? "Akurasi lokasi terlalu rendah. Aktifkan GPS 'akurasi tinggi', keluar ke area terbuka, lalu coba lagi."
+      : ev.status === "tolerance"
+        ? `Anda ${data.distance.toFixed(0)} m dari titik kantor — masih diterima karena toleransi GPS +${ev.bonus.toFixed(0)} m (batas ${ev.effectiveRadius.toFixed(0)} m).`
+        : "Akurasi lokasi bergantung pada perangkat, GPS, jaringan, dan kondisi lingkungan.");
 
     // Radar dot: peta jarak ke radius piksel radar, diskalakan mengikuti
     // ATTENDANCE_RADIUS x3 (bukan angka tetap) supaya tetap masuk akal
@@ -515,15 +519,30 @@
     document.getElementById("attendance-modal-title").textContent = type === "check-in" ? "Absen Masuk" : "Absen Pulang";
     el.attendanceModalBody.innerHTML = `
       <div class="spinner" style="width:32px;height:32px;border-color:var(--border);border-top-color:var(--brand-600);margin:0 auto 1em"></div>
-      <p class="text-muted text-sm">Mengambil lokasi GPS Anda…</p>`;
+      <p class="text-muted text-sm" id="gps-lock-text">Mengunci sinyal GPS…</p>
+      <div style="height:6px;border-radius:99px;background:var(--border);overflow:hidden;margin:.6em 0">
+        <div id="gps-lock-bar" style="height:100%;width:4%;background:var(--brand-600);transition:width .4s"></div>
+      </div>
+      <p class="fine-print" id="gps-lock-hint">Diamkan HP sejenak. Beberapa pembacaan GPS dirata-ratakan agar jarak akurat.</p>`;
     Modal.show("attendance-modal");
 
-    getCurrentPositionOnce()
-      .then((pos) => {
-        const { latitude, longitude, accuracy } = pos.coords;
-        const distance = distanceToOffice(latitude, longitude);
+    getCurrentPositionOnce({
+      onProgress: (p) => {
+        const t = document.getElementById("gps-lock-text");
+        const bar = document.getElementById("gps-lock-bar");
+        if (t) t.textContent = `Mengunci GPS… akurasi ±${Math.round(p.accuracy)} m · ${p.samples} pembacaan`;
+        if (bar) bar.style.width = Math.min(96, Math.max(8, (p.elapsed / p.maxWait) * 100, p.target / Math.max(p.accuracy, p.target) * 70)) + "%";
+      }
+    })
+      .then((res) => {
+        const fix = res.fix;
+        const distance = distanceToOffice(fix.lat, fix.lon);
         attendanceInProgress = false;
-        renderAttendanceCheck(type, { lat: latitude, lon: longitude, accuracy, distance });
+        renderAttendanceCheck(type, {
+          lat: fix.lat, lon: fix.lon, accuracy: fix.accuracy, distance,
+          samples: fix.samples, trust: fix.trust, trustLevel: fix.trustLevel, flags: fix.flags,
+          eval: evaluateLocation(distance, fix.accuracy)
+        });
       })
       .catch((err) => {
         attendanceInProgress = false;
@@ -535,26 +554,32 @@
   }
 
   function renderAttendanceCheck(type, meta) {
-    const withinRadius = meta.distance <= CONFIG.ATTENDANCE_RADIUS;
-    const accuracyOk = meta.accuracy <= CONFIG.MAX_ACCEPTABLE_ACCURACY;
+    const ev = meta.eval || evaluateLocation(meta.distance, meta.accuracy);
+    const withinRadius = ev.allowed;
+    const accuracyOk = ev.status !== "poor-accuracy";
 
     // Aturan bisnis: absen HANYA boleh di dalam radius kantor. Satu-satunya
     // jalan lain adalah admin memberi izin eksplisit untuk hari ini (lihat
     // Store.approvedOutsideRequestFor). Kalau belum ada izin sama sekali,
     // karyawan bisa mengajukan permintaan lewat form di bawah — bukan
     // otomatis lolos hanya karena mengisi alasan.
-    const approvedException = !withinRadius ? Store.approvedOutsideRequestFor(user.id, type) : null;
-    const pendingException = !withinRadius && !approvedException ? Store.pendingOutsideRequestFor(user.id, type) : null;
+    const isOutside = ev.status === "outside";
+    const approvedException = isOutside ? Store.approvedOutsideRequestFor(user.id, type) : null;
+    const pendingException = isOutside && !approvedException ? Store.pendingOutsideRequestFor(user.id, type) : null;
     const canProceed = (withinRadius || approvedException) && accuracyOk;
 
-    const statusBadge = withinRadius
+    const statusBadge = ev.status === "poor-accuracy"
+      ? '<span class="badge badge--warning">AKURASI RENDAH</span>'
+      : ev.status === "tolerance"
+        ? '<span class="badge badge--success">Boleh Absen · Toleransi GPS</span>'
+      : withinRadius
       ? '<span class="badge badge--success">Boleh Absen</span>'
       : approvedException
         ? '<span class="badge badge--success">Diizinkan Admin</span>'
         : '<span class="badge badge--danger">DI LUAR RADIUS</span>';
 
     let outsideBlock = "";
-    if (!withinRadius) {
+    if (isOutside) {
       if (approvedException) {
         outsideBlock = `<p style="color:var(--success-600);font-size:.86rem;font-weight:600">✅ Admin mengizinkan Anda ${type === "check-in" ? "absen masuk" : "absen pulang"} di luar radius kantor hari ini.</p>`;
       } else if (pendingException) {
@@ -563,7 +588,8 @@
           <p class="text-muted text-sm">Alasan yang Anda kirim: "${escapeHtml(pendingException.reason || "-")}"</p>`;
       } else {
         outsideBlock = `
-          <p style="color:var(--danger-600);font-size:.86rem;font-weight:600">❌ Anda berada ${meta.distance.toFixed(1)} meter dari kantor. Absensi hanya dapat dilakukan dalam radius ${CONFIG.ATTENDANCE_RADIUS} meter.</p>
+          <p style="color:var(--danger-600);font-size:.86rem;font-weight:600">❌ Anda berada ${meta.distance.toFixed(1)} meter dari kantor. Absensi hanya dapat dilakukan dalam radius ${ev.radius} meter (+${ev.bonus.toFixed(0)} m toleransi GPS = ${ev.effectiveRadius.toFixed(0)} m). Anda masih kurang dekat ${ev.shortBy.toFixed(0)} m.</p>
+          ${meta.distance > 150 && ev.quality !== "poor" ? '<p class="text-muted text-sm" style="margin-top:.5em">Jarak ini sangat jauh padahal akurasi GPS baik. Jika Anda yakin sudah berada di kantor, titik kantor mungkin belum dikalibrasi — hubungi admin.</p>' : ""}
           <p class="text-muted text-sm" style="margin-top:.5em">Jika Anda memang perlu absen dari lokasi ini (mis. tugas lapangan), ajukan izin ke admin di bawah ini.</p>
           <label for="outside-reason-input">Alasan absen di luar lokasi</label>
           <textarea id="outside-reason-input" placeholder="Contoh: Sedang tugas di kandang blok C…" rows="2"></textarea>
@@ -575,12 +601,15 @@
     el.attendanceModalBody.innerHTML = `
       <dl class="stat-list" style="text-align:left;margin-bottom:1em">
         <div class="stat-list__item"><dt>Jarak dari kantor</dt><dd class="mono">${meta.distance.toFixed(1)} m dari kantor</dd></div>
-        <div class="stat-list__item"><dt>Akurasi GPS</dt><dd class="mono">${Math.round(meta.accuracy)} meter</dd></div>
+        <div class="stat-list__item"><dt>Akurasi GPS</dt><dd class="mono">±${Math.round(meta.accuracy)} meter${meta.samples ? ` · ${meta.samples} pembacaan` : ""}</dd></div>
+        <div class="stat-list__item"><dt>Batas jarak</dt><dd class="mono">${ev.radius} m + ${ev.bonus.toFixed(0)} m toleransi</dd></div>
         <div class="stat-list__item"><dt>Jam</dt><dd class="mono">${new Date().toTimeString().slice(0,8)}</dd></div>
         <div class="stat-list__item"><dt>Status</dt><dd>${statusBadge}</dd></div>
       </dl>
       ${outsideBlock}
-      ${withinRadius && !accuracyOk ? `<p style="color:var(--warning-600);font-size:.86rem;font-weight:600">⚠️ GPS belum cukup akurat (±${Math.round(meta.accuracy)} m). Tunggu beberapa detik lalu coba lagi.</p>` : ""}
+      ${!accuracyOk ? `<p style="color:var(--warning-600);font-size:.86rem;font-weight:600">⚠️ GPS belum cukup akurat (±${Math.round(meta.accuracy)} m, batas ±${CONFIG.MAX_ACCEPTABLE_ACCURACY} m). Aktifkan GPS "akurasi tinggi", pindah ke area terbuka, lalu tekan Coba Lagi.</p>` : ""}
+      ${ev.status === "tolerance" ? `<p class="text-muted text-sm">Posisi Anda ${meta.distance.toFixed(0)} m dari titik kantor — diterima berkat toleransi akurasi GPS.</p>` : ""}
+      ${meta.flags && meta.flags.length && meta.trust < 80 ? `<p class="text-muted text-sm">ℹ️ Sinyal lokasi terdeteksi tidak biasa. Absen tetap bisa dilakukan dan akan ditandai untuk ditinjau admin.</p>` : ""}
       <button id="attendance-confirm-btn" type="button" class="btn btn--primary btn--block mt-1" ${canProceed ? "" : "disabled"}>
         ${type === "check-in" ? "📷 Ambil Foto & Absen Masuk" : "📷 Ambil Foto & Absen Pulang"}
       </button>

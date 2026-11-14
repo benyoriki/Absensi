@@ -56,13 +56,13 @@
 <meta name="apple-mobile-web-app-title" content="PT. Depo PRG" />
 <meta name="mobile-web-app-capable" content="yes" />
 <script>(function(){try{var t=JSON.parse(localStorage.getItem("rakabu_theme"));if(t!=="light"&&t!=="dark"){t=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.setAttribute("data-theme",t)}catch(e){}})();</script>
-<link rel="stylesheet" href="style.css?v=46" />
+<link rel="stylesheet" href="style.css?v=47" />
 <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
-<link rel="stylesheet" href="style-v43.css?v=46" />
-<link rel="stylesheet" href="style-v44.css?v=46" />
-<link rel="stylesheet" href="style-v46.css?v=46" />
-<script src="adapt.js?v=46"></script>
+<link rel="stylesheet" href="style-v43.css?v=47" />
+<link rel="stylesheet" href="style-v44.css?v=47" />
+<link rel="stylesheet" href="style-v46.css?v=47" />
+<script src="adapt.js?v=47"></script>
 </head>
 <body class="pg-admin">
 <div id="app-loading-screen" class="ld" role="status" aria-live="polite" aria-label="Memuat halaman">
@@ -154,6 +154,11 @@
         <div class="page-title flex-between">
           <div><h2>Dasbor Admin</h2><p>Monitoring kehadiran &amp; aktivitas karyawan.</p></div>
           <span class="date-chip" id="dash-date">-</span>
+        </div>
+        <div id="calib-banner" class="card" hidden style="border-left:4px solid var(--warning-600);margin-bottom:1em">
+          <strong>⚠️ Titik kantor belum terkalibrasi</strong>
+          <p class="fine-print" style="margin:.4em 0 .8em">Koordinat bawaan hanyalah perkiraan, sehingga karyawan yang sudah di kantor bisa terbaca ratusan meter jauhnya. Kalibrasi sekali dengan berdiri di titik absen, atau tempel koordinat dari Google Maps.</p>
+          <button type="button" class="btn btn--primary btn--sm" id="calib-banner-btn">📍 Kalibrasi sekarang</button>
         </div>
 
         <div class="grid-stats" id="stat-cards"></div>
@@ -413,7 +418,9 @@
             <div class="stat-list__item"><dt>Longitude Kantor</dt><dd class="mono" id="setting-lon">-</dd></div>
             <div class="stat-list__item"><dt>Radius Absensi (Masuk/Pulang)</dt><dd class="mono" id="setting-radius">-</dd></div>
             <div class="stat-list__item"><dt>Radius Area Kerja (Alarm)</dt><dd class="mono" id="setting-outside-radius">-</dd></div>
+            <div class="stat-list__item"><dt>Toleransi Akurasi GPS (maks.)</dt><dd class="mono" id="setting-tolerance">-</dd></div>
             <div class="stat-list__item"><dt>Akurasi GPS Maksimum Diterima</dt><dd class="mono" id="setting-accuracy">-</dd></div>
+            <div class="stat-list__item"><dt>Status Titik Kantor</dt><dd id="setting-calibration">-</dd></div>
             <div class="stat-list__item"><dt>Batas Peringatan Keluar Area</dt><dd class="mono" id="setting-outside">-</dd></div>
             <div class="stat-list__item"><dt>Batas Jam Terlambat</dt><dd class="mono" id="setting-late">-</dd></div>
           </dl>
@@ -615,7 +622,13 @@
     <div class="modal__head"><h2>Ubah Lokasi Kantor</h2><button class="icon-btn" id="office-location-close" aria-label="Tutup">✕</button></div>
     <form id="office-location-form" novalidate>
       <p class="fine-print">Koordinat ini menentukan titik pusat radius absensi. Semua karyawan akan mengikuti titik baru setelah disimpan.</p>
-      <button type="button" class="btn btn--ghost btn--block" id="office-use-my-location-btn">📡 Gunakan Lokasi Saya Sekarang</button>
+      <label for="office-paste">Tempel dari Google Maps (link panjang atau koordinat)</label>
+      <div style="display:flex;gap:.5em">
+        <input id="office-paste" type="text" placeholder="-6.456874, 106.729983  atau  https://www.google.com/maps/...@-6.45,106.72" style="flex:1" />
+        <button type="button" class="btn btn--ghost btn--sm" id="office-paste-btn">Baca</button>
+      </div>
+      <p class="fine-print text-sm" id="office-paste-status" style="min-height:1.2em"></p>
+      <button type="button" class="btn btn--ghost btn--block" id="office-use-my-location-btn">📡 Kalibrasi di Lokasi (berdiri di titik absen, ±20 detik)</button>
       <p class="fine-print text-sm" id="office-geo-status" style="min-height:1.2em"></p>
       <div class="field-row mt-1">
         <div><label for="office-lat">Latitude</label><input id="office-lat" type="text" inputmode="decimal" placeholder="-6.4569020" required /></div>
@@ -625,6 +638,9 @@
         <div><label for="office-radius">Radius Absensi (m)</label><input id="office-radius" type="number" min="1" max="1000" step="1" required /></div>
         <div><label for="office-outside-radius">Radius Area Kerja (m)</label><input id="office-outside-radius" type="number" min="1" max="2000" step="1" required /></div>
       </div>
+      <label for="office-gps-tolerance">Toleransi Akurasi GPS Maksimum (m)</label>
+      <input id="office-gps-tolerance" type="number" min="0" max="100" step="1" />
+      <p class="fine-print">Jarak terjauh yang diterima = radius absensi + toleransi (yang dikreditkan = separuh akurasi GPS, maks. angka ini). Disarankan 15–25 m. Isi 0 untuk menonaktifkan.</p>
       <label for="office-maps-url">Link Google Maps (opsional)</label>
       <input id="office-maps-url" type="url" placeholder="https://maps.app.goo.gl/..." />
       <p class="fine-print">Kosongkan untuk membuat link otomatis dari koordinat di atas.</p>
@@ -672,17 +688,17 @@
 
 <div id="toast-region" class="toast-region" aria-live="polite"></div>
 
-<script src="config.js?v=46"></script>
-<script src="store.js?v=46"></script>
-<script src="demo-data.js?v=46"></script>
-<script src="ui-common.js?v=46"></script>
-<script src="modal.js?v=46"></script>
-<script src="geo.js?v=46"></script>
-<script src="chat.js?v=46"></script>
-<script src="photo.js?v=46"></script>
-<script src="report-export.js?v=46"></script>
-<script src="ui-enhance.js?v=46"></script>
-<script src="admin.js?v=46"></script>
-<script src="ui-v42.js?v=46"></script>
+<script src="config.js?v=47"></script>
+<script src="store.js?v=47"></script>
+<script src="demo-data.js?v=47"></script>
+<script src="ui-common.js?v=47"></script>
+<script src="modal.js?v=47"></script>
+<script src="geo.js?v=47"></script>
+<script src="chat.js?v=47"></script>
+<script src="photo.js?v=47"></script>
+<script src="report-export.js?v=47"></script>
+<script src="ui-enhance.js?v=47"></script>
+<script src="admin.js?v=47"></script>
+<script src="ui-v42.js?v=47"></script>
 </body>
 </html>

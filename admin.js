@@ -47,6 +47,7 @@
       "edit-office-location-btn","setting-updated-note",
       "office-location-modal","office-location-close","office-location-form","office-use-my-location-btn","office-geo-status",
       "office-lat","office-lon","office-radius","office-outside-radius","office-maps-url","office-location-error","office-reset-default-btn",
+      "calib-banner","calib-banner-btn","office-paste","office-paste-btn","office-paste-status","office-gps-tolerance","setting-tolerance","setting-calibration",
       "monitoring-tbody","riwayat-lokasi-tbody","riwayat-lokasi-search",
       "izin-lokasi-tbody","sidebar-outside-badge",
       "setting-lat","setting-lon","setting-radius","setting-outside-radius","setting-accuracy","setting-outside","setting-late","setting-open-maps-btn",
@@ -181,6 +182,9 @@
     el.officeLocationClose.addEventListener("click", () => Modal.hide("office-location-modal"));
     el.officeLocationForm.addEventListener("submit", onSubmitOfficeLocation);
     el.officeUseMyLocationBtn.addEventListener("click", onUseMyLocation);
+    el.officePasteBtn.addEventListener("click", onParseMapsPaste);
+    el.calibBannerBtn.addEventListener("click", openOfficeLocationModal);
+    el.officePaste.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); onParseMapsPaste(); } });
     el.officeResetDefaultBtn.addEventListener("click", onResetOfficeLocation);
 
     el.rejectModalClose.addEventListener("click", () => Modal.hide("reject-modal"));
@@ -238,6 +242,7 @@
 
   function renderDashboard() {
     const todayKey = Store.localDateKey();
+    if (el.calibBanner) el.calibBanner.hidden = !!CONFIG.OFFICE_CALIBRATED;
     if (el.dashDate) el.dashDate.textContent = new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
     const users = Store.getUsers().filter((u) => u.role === "employee");
     const st = Store.getDailyStats(todayKey);
@@ -470,6 +475,7 @@
         ${row("Jam pulang", `<span class="mono">${(a && a.checkOut) || "—"}</span>`)}
         ${row("Jarak saat masuk", a && a.checkInDistance != null ? a.checkInDistance.toFixed(1) + " m" : "—")}
         ${row("Akurasi GPS", a && a.checkInAccuracy != null ? "±" + Math.round(a.checkInAccuracy) + " m" : "—")}
+        ${row("Kualitas lokasi", a && a.checkInGps ? escapeHtml(({inside:"Dalam radius",tolerance:"Dalam toleransi GPS (+"+a.checkInGps.bonus+" m)",outside:"Izin admin"}[a.checkInGps.status]||"—")) + (a.checkInGps.trust != null ? " · kepercayaan " + a.checkInGps.trust + "/100" : "") + (a.checkInGps.flags && a.checkInGps.flags.length ? " · ⚠️ " + escapeHtml(a.checkInGps.flags.join(", ")) : "") : "—")}
         ${row("Koordinat", `<span class="mono">${coord}</span>`)}
         ${row("Alamat", escapeHtml((a && a.checkInAddress) || "—"))}
         ${row("Kode verifikasi", `<span class="mono">${escapeHtml((a && (a.checkInPhotoCode || "")) || "—")}</span>`)}
@@ -702,13 +708,16 @@
       const u = Store.findUserById(a.userId);
       const exceptionNote = (a.checkInViaException || a.checkOutViaException)
         ? ' <span class="text-sm text-muted" title="Absen di luar radius, disetujui admin">📍izin</span>' : "";
+      const g = a.checkInGps;
+      const gpsNote = g && g.status === "tolerance" ? ' <span class="text-sm text-muted" title="Diterima lewat toleransi akurasi GPS (+' + g.bonus + ' m)">📡toleransi</span>' : "";
+      const flagNote = g && g.flags && g.flags.length ? ' <span class="text-sm" style="color:var(--warning-600)" title="Sinyal GPS tidak biasa: ' + escapeHtml(g.flags.join(", ")) + ' (skor kepercayaan ' + g.trust + '/100)">⚠️ tinjau</span>' : "";
       const editedNote = a.editedByAdmin ? ` <span class="text-sm text-muted" title="Dikoreksi oleh ${escapeHtml(a.editedByAdmin.by)}${a.editedByAdmin.note ? ': ' + escapeHtml(a.editedByAdmin.note) : ''}">✏️ dikoreksi</span>` : "";
       return `<tr>
         <td>${escapeHtml(u ? u.name : a.userId)}</td>
         <td>${formatDateID(a.date)}</td>
         <td class="mono">${a.checkIn || "—"}</td>
         <td class="mono">${a.checkOut || "—"}</td>
-        <td class="mono">${a.checkInDistance != null ? a.checkInDistance.toFixed(1) + " m" : "—"}${exceptionNote}</td>
+        <td class="mono">${a.checkInDistance != null ? a.checkInDistance.toFixed(1) + " m" : "—"}${exceptionNote}${gpsNote}${flagNote}</td>
         <td>${statusBadge(a.status)}${editedNote}</td>
         <td><button type="button" class="btn btn--ghost btn--sm" data-edit-attendance="${a.userId}" data-edit-date="${a.date}">Edit</button> ${AttendancePhoto.buttonsHtml(a, u ? u.name : a.userId)}</td>
       </tr>`;
@@ -1102,6 +1111,11 @@
     el.settingRadius.textContent = CONFIG.ATTENDANCE_RADIUS + " meter";
     el.settingOutsideRadius.textContent = CONFIG.OUTSIDE_AREA_RADIUS + " meter";
     el.settingAccuracy.textContent = CONFIG.MAX_ACCEPTABLE_ACCURACY + " meter";
+    if (el.calibBanner) el.calibBanner.hidden = !!CONFIG.OFFICE_CALIBRATED;
+    el.settingTolerance.textContent = "+" + CONFIG.GPS_TOLERANCE_MAX + " m (½ × akurasi) → jarak terjauh diterima " + (CONFIG.ATTENDANCE_RADIUS + CONFIG.GPS_TOLERANCE_MAX) + " m";
+    el.settingCalibration.innerHTML = CONFIG.OFFICE_CALIBRATED
+      ? '<span class="badge badge--success">Terkalibrasi</span>'
+      : '<span class="badge badge--warning">Belum terkalibrasi — gunakan Ubah Lokasi Kantor</span>';
     el.settingOutside.textContent = CONFIG.OUTSIDE_AREA_MINUTES + " menit";
     el.settingLate.textContent = CONFIG.LATE_AFTER;
     const saved = Store.getOfficeSettings();
@@ -1123,6 +1137,8 @@
     el.officeLon.value = CONFIG.OFFICE_LOCATION.longitude.toFixed(7);
     el.officeRadius.value = CONFIG.ATTENDANCE_RADIUS;
     el.officeOutsideRadius.value = CONFIG.OUTSIDE_AREA_RADIUS;
+    el.officeGpsTolerance.value = CONFIG.GPS_TOLERANCE_MAX;
+    el.officePaste.value = ""; el.officePasteStatus.textContent = "";
     const saved = Store.getOfficeSettings();
     el.officeMapsUrl.value = (saved && saved.mapsUrl) ? saved.mapsUrl : "";
     el.officeGeoStatus.textContent = "";
@@ -1131,23 +1147,49 @@
     Modal.show("office-location-modal");
   }
 
+  /** Baca koordinat dari link/teks Google Maps (lihat parseMapsInput di geo.js). */
+  function onParseMapsPaste() {
+    const raw = el.officePaste.value;
+    const r = parseMapsInput(raw);
+    if (r.error) { el.officePasteStatus.style.color = "var(--danger-600)"; el.officePasteStatus.textContent = "❌ " + r.error; return; }
+    el.officeLat.value = r.lat.toFixed(7);
+    el.officeLon.value = r.lon.toFixed(7);
+    if (/^https?:\/\//i.test(raw.trim())) el.officeMapsUrl.value = raw.trim();
+    const old = haversineDistance(CONFIG.OFFICE_LOCATION.latitude, CONFIG.OFFICE_LOCATION.longitude, r.lat, r.lon);
+    const src = { pin: "pin tempat (presisi tinggi)", view: "pusat tampilan peta (pastikan pin tepat di titik absen)", param: "parameter link", text: "koordinat teks" }[r.source];
+    el.officePasteStatus.style.color = "var(--success-600)";
+    el.officePasteStatus.textContent = `✅ Terbaca dari ${src}: ${r.lat.toFixed(6)}, ${r.lon.toFixed(6)}. Bergeser ${old.toFixed(0)} m dari titik sebelumnya. Cek lagi lalu simpan.`;
+  }
+
+  /** Kalibrasi: berdiri di titik absen → kunci GPS ±20 detik, rata-rata berbobot. */
+  let calibrating = null;
   function onUseMyLocation() {
     if (typeof getCurrentPositionOnce !== "function") {
       el.officeGeoStatus.textContent = "Fitur lokasi tidak tersedia di perangkat ini.";
       return;
     }
-    el.officeUseMyLocationBtn.disabled = true;
-    el.officeGeoStatus.textContent = "📡 Mencari lokasi Anda...";
-    getCurrentPositionOnce().then((pos) => {
-      el.officeLat.value = pos.coords.latitude.toFixed(7);
-      el.officeLon.value = pos.coords.longitude.toFixed(7);
-      const acc = Math.round(pos.coords.accuracy);
-      el.officeGeoStatus.textContent = `✅ Lokasi ditemukan (akurasi ±${acc} m). Pastikan Anda sedang berdiri persis di titik kantor sebelum menyimpan.`;
-    }).catch((err) => {
-      el.officeGeoStatus.textContent = "❌ " + (err && err.message ? err.message : "Gagal mengambil lokasi.");
-    }).finally(() => {
-      el.officeUseMyLocationBtn.disabled = false;
+    if (calibrating) { calibrating.cancel(); return; }
+    const btn = el.officeUseMyLocationBtn, label = btn.textContent;
+    btn.textContent = "⏹ Batalkan kalibrasi";
+    el.officeGeoStatus.textContent = "📡 Mengunci GPS… diamkan HP di titik absen.";
+    calibrating = getCurrentPositionOnce({
+      maxWaitMs: 20000, targetAccuracy: 6, minSamples: 8,
+      onProgress: (p) => { el.officeGeoStatus.textContent = `📡 Mengunci GPS… ±${Math.round(p.accuracy)} m · ${p.samples} pembacaan · ${Math.round(p.elapsed / 1000)}/${Math.round(p.maxWait / 1000)} dtk`; }
     });
+    calibrating.then((res) => {
+      const f = res.fix;
+      el.officeLat.value = f.lat.toFixed(7);
+      el.officeLon.value = f.lon.toFixed(7);
+      const acc = Math.round(f.accuracy);
+      const good = f.accuracy <= 15;
+      el.officeGeoStatus.style.color = good ? "var(--success-600)" : "var(--warning-600)";
+      el.officeGeoStatus.textContent = good
+        ? `✅ Terkunci: akurasi ±${acc} m dari ${f.used} pembacaan. Simpan jika Anda berdiri tepat di titik absen.`
+        : `⚠️ Akurasi hanya ±${acc} m. Untuk hasil terbaik, ulangi di area terbuka dengan GPS "akurasi tinggi" — atau tempel koordinat dari Google Maps.`;
+    }).catch((err) => {
+      el.officeGeoStatus.style.color = "var(--danger-600)";
+      el.officeGeoStatus.textContent = "❌ " + (err && err.message ? err.message : "Gagal mengambil lokasi.");
+    }).finally(() => { calibrating = null; btn.textContent = label; });
   }
 
   function onSubmitOfficeLocation(e) {
@@ -1157,6 +1199,7 @@
       longitude: el.officeLon.value,
       attendanceRadius: el.officeRadius.value,
       outsideAreaRadius: el.officeOutsideRadius.value,
+      gpsToleranceMax: el.officeGpsTolerance.value,
       mapsUrl: el.officeMapsUrl.value
     }, admin.name);
     if (!result.ok) {

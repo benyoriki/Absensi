@@ -414,6 +414,19 @@ const Store = (function () {
     return getAttendance().find(a => a.userId === userId && a.date === key) || null;
   }
 
+  /** Ringkasan kualitas GPS yang disimpan bersama absen (v47). */
+  function gpsSummary(meta) {
+    const ev = meta && meta.eval;
+    return {
+      status: ev ? ev.status : null,              // inside | tolerance | outside
+      radius: ev ? ev.radius : null,
+      bonus: ev ? Math.round(ev.bonus * 10) / 10 : null,
+      samples: meta && meta.samples != null ? meta.samples : null,
+      trust: meta && meta.trust != null ? meta.trust : null,
+      flags: (meta && meta.flags) || []
+    };
+  }
+
   function checkIn(userId, meta) {
     const list = getAttendance();
     const dateKey = localDateKey();
@@ -431,6 +444,9 @@ const Store = (function () {
         status: isLate ? "terlambat" : "hadir",
         checkInDistance: meta.distance, checkInAccuracy: meta.accuracy,
         checkInLat: meta.lat, checkInLon: meta.lon,
+        // v47: kualitas penguncian GPS (toleransi, skor kepercayaan, bendera
+        // anomali) supaya admin bisa meninjau absen yang meragukan.
+        checkInGps: gpsSummary(meta),
         // Bug fix (izin lokasi): jika absen ini disetujui lewat izin admin
         // (di luar radius normal), simpan referensinya di record supaya
         // admin bisa melihat jejaknya di Rekap Absensi, bukan cuma di
@@ -444,6 +460,7 @@ const Store = (function () {
       record.checkIn = timeStr;
       record.status = isLate ? "terlambat" : "hadir";
       record.checkInDistance = meta.distance;
+      record.checkInGps = gpsSummary(meta);
       record.checkInViaException = meta.viaException || null;
       record.checkInPhoto = meta.photoId || null; record.checkInPhotoCode = meta.photoCode || null;
       record.checkInAddress = meta.address || "";
@@ -463,6 +480,7 @@ const Store = (function () {
     record.checkOutAddress = meta.address || "";
     record.checkOutDistance = meta.distance;
     record.checkOutAccuracy = meta.accuracy;
+    record.checkOutGps = gpsSummary(meta);
     record.checkOutViaException = meta.viaException || null;
     saveAttendanceList(list);
     return record;
@@ -597,7 +615,9 @@ const Store = (function () {
     longitude: CONFIG.OFFICE_LOCATION.longitude,
     mapsUrl: CONFIG.OFFICE_MAPS_URL,
     attendanceRadius: CONFIG.ATTENDANCE_RADIUS,
-    outsideAreaRadius: CONFIG.OUTSIDE_AREA_RADIUS
+    outsideAreaRadius: CONFIG.OUTSIDE_AREA_RADIUS,
+    gpsToleranceMax: CONFIG.GPS_TOLERANCE_MAX,
+    calibrated: !!CONFIG.OFFICE_CALIBRATED
   } : null;
 
   function buildGoogleMapsUrl(lat, lon) {
@@ -613,6 +633,9 @@ const Store = (function () {
     const lon = Number(input.longitude);
     const radius = Number(input.attendanceRadius);
     const outsideRadius = Number(input.outsideAreaRadius);
+    const tolRaw = input.gpsToleranceMax;
+    const tol = (tolRaw === undefined || tolRaw === null || tolRaw === "")
+      ? (typeof CONFIG !== "undefined" ? CONFIG.GPS_TOLERANCE_MAX : 20) : Number(tolRaw);
 
     if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
       return { ok: false, error: "Latitude harus berupa angka antara -90 sampai 90." };
@@ -629,6 +652,9 @@ const Store = (function () {
     if (!Number.isFinite(outsideRadius) || outsideRadius < 1 || outsideRadius > 2000) {
       return { ok: false, error: "Radius area kerja harus angka antara 1–2000 meter." };
     }
+    if (!Number.isFinite(tol) || tol < 0 || tol > 100) {
+      return { ok: false, error: "Toleransi GPS maksimum harus angka antara 0–100 meter (0 = tanpa toleransi)." };
+    }
     if (outsideRadius < radius) {
       return { ok: false, error: "Radius area kerja tidak boleh lebih kecil dari radius absensi (karyawan yang baru absen masuk langsung dianggap 'keluar area')." };
     }
@@ -640,7 +666,8 @@ const Store = (function () {
 
     return {
       ok: true,
-      data: { latitude: lat, longitude: lon, attendanceRadius: Math.round(radius), outsideAreaRadius: Math.round(outsideRadius), mapsUrl }
+      data: { latitude: lat, longitude: lon, attendanceRadius: Math.round(radius), outsideAreaRadius: Math.round(outsideRadius), gpsToleranceMax: Math.round(tol), mapsUrl,
+        calibrated: input.calibrated === undefined ? true : !!input.calibrated }
     };
   }
 
@@ -667,6 +694,9 @@ const Store = (function () {
     CONFIG.OFFICE_LOCATION.longitude = settings.longitude;
     CONFIG.ATTENDANCE_RADIUS = settings.attendanceRadius;
     CONFIG.OUTSIDE_AREA_RADIUS = settings.outsideAreaRadius;
+    if (settings.gpsToleranceMax != null) CONFIG.GPS_TOLERANCE_MAX = settings.gpsToleranceMax;
+    // Admin yang menyimpan lokasi lewat menu = titik dianggap sudah diverifikasi.
+    CONFIG.OFFICE_CALIBRATED = !!settings.calibrated;
     CONFIG.OFFICE_MAPS_URL = settings.mapsUrl;
   }
 

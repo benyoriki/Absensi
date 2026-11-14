@@ -29,33 +29,72 @@
    ========================================================================== */
 
 const CONFIG = {
-  // Titik absen PT. Depo PRG — link Google Maps dari pemilik:
-  // https://maps.app.goo.gl/Uptwi83tp6D83noA9?g_st=ac
-  // Link pendek tidak bisa dibaca koordinatnya dari JavaScript, jadi koordinat
-  // di bawah diisi manual (sampel foto absen di Jl. Balai Desa Jabon Mekar,
-  // Parung). WAJIB dicek: buka link Maps di atas, tekan-tahan tepat di titik
-  // absen, salin koordinatnya, lalu cocokkan. Bisa juga diubah dari Dashboard
-  // Admin > Lokasi Kantor > "Gunakan lokasi saya" (berdiri di titik absen).
+  // Titik absen — pin Google Maps dari pemilik (v47):
+  // https://maps.app.goo.gl/pZUmxACbiEQcC6wW6  → pin koordinat langsung
+  // -6.4590039, 106.7308313 (bukan listing bisnis, jadi titiknya persis di
+  // tempat pin dijatuhkan). Jarak ke koordinat lama = ±254,6 m, sama persis
+  // dengan angka di screenshot absen — tanda koordinat lama memang salah.
+  // Bisa dikoreksi kapan saja: Admin > Pengaturan > Ubah Lokasi Kantor >
+  // "Kalibrasi di Lokasi" atau tempel koordinat dari Google Maps.
   OFFICE_LOCATION: {
-    latitude: -6.456874,
-    longitude: 106.729983
+    latitude: -6.4590039,
+    longitude: 106.7308313
   },
-  OFFICE_MAPS_URL: "https://maps.app.goo.gl/Uptwi83tp6D83noA9?g_st=ac",
+  OFFICE_MAPS_URL: "https://maps.app.goo.gl/pZUmxACbiEQcC6wW6?g_st=ac",
+
+  // true = koordinat sudah diverifikasi. Jika false, dasbor admin menampilkan
+  // peringatan "titik kantor belum terkalibrasi" (lihat admin.js).
+  OFFICE_CALIBRATED: true,
 
   // Naikkan angka ini setiap kali titik/radius di atas diubah lewat file ini,
   // supaya pengaturan lama yang tersimpan di HP/browser otomatis diabaikan.
-  SETTINGS_VERSION: 2,
+  SETTINGS_VERSION: 4,
 
-  // Radius absensi (meter). HANYA dipakai untuk memvalidasi tombol Absen
-  // Masuk & Absen Pulang. Karyawan di luar radius ini tidak bisa absen.
-  ATTENDANCE_RADIUS: 10,
+  // ---- RADIUS & TOLERANSI JARAK (v47) -------------------------------------
+  // Praktik umum geofence absensi: radius dasar 25–50 m + toleransi yang
+  // mengikuti akurasi GPS perangkat. GPS HP di luar ruangan biasanya ±5–20 m,
+  // di dalam bangunan ±20–50 m, sehingga radius 10 m membuat karyawan yang
+  // sebenarnya sudah di kantor sering ditolak.
+  //
+  // Aturan keputusan (lihat evaluateLocation di geo.js):
+  //   jarak <= ATTENDANCE_RADIUS                      → DI DALAM (valid)
+  //   jarak - bonus <= ATTENDANCE_RADIUS              → DI DALAM (toleransi GPS)
+  //   selain itu                                      → DI LUAR RADIUS
+  //   bonus = min(akurasi × GPS_TOLERANCE_FACTOR, GPS_TOLERANCE_MAX)
+  //   akurasi > MAX_ACCEPTABLE_ACCURACY               → DITOLAK (sinyal lemah)
+  // Jadi batas terjauh yang pernah diterima = radius + GPS_TOLERANCE_MAX.
+
+  // Radius dasar absen masuk & pulang (meter).
+  ATTENDANCE_RADIUS: 30,
+
+  // Seberapa besar akurasi GPS dikreditkan sebagai toleransi (0–1). 0.5 =
+  // separuh dari angka akurasi (±20 m → bonus 10 m). Konservatif supaya
+  // tidak mudah dimanfaatkan.
+  GPS_TOLERANCE_FACTOR: 0.5,
+
+  // Batas maksimum bonus toleransi (meter), berapa pun buruknya akurasi.
+  GPS_TOLERANCE_MAX: 20,
 
   // Radius area kerja (meter) SETELAH absen masuk. Berbeda & lebih longgar
   // dari ATTENDANCE_RADIUS di atas — lihat penjelasan di header file ini.
-  OUTSIDE_AREA_RADIUS: 15,
+  OUTSIDE_AREA_RADIUS: 60,
 
-  // Akurasi GPS lebih buruk dari ini (meter) akan diberi peringatan.
-  MAX_ACCEPTABLE_ACCURACY: 30,
+  // Akurasi GPS ≤ ini dianggap "baik" (label hijau).
+  GOOD_ACCURACY: 20,
+
+  // Akurasi GPS lebih buruk dari ini (meter) DITOLAK saat absen. Pembacaan
+  // GPS dikumpulkan beberapa kali (lihat samplePosition) sehingga akurasi
+  // akhir biasanya jauh lebih baik dari satu pembacaan tunggal.
+  MAX_ACCEPTABLE_ACCURACY: 50,
+
+  // ---- PENGUNCIAN GPS (multi-sampling) -----------------------------------
+  // Saat absen, aplikasi mengumpulkan beberapa pembacaan GPS, membuang
+  // pembacaan lompat/basi/akurasi buruk, lalu merata-ratakan dengan bobot
+  // 1/akurasi². Berhenti lebih cepat jika akurasi target sudah tercapai.
+  GPS_TARGET_ACCURACY: 15,   // meter — berhenti lebih awal jika tercapai
+  GPS_MIN_SAMPLES: 3,        // minimal pembacaan bagus sebelum boleh berhenti
+  GPS_MAX_WAIT_MS: 15000,    // batas waktu maksimum penguncian (ms)
+  GPS_MAX_SAMPLE_AGE_MS: 20000, // pembacaan lebih tua dari ini dianggap basi
 
   // Karyawan yang berada di luar OUTSIDE_AREA_RADIUS selama menit ini
   // (setelah absen masuk, sebelum absen pulang) akan memicu alarm +
